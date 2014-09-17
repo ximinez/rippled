@@ -3,12 +3,26 @@ var Amount = require('ripple-lib').Amount;
 var Wallet = require('ripple-lib').Wallet;
 var extend = require('extend');
 
-var wallets = [];
-exports.wallets = wallets;
 var fundedWallets = [];
 exports.fundedWallets = fundedWallets;
 var prefix = '   ';
 exports.prefix = prefix;
+
+function get_config() {
+  // Stolen from ../test/testutils.js
+  var cfg = require(__dirname + '/config-example');
+
+  // Load the custom config if any
+  try {
+    cfg = extend({}, cfg, require(__dirname + '/config'));
+  } catch(e) {
+    // ignore exceptions - fall back to the default
+  }
+
+  return cfg;
+}
+
+var config = get_config();
 
 // The canonical root account. Assume for now that on a test network, 
 // it will have sufficient XRP to fund new accounts.
@@ -18,16 +32,30 @@ var rootAccount = {
 };
 exports.rootAccount = rootAccount;
 
-// create a remote
-var remote = new Remote({
-  // see the api reference for available options
-  //trace: true,
-  trusted: true,
-  servers: [ 'ws://127.0.0.1:6006' ]
-});
-remote.setSecret(rootAccount.address, rootAccount.secret);
+// Work with a subset of the wallets if specified in the config
+if( config.walletLimit ) {
+  wallets.length = config.walletLimit;
+}
 
-exports.remote = remote;
+var remotes = new Array(config.remoteParams.length);
+for(var i = 0; i < config.remoteParams.length; ++i) {
+  // create a remote
+  var remote = new Remote(config.remoteParams[i]);
+  remote.setSecret(rootAccount.address, rootAccount.secret);
+
+  remotes.push(remote);
+}
+
+exports.remotes = remotes;
+
+var lastRemote = -1;
+function roundRobinRemote(remotes) {
+  lastRemote = ( lastRemote + 1 ) % remotes.length;
+
+  var remote = remotes[lastRemote];
+
+  return remote;
+}
 
 function date() {
   return '\n' + new Date().toISOString() + ' ';
@@ -37,13 +65,18 @@ exports.date = date;
 var errorHandler = function onError(err) {
   console.log(date() + 'Error');
   console.log(err);
-  remote.disconnect();
-  setTimeout(function() { remote.disconnect(); }, 100);
+  for(var i = 0; i < remotes.length; ++i) {
+    remotes[i].disconnect();
+    (function(i) {
+      var j = i;
+      setTimeout(function() { remotes[j].disconnect(); }, 100);
+    })();
+  }
 };
 exports.errorHandler = errorHandler;
 
 function getAccountInfo(address) {
-  var accountinfo = remote.request('account_info', {
+  var accountinfo = roundRobinRemote().request('account_info', {
     account: address
   });
 
@@ -66,7 +99,7 @@ exports.getAccountInfo = getAccountInfo;
 
 function getLedger(ledger_index, opts, callback) {
   opts = opts || {};
-  var ledger = remote.request('ledger', null, opts).ledger_index(ledger_index);
+  var ledger = roundRobinRemote().request('ledger', null, opts).ledger_index(ledger_index);
 
   ledger.on('error', errorHandler);
 
@@ -85,7 +118,7 @@ function getClosedLedger(opts) {
   extend( opts, {
     accounts: true,
   });
-  var ledger = remote.request('ledger', null, opts).ledger_index("closed");
+  var ledger = roundRobinRemote().request('ledger', null, opts).ledger_index("closed");
 
   ledger.on('error', errorHandler);
 
@@ -95,16 +128,16 @@ function getClosedLedger(opts) {
 }
 exports.getClosedLedger = getClosedLedger;
 
-function transactionTimeout(label) {
-  return setTimeout(function() {
-    console.log(date() + 'Timeout ' + label);
-    remote.disconnect();
-    process.exit(1);
-  }, 30000)
-}
+//function transactionTimeout(label) {
+//  return setTimeout(function() {
+//    console.log(date() + 'Timeout ' + label);
+//    // remote.disconnect();
+//    // process.exit(1);
+//  }, 30000)
+//}
 
 function makePayment(srcAddress, destAddress, amount) {
-  var transaction = remote.createTransaction('Payment', {
+  var transaction = roundRobinRemote().createTransaction('Payment', {
     account: srcAddress,
     destination: destAddress,
     amount: amount
@@ -112,11 +145,10 @@ function makePayment(srcAddress, destAddress, amount) {
   var label = 'from ' + srcAddress
       + ' to ' + destAddress
       + ' for ' + amount.to_human_full();
-  var timeoutId = transactionTimeout(label);
+  // var timeoutId = transactionTimeout(label);
 
   transaction.on('proposed', function() {
     console.log(date() + 'Payment transaction queued ' + label);
-    // remote.ledger_accept();
   });
   transaction.on('missing', function() {
     console.log(date() + 'Payment is missing ' + label);
@@ -126,12 +158,14 @@ function makePayment(srcAddress, destAddress, amount) {
     console.log(prefix + 'Result: ' + err.engine_result);
     console.log(prefix + 'Result code: ' + err.engine_result_code);
     console.log(prefix + 'Result message: ' + err.engine_result_message);
-    console.log(prefix + 'Source Account: ' + err.tx_json.Account);
-    console.log(prefix + 'Dest Account: ' + err.tx_json.Destination);
-    console.log(prefix + 'Amount: ' 
-      + Amount.from_json(err.tx_json.Amount).to_human_full());
-    console.log(prefix + 'Fee: ' + err.tx_json.Fee);
-    console.log(prefix + 'Transaction Type: ' + err.tx_json.TransactionType);
+    if( err.tx_json ) {
+      console.log(prefix + 'Source Account: ' + err.tx_json.Account);
+      console.log(prefix + 'Dest Account: ' + err.tx_json.Destination);
+      console.log(prefix + 'Amount: ' 
+        + Amount.from_json(err.tx_json.Amount).to_human_full());
+      console.log(prefix + 'Fee: ' + err.tx_json.Fee);
+      console.log(prefix + 'Transaction Type: ' + err.tx_json.TransactionType);
+    }
     if(err.engine_result != 'temREDUNDANT') {
       console.log(err);
     }
@@ -152,27 +186,26 @@ function makePayment(srcAddress, destAddress, amount) {
     console.log(prefix + 'Transaction Type: ' + res.tx_json.TransactionType);
     console.log(prefix + 'Date: ' + res.tx_json.date);
   });
-  transaction.submit(function(res, err) {
+  transaction.submit(/*function(res, err) {
     // clear the timeout no matter what
     clearTimeout(timeoutId);
-  });
+  }*/);
 
   return transaction;
 }
 exports.makePayment = makePayment;
 
 function makeTrustLine(trusterAddress, limit) {
-  var transaction = remote.createTransaction('TrustSet', {
+  var transaction = roundRobinRemote().createTransaction('TrustSet', {
     account: trusterAddress,
     limit: limit
   });
   var label = 'from ' + trusterAddress
       + ' for ' + limit.to_human_full();
-  var timeoutId = transactionTimeout(label);
+  // var timeoutId = transactionTimeout(label);
 
   transaction.on('proposed', function() {
     console.log(date() + 'Trust line transaction queued ' + label);
-    // remote.ledger_accept();
   });
   transaction.on('missing', function() {
     console.log(date() + 'Trust line is missing ' + label);
@@ -208,17 +241,17 @@ function makeTrustLine(trusterAddress, limit) {
     console.log(prefix + 'Date: ' + res.tx_json.date);
     // console.log(res);
   });
-  transaction.submit(function(res, err) {
+  transaction.submit(/*function(res, err) {
     // clear the timeout no matter what
     clearTimeout(timeoutId);
-  });
+  }*/);
 
   return transaction;
 }
 exports.makeTrustLine = makeTrustLine;
 
 //function makeOffer(sellAddress, sellAmount, buyAmount, expiration) {
-//  var transaction = remote.createTransaction('OfferCreate', {
+//  var transaction = roundRobinRemote().createTransaction('OfferCreate', {
 //    account: sellAddress,
 //    buy: buyAmount,
 //    sell: sellAmount,
@@ -234,7 +267,6 @@ exports.makeTrustLine = makeTrustLine;
 //
 //  transaction.on('proposed', function() {
 //    console.log(date() + 'Payment transaction queued ' + label);
-//    // remote.ledger_accept();
 //  });
 //  transaction.on('missing', function() {
 //    console.log(date() + 'Payment is missing ' + label);
@@ -297,12 +329,16 @@ function initialFunding(destAddress, fundingmin, fundingmax) {
 }
 exports.initialFunding = initialFunding;
 
-function createNewAccount(fundingmin, fundingmax) {
+function createNewAccount(fundingmin, fundingmax, wallets) {
   var wallet = Wallet.generate();
   console.log(date() + 'New wallet: ' + wallet.address);
   console.log(prefix + 'Secret key: ' + wallet.secret);
-  wallets.push(wallet);
-  remote.setSecret(wallet.address, wallet.secret);
+  if(wallets) {
+    wallets.push(wallet);
+  }
+  for(var i = 0; i < remotes.length; ++i) {
+    remotes[i].setSecret(wallet.address, wallet.secret);
+  }
 
   return {
     wallet: wallet,
