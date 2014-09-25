@@ -17,9 +17,6 @@ var paymentmax = 1000;
 var Remote = require('ripple-lib').Remote;
 var Amount = require('ripple-lib').Amount;
 var functions = require('./functions');
-var wallets = require('./wallets').wallets;
-// Work with a subset
-wallets.length = 1000;
 var flowControl = require('./flowControl').flowControl;
 
 var remote = functions.remote;
@@ -34,6 +31,8 @@ var getClosedLedger = functions.getClosedLedger;
 var makePayment = functions.makePayment;
 var initialFunding = functions.initialFunding;
 var createNewAccount = functions.createNewAccount;
+
+var wallets = functions.getGeneratedWallets();
 
 function randomPayment() {
   var length = fundedWallets.length;

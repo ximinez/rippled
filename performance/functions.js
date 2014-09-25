@@ -24,6 +24,19 @@ function get_config() {
 
 var config = get_config();
 
+function getGeneratedWallets() {
+  var wallets = require('./wallets').wallets;
+
+  // Work with a subset of the wallets if specified in the config
+  if( config.walletLimit ) {
+    wallets.length = config.walletLimit;
+  }
+
+  return wallets;
+}
+
+exports.getGeneratedWallets = getGeneratedWallets;
+
 // The canonical root account. Assume for now that on a test network, 
 // it will have sufficient XRP to fund new accounts.
 var rootAccount = {
@@ -32,30 +45,27 @@ var rootAccount = {
 };
 exports.rootAccount = rootAccount;
 
-// Work with a subset of the wallets if specified in the config
-if( config.walletLimit ) {
-  wallets.length = config.walletLimit;
-}
-
 var remotes = new Array(config.remoteParams.length);
 for(var i = 0; i < config.remoteParams.length; ++i) {
   // create a remote
   var remote = new Remote(config.remoteParams[i]);
   remote.setSecret(rootAccount.address, rootAccount.secret);
 
-  remotes.push(remote);
+  remotes[i] = remote;
 }
 
 exports.remotes = remotes;
 
 var lastRemote = -1;
-function roundRobinRemote(remotes) {
+function roundRobinRemote() {
   lastRemote = ( lastRemote + 1 ) % remotes.length;
 
   var remote = remotes[lastRemote];
 
   return remote;
 }
+
+exports.roundRobinRemote = roundRobinRemote;
 
 function date() {
   return '\n' + new Date().toISOString() + ' ';
@@ -136,7 +146,7 @@ exports.getClosedLedger = getClosedLedger;
 //  }, 30000)
 //}
 
-function makePayment(srcAddress, destAddress, amount) {
+function makePaymentTransaction(srcAddress, destAddress, amount) {
   var transaction = roundRobinRemote().createTransaction('Payment', {
     account: srcAddress,
     destination: destAddress,
@@ -186,6 +196,15 @@ function makePayment(srcAddress, destAddress, amount) {
     console.log(prefix + 'Transaction Type: ' + res.tx_json.TransactionType);
     console.log(prefix + 'Date: ' + res.tx_json.date);
   });
+
+  return transaction;
+}
+
+exports.makePaymentTransaction = makePaymentTransaction;
+
+function makePayment(srcAddress, destAddress, amount) {
+  var transaction = makePaymentTransaction(srcAddress, destAddress, amount);
+
   transaction.submit(/*function(res, err) {
     // clear the timeout no matter what
     clearTimeout(timeoutId);
@@ -312,18 +331,29 @@ exports.makeTrustLine = makeTrustLine;
 //}
 //exports.makeOffer = makeOffer;
 
-function initialFunding(destAddress, fundingmin, fundingmax) {
+function makeInitialFundingTransaction(destAddress, fundingmin, fundingmax) {
   // doesn't need to be cryptographically secure
   var funding = Math.floor(Math.random() * ( fundingmax - fundingmin )) 
     + fundingmin;
   // Send some money from default account to my new account
-  var transaction = makePayment(rootAccount.address, destAddress,
+  var transaction = makePaymentTransaction(rootAccount.address, destAddress,
       Amount.from_human(funding + 'XRP'));
+
+  return transaction;
+}
+
+exports.makeInitialFundingTransaction = makeInitialFundingTransaction;
+
+function initialFunding(destAddress, fundingmin, fundingmax) {
+  var transaction = makeInitialFundingTransaction(destAddress,
+    fundingmin, fundingmax);
 
   transaction.on('success', function(res) {
     fundedWallets.push(res.tx_json.Destination);
     getAccountInfo(destAddress);
   });
+
+  transaction.submit();
 
   return transaction;
 }

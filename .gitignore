@@ -56,6 +56,8 @@ debug_log.txt
 # Ignore customized configs
 rippled.cfg
 validators.txt
+performance/wallets.js
+performance/config.js
 
 # Doxygen generated documentation output
 HtmlDocumentation
