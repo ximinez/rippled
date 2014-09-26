@@ -58,6 +58,7 @@ rippled.cfg
 validators.txt
 performance/wallets.js
 performance/config.js
+performance/*.sh
 
 # Doxygen generated documentation output
 HtmlDocumentation

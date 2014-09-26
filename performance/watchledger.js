@@ -1,11 +1,6 @@
-/* Loading ripple-lib with Node.js */
-var Remote = require('ripple-lib').Remote;
-var Amount = require('ripple-lib').Amount;
-var Wallet = require('ripple-lib').Wallet;
 var functions = require('./functions');
 
 var remote = functions.remote;
-remote.setTrace(true);
 var date = functions.date;
 var getLedger = functions.getLedger;
 var prefix = functions.prefix;
@@ -25,7 +20,10 @@ remote.on('ledger_closed', function onLedgerClosed(ledgerData) {
 
   events.push(ledgerData.ledger_index);
   var ledgerReq = getLedger(ledgerData.ledger_index,
-    { transactions: true, expand: true },
+    {
+      transactions: true,
+      // expand: true
+    },
     function callback(ledger) {
       ledger.on('success', function fullLedger(ledger) {
         // console.log(date() + 'Ledger!');
@@ -35,7 +33,7 @@ remote.on('ledger_closed', function onLedgerClosed(ledgerData) {
     //    console.log(prefix + 'Num transactions: ' + ledger.ledger.transactions.length);
         
         var current = {
-          ledger_index: ledger.ledger.ledger_index,
+          ledger_index: Number(ledger.ledger.ledger_index),
           close_time: ledger.ledger.close_time,
           close_time_human: ledger.ledger.close_time_human,
           wall_time: new Date(),
@@ -56,6 +54,8 @@ remote.on('ledger_closed', function onLedgerClosed(ledgerData) {
         } else {
           if( current.ledger_index < allLedgers.first ) {
             // out of order. Ignore
+            console.log(date() + 'Got an out of order ledger number: '
+              + current.ledger_index + ' comes before ' + allLedgers.first);
             return;
           } else {
             if( current.ledger_index - allLedgers.last > 1 ) {
@@ -107,8 +107,14 @@ remote.on('ledger_closed', function onLedgerClosed(ledgerData) {
         }
       });
     });
-  console.log(ledgerReq.message);
+  //console.log(ledgerReq.message);
 });
+
+/*
+remote.on('connect', function() {
+  this.setTrace(true);
+});
+*/
 
 remote.on('disconnect', function() {
   console.log(date() + 'Disconnect');
@@ -129,17 +135,32 @@ remote.on('disconnect', function() {
     var first = allLedgers.ledgers[firstIndex];
     var last = allLedgers.ledgers[lastIndex];
     var numTransactions = 0;
+    var minLedger = first;
+    var maxLedger = minLedger;
     for( var i = firstIndex; i <= lastIndex; i++ ) {
-      numTransactions += allLedgers.ledgers[i].transaction_count;
+      var ledger = allLedgers.ledgers[i];
+      var count = ledger.transaction_count;
+      numTransactions += count;
+      if(count < minLedger.transaction_count) {
+        minLedger = ledger;
+      } else if(count > maxLedger.transaction_count) {
+        maxLedger = ledger;
+      }
     }
     var time = (last.wall_time - first.wall_time) / 1000;
     console.log(prefix + 'Overall, ' + first.ledger_index 
       + '-' + last.ledger_index + ': ' + numTransactions
       + ' transactions in ' + time + ' seconds.');
+    console.log(prefix + ( numTransactions / (lastIndex - firstIndex + 1) )
+      + ' transactions/ledger.');
     if(time != 0) {
       console.log(prefix + ( numTransactions / time )
         + ' transactions/second.');
     }
+    console.log(prefix + 'Ledger with minimum transactions:');
+    console.log(minLedger);
+    console.log(prefix + 'Ledger with maximum transactions:');
+    console.log(maxLedger);
   }
 
   process.exit();
