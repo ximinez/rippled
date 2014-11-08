@@ -81,6 +81,13 @@ function connectRemotes() {
 
 exports.connectRemotes = connectRemotes;
 
+function getRemoteAddress(myRemote) {
+  myRemote = myRemote || remote;
+  var address = myRemote._servers[0]._opts.url;
+  return address;
+}
+exports.getRemoteAddress = getRemoteAddress;
+
 function date() {
   return '\n' + new Date().toISOString() + ' ';
 }
@@ -121,14 +128,18 @@ function getAccountInfo(address) {
 };
 exports.getAccountInfo = getAccountInfo;
 
-function getLedger(ledger_index, opts, callback) {
+/*
+ * myRemote is last so it can be optional. It probably shouldn't be.
+ */
+function getLedger(ledger_index, opts, callback, myRemote) {
   opts = opts || {};
-  var ledger = roundRobinRemote().request('ledger', opts).ledger_index(ledger_index);
+  myRemote = myRemote || roundRobinRemote();
+  var ledger = myRemote.request('ledger', opts).ledger_index(ledger_index);
 
   ledger.on('error', errorHandler);
 
   if(callback) {
-    callback(ledger);
+    callback(ledger, myRemote);
   }
 
   ledger.request();
@@ -156,17 +167,58 @@ function acceptLedger(ledgerAcceptedCallback, completeLedgerCallback) {
   var startTime = new Date();
   var request = remote.ledger_accept();
   request.once('ledger_closed', function(ledger) {
-    var ledgerRequest = ledgerAccepted(startTime, ledger,
+    var ledgerRequest = ledgerAccepted(remote, startTime, ledger,
       completeLedgerCallback);
     if(ledgerAcceptedCallback) {
-      ledgerAcceptedCallback(startTime, ledger, ledgerRequest);
+      ledgerAcceptedCallback(startTime, ledger, ledgerRequest, remote);
     }
   });
   return request;
 }
 exports.acceptLedger = acceptLedger;
 
-function ledgerAccepted(startTime, ledger, completeLedgerCallback) {
+function monitorLedger(myRemote) {
+  var currentTime = new Date();
+  var trackLedgers = false;
+  var expectedLedger = 0;
+
+  var myRemote = myRemote || remote;
+
+  function startTracking(ledger) {
+    currentTime = new Date();
+    trackLedgers = true;
+    expectedLedger = ledger.ledger_index + 1;
+  }
+
+  myRemote.on('ledger_closed', function(ledger) {
+    console.log(date() + 'Got ledger number ' + ledger.ledger_index
+      + ' from ' + getRemoteAddress(myRemote));
+    if( !trackLedgers || !expectedLedger ) {
+      console.log(prefix + 'First ledger. Start stat collection.');
+      startTracking(ledger);
+    } else if( ledger.ledger_index < expectedLedger ) {
+      console.log(prefix + 'Ledger out of order. Expected ' + expectedLedger
+        + '. Ignore, and stop stat collection until we catch up.');
+      trackLedgers = false;
+    } else if( ledger.ledger_index > expectedLedger ) {
+      console.log(prefix + 'Ledgers were skipped. Expected ' + expectedLedger
+        + '. Ignore, and restart stat collection.');
+      startTracking(ledger);
+    } else if( !trackLedgers ) {
+      console.log(prefix + 'Ledger sequence is back on track.'
+        + ' Resume stat collection.')
+      startTracking(ledger);
+    } else {
+      //console.log(ledger);
+      console.log(prefix + 'Retrieving ledger');
+      var ledgerRequest = ledgerAccepted(myRemote, currentTime, ledger);
+      startTracking(ledger);
+    }
+  });
+}
+exports.monitorLedger = monitorLedger;
+
+function ledgerAccepted(myRemote, startTime, ledger, completeLedgerCallback) {
   var endTime = new Date();
   // console.log(date() + 'start time: ' + startTime.toISOString());
   // console.log(prefix + 'end time: ' + endTime.toISOString());
@@ -177,19 +229,20 @@ function ledgerAccepted(startTime, ledger, completeLedgerCallback) {
     {
       transactions: true,
     },
-    function callback(ledger) {
+    function callback(ledger, myRemote) {
       ledger.once('success', function gotLedger(fullLedger) {
-        completeLedger(startTime, endTime, fullLedger);
+        completeLedger(myRemote, startTime, endTime, fullLedger);
         if(completeLedgerCallback) {
-          completeLedgerCallback(startTime, endTime, fullLedger);
+          completeLedgerCallback(startTime, endTime, fullLedger, myRemote);
         }
       });
-    }
+    },
+    myRemote
   );
   return ledgerReq;
 }
 
-function completeLedger(startTime, endTime, fullLedger) {
+function completeLedger(myRemote, startTime, endTime, fullLedger) {
   var duration = endTime - startTime;
   var transactionCount = fullLedger.ledger.transactions.length;
   var rate;
@@ -199,11 +252,30 @@ function completeLedger(startTime, endTime, fullLedger) {
     rate = 'INFINITE';
   }
 
-  console.log(date() + 'ledger_accept took ' + duration 
+  var address = getRemoteAddress(myRemote);
+
+  var testStatsLong = '';
+  var testStats = '';
+  if(globalTestRepParams) {
+    testStats = '\t' + globalTestRepParams.testSize;
+    testStats += '\t' + globalTestRepParams.testNumber;
+    // race condition if multithreaded
+    testStats += '\t' + globalTestRepParams.txnsSent;
+    testStatsLong = 'test #' + globalTestRepParams.testNumber 
+      + ' test size ' + globalTestRepParams.testSize
+      + ' since last ledger, sent ' + globalTestRepParams.txnsSent
+      + ' ';
+    globalTestRepParams.txnsSent = 0;
+  }
+  console.log(date() + 'ledger_accept for ledger #' +
+    fullLedger.ledger.ledger_index + ' took ' + duration 
     + 'ms to process ' + transactionCount + ' transactions. '
-    + rate + ' transactions/second');
+    + rate + ' transactions/second. (' + testStatsLong
+    + '@' + address + ')');
   console.log(date().trim() + '\t' + duration + '\t' + transactionCount
-    + '\t' + rate);
+    + '\t' + rate + '\t' + fullLedger.ledger.ledger_index
+    + testStats // includes its own delimiter
+    + '\t' + address);
 }
 
 
@@ -465,9 +537,17 @@ exports.createNewAccount = createNewAccount;
   params.timeoutHandle undefined
   params.waitingForLedger undefined
 
-  next must be a function that takes params as the first parameter
+  next must be a function that takes params as the first parameter,
+  or null.
  */
-function checkForAccept(next, params) {
+function checkForAccept(next, params, myRemote) {
+  myRemote = myRemote || remote;
+  var standalone = myRemote._stand_alone;
+  if( !standalone && !params.monitoringLedger ) {
+    console.log(date() + 'Running on a network. Start monitoring the ledger');
+    monitorLedger(myRemote);
+    params.monitoringLedger = true;
+  }
   if(params.testTxnNumber >= params.testSize) {
     //console.log(params);
     if(params.testTxnReady < params.testTxnNumber) {
@@ -487,63 +567,15 @@ function checkForAccept(next, params) {
           delete params.timeoutHandle;
           console.log(date()
             + 'Gave up waiting for transactions to be acknowledged');
-          setImmediate(checkForAccept, next, params);
+          setImmediate(checkForAccept, next, params, myRemote);
         }, 20000);
       }
     } else if (!params.waitingForLedger) {
-      console.log(date() + "accept_ledger");
-      if(params.timeoutHandle) {
-        clearTimeout(params.timeoutHandle);
-        delete params.timeoutHandle;
+      if(standalone) {
+        _checkForAccept_doLedgerAccept(next, params, myRemote);
+      } else {
+        _checkForAccept_waitForLedger(next, params, myRemote);
       }
-      if(!remote.isConnected()) {
-        console.log(date() + 'next: Remote is disconnected. Try again later.');
-        setImmediate(checkForAccept, next, params);
-        return true;
-      }
-
-      var timeout = 10 * params.testSize;
-      var hardTimeout = 2 * timeout;
-      console.log(date() + 'Set timeout to ' + timeout);
-      var timeoutHandle = setTimeout(function() {
-          console.log(date()
-          + 'acceptLedger hard timeout - internal request timeout failed.');
-          if(params.waitingForLedger) {
-            console.log(date() + 'Send more transactions.');
-            startNextTestRep(next, params);
-          }
-        }, hardTimeout);
-
-      params.waitingForLedger = true;
-      var ledgerRequest = acceptLedger(
-        function ledgerAccepted(startTime, ledger, ledgerRequest) {
-          timeoutHandle = checkForAccept_ledgerAccepted(startTime,
-            ledger, ledgerRequest, timeoutHandle, timeout);
-        },
-        function completeLedger(startTime, endTime, fullLedger) {
-          clearTimeout(timeoutHandle);
-          if(params.waitingForLedger) {
-            startNextTestRep(next, params);
-          }
-        }
-      );
-
-      ledgerRequest.timeout(timeout, function() {
-        clearTimeout(timeoutHandle);
-        console.log(date() + 'acceptLedger timed out (callback).');
-        if(params.waitingForLedger) {
-          console.log(date() + 'Send more transactions.');
-          startNextTestRep(next, params);
-        }
-      });
-      ledgerRequest.once('timeout', function() {
-        clearTimeout(timeoutHandle);
-        console.log(date() + 'acceptLedger timed out (event). Send more transactions.');
-        if(params.waitingForLedger) {
-          console.log(date() + 'Send more transactions.');
-          startNextTestRep(next, params);
-        }
-      });
     }
     return true;
   }
@@ -552,8 +584,88 @@ function checkForAccept(next, params) {
 }
 exports.checkForAccept = checkForAccept;
 
+function _checkForAccept_doLedgerAccept(next, params, myRemote) {
+  console.log(date() + "accept_ledger");
+  if(params.timeoutHandle) {
+    clearTimeout(params.timeoutHandle);
+    delete params.timeoutHandle;
+  }
+  if(!myRemote.isConnected()) {
+    var address = getRemoteAddress(myRemote);
+    console.log(date() + 'next: Remote ' + address
+      + ' is disconnected. Try again later.');
+    setImmediate(checkForAccept, next, params, myRemote);
+    return true;
+  }
+
+  var timeout = 10 * params.testSize;
+  var hardTimeout = 2 * timeout;
+  console.log(date() + 'Set timeout to ' + timeout);
+  var timeoutHandle = setTimeout(function() {
+      console.log(date()
+      + 'acceptLedger hard timeout - internal request timeout failed.');
+      if(params.waitingForLedger) {
+        console.log(date() + 'Send more transactions.');
+        startNextTestRep(next, params, myRemote);
+      }
+    }, hardTimeout);
+
+  params.waitingForLedger = true;
+  var ledgerRequest = acceptLedger(
+    function ledgerAccepted(myRemote, startTime, ledger, ledgerRequest) {
+      timeoutHandle = checkForAccept_ledgerAccepted(startTime,
+        ledger, ledgerRequest, timeoutHandle, timeout, myRemote);
+    },
+    function completeLedger(startTime, endTime, fullLedger) {
+      clearTimeout(timeoutHandle);
+      if(params.waitingForLedger) {
+        startNextTestRep(next, params, myRemote);
+      }
+    }
+  );
+
+  ledgerRequest.timeout(timeout, function() {
+    clearTimeout(timeoutHandle);
+    console.log(date() + 'acceptLedger timed out (callback).');
+    if(params.waitingForLedger) {
+      console.log(date() + 'Send more transactions.');
+      startNextTestRep(next, params, myRemote);
+    }
+  });
+  ledgerRequest.once('timeout', function() {
+    clearTimeout(timeoutHandle);
+    console.log(date() + 'acceptLedger timed out (event). Send more transactions.');
+    if(params.waitingForLedger) {
+      console.log(date() + 'Send more transactions.');
+      startNextTestRep(next, params, myRemote);
+    }
+  });
+}
+
+function _checkForAccept_waitForLedger(next, params, myRemote) {
+  console.log(date() + "wait For Ledger");
+  if(params.timeoutHandle) {
+    clearTimeout(params.timeoutHandle);
+    delete params.timeoutHandle;
+  }
+
+  params.waitingForLedger = true;
+  myRemote.once('ledger_closed', function(ledger) {
+    if(params.waitingForLedger) {
+      /*
+      var address = getRemoteAddress(remote);
+
+      console.log(date() + '\tTest size\t' + params.testSize + '\t\t'
+        + ledger.ledger_index + '\t' + address);
+      */
+      startNextTestRep(next, params, this);
+    }
+  });
+}
+
 function checkForAccept_ledgerAccepted(startTime, ledger, ledgerRequest,
-  timeoutHandle, timeout) {
+  timeoutHandle, timeout, myRemote) {
+  myRemote = myRemote || roundRobinRemote();
   clearTimeout(timeoutHandle);
   console.log(date()
     + 'ledger_accept complete. Requesting ledger data.');
@@ -562,43 +674,55 @@ function checkForAccept_ledgerAccepted(startTime, ledger, ledgerRequest,
         + 'ledger request timed out. Retry.');
       // Make another request
       var newLedgerReq = getLedger(ledger.ledger_index,
-        { transactions: true, });
+        { transactions: true, }, null, myRemote);
       newLedgerReq.once('success',
         function gotSecondLedger(fullLedger) {
           ledgerRequest.emit('success', fullLedger);
         });
       checkForAccept_ledgerAccepted(startTime, ledger, ledgerRequest,
-        timeoutHandle, timeout);
+        timeoutHandle, timeout, myRemote);
     }, timeout);
   return timeoutHandle;
 }
 
-function startNextTestRep(next, params) {
+var globalTestRepParams;
+function startNextTestRep(next, params, myRemote) {
+  myRemote = myRemote || remote;
+  globalTestRepParams = params;
   ++params.testRep;
-  if(params.testRep >= params.repetitionsPerCycle) {
+  params.testNumber = (params.testNumber || 0) + 1;
+  if(params.repetitionsPerCycle
+    && params.testRep >= params.repetitionsPerCycle) {
     if(params.factor)
       params.testSize *= params.factor;
     if(params.increment)
       params.testSize += params.increment;
     params.testRep = 0;
     params.testCycle++;
-    if(params.testCycle >= params.cycles) {
+    if(params.cycles && params.testCycle >= params.cycles) {
       console.log(date() + 'All finished!');
-      remote.disconnect();
+      myRemote.disconnect();
+      setImmediate(function () {
+        console.log(date() + 'Exit ' + getRemoteAddress(myRemote));
+        process.exit();
+      });
       return;
     }
   }
   params.testTxnReady = 0;
   params.testTxnNumber = 0;
   params.waitingForLedger = false;
-  setImmediate(next, params);
+  if(next) {
+    setImmediate(next, params);
+  }
 }
+exports.startNextTestRep = startNextTestRep;
 
-var numDisconnects = 0;
-function reconnectOnDisconnect(remote) {
+function reconnectRemote(remote) {
   ++numDisconnects;
-  console.log(date() + 'Disconnect ' + numDisconnects);
-  if(this._should_connect) {
+  var address = getRemoteAddress(remote);
+  console.log(date() + 'Disconnect ' + address + ' ' + numDisconnects);
+  if(remote._should_connect) {
     console.log('Remote connection was dropped remotely.');
   } else {
     console.log('Remote was disconnected by ripple-lib.');
@@ -610,21 +734,75 @@ function reconnectOnDisconnect(remote) {
     else
       console.log('Server ' + i + ' was disconnected by ripple-lib.');
   }
-  var timeoutHandle = setTimeout( function() {
-    setImmediate(function () {
-      console.log(date() + 'Exit ' + numDisconnects);
-      process.exit();
-    });
-  }, 10000);
-
-  remote.once('connect', function() {
-    console.log(date() + 'Reconnected ' + numDisconnects);
-    clearTimeout(timeoutHandle);
-  });
 
   remote.reconnect();
 }
+
+var numDisconnects = 0;
+function reconnectOnDisconnect(remote, timeout) {
+  timeout = timeout || 10000;
+
+  reconnectRemote(remote);
+  var address = getRemoteAddress(remote);
+
+  var timeoutHandle = setTimeout( function() {
+    setImmediate(function () {
+      console.log(date() + 'Exit ' + address + ' ' + numDisconnects);
+      process.exit();
+    });
+  }, timeout);
+
+  remote.once('connect', function() {
+    console.log(date() + 'Reconnected ' + getRemoteAddress(this) 
+      + ' ' + numDisconnects);
+    clearTimeout(timeoutHandle);
+  });
+}
 exports.reconnectOnDisconnect = reconnectOnDisconnect;
+
+var multiTimeoutHandle;
+function reconnectOnDisconnectMulti(remotes, remote, timeout) {
+  timeout = timeout || 10000;
+
+  reconnectRemote(remote);
+  var address = getRemoteAddress(remote);
+
+  var allDisconnected = remotes.every(
+    function disconnected(remote, index, array)
+    {
+      return !remote.isConnected();
+    }
+    );
+
+  if(multiTimeoutHandle) {
+    clearTimeout(multiTimeoutHandle);
+  }
+  if(allDisconnected) {
+    multiTimeoutHandle = setTimeout( function() {
+      setImmediate(function () {
+        console.log(date() + 'Exit ' + address + ' ' + numDisconnects);
+        process.exit();
+      });
+    }, timeout);
+  } else {
+    // innocuous operation
+    multiTimeoutHandle = setTimeout( function() {
+      console.log(date() + 'Remote ' + address
+        + ' has been disconnected for ' 
+        + timeout + 'ms. ' + numDisconnects);
+    }, timeout);
+  }
+
+  remote.once('connect', function() {
+    console.log(date() + 'Reconnected ' + getRemoteAddress(this)
+      + ' ' + numDisconnects);
+    if(multiTimeoutHandle) {
+      clearTimeout(multiTimeoutHandle);
+      multiTimeoutHandle = undefined;
+    }
+  });
+}
+exports.reconnectOnDisconnectMulti = reconnectOnDisconnectMulti;
 
 // Trades
 var tradeCurrencies = [

@@ -46,6 +46,10 @@ remote.once('connect', function() {
   // update the start time
   start = new Date();
 
+  if(!this._stand_alone) {
+    console.log(date() + "Connected to a network. Will not send ledger_accept commands.");
+  }
+
   function next(params) {
     if(checkForAccept(next, params))
       return;
@@ -140,7 +144,7 @@ remote.once('connect', function() {
 });
 
 remote.on('disconnect', function() {
-  functions.reconnectOnDisconnect(this)
+  functions.reconnectOnDisconnect(this, 15*60*1000);
 });
 
 remote.connect();

@@ -1,11 +1,17 @@
 /*
- * Sends transactions to configured rippled as fast as possible. For
- * even more fun, run in parallel with a shell command like:
- *
+ Sends transactions to configured rippled as fast as possible. 
+
+ For even more fun, run in parallel. With a standalone rippled, use
+ a shell command like:
 
 $ num=64; rm -vf firehose*.log ; node performance/maintainLedger.js | tee maintainLedger.log & for i in $(seq 1 $num) ; do node performance/firehose.js ${i} ${num} | tee firehose${i}.log &  done
 
- * Some ways of looking at the results:
+ With a network of rippleds, including multiple client handlers, use
+ a shell command like:
+
+$ num=64; clients=2; thisclient=1; rm -vf firehose*.log ; for i in $(seq 1 $num) ; do node performance/firehose.js $(( ${i} + ( ${thisclient} - 1 ) * ${num} )) $(( ${num} * ${clients} ))  | tee firehose${i}.log &  done
+
+ Some ways of looking at the results:
 
 $ grep -H finish firehose[0-9]*.log|sed 's/:/ /' | cut -d\  -f 1,8-9 | sort | uniq -c && grep -H Exit firehose[0-9]*.log
 $ grep -H finish firehose[0-9]*.log|sed 's/:/ /' | cut -d\  -f 8-9 | sort | uniq -c && grep -H Exit firehose[0-9]*.log
@@ -64,7 +70,7 @@ if(process.argv.length > 2) {
     // Try to adjust the balance to account for reserve and fees
     var rootBalance = rootBalance - 200*1000000 - (20 * numberOfInstances);
     console.log(date() + 'Available root balance is ' + rootBalance);
-    var amount = rootBalance / numberOfInstances;
+    var amount = Math.floor(rootBalance / numberOfInstances);
     console.log(date() + 'Want to fund source account for ' + amount);
     var transaction = remote.createTransaction('Payment',
       {
@@ -76,15 +82,18 @@ if(process.argv.length > 2) {
 
     console.log(date() + 'Fund source account for '
       + Amount.from_json(transaction.tx_json.Amount).to_human_full());
+    console.log(transaction.tx_json);
 
     transaction.on('error', function(err) {
       // retry
-      console.log(date() + 'retry initial funding');
+      console.log(date() + 'retry initial funding: error');
+      console.log(err);
       gotRoot(res, next);
     });
     transaction.on('timeout', function(err) {
       // retry
-      console.log(date() + 'retry initial funding');
+      console.log(date() + 'retry initial funding: timeout');
+      console.log(err);
       gotRoot(res, next);
     });
     transaction.on('success', function(res) {
