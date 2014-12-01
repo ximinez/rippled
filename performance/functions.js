@@ -2,6 +2,7 @@ var Remote = require('ripple-lib').Remote;
 var Amount = require('ripple-lib').Amount;
 var Wallet = require('ripple-lib').Wallet;
 var extend = require('extend');
+var child_process = require('child_process');
 
 var fundedWallets = [];
 exports.fundedWallets = fundedWallets;
@@ -105,6 +106,15 @@ var errorHandler = function onError(err) {
   }
 };
 exports.errorHandler = errorHandler;
+
+function spawnWorker() {
+  var child = child_process.fork(__dirname + '/workerProc.js');
+  child.on('exit', function(code, signal) {
+    console.log(date() + 'worker process exited', code, signal);
+  });
+  return child;
+}
+exports.spawnWorker = spawnWorker;
 
 function getAccountInfo(address) {
   var accountinfo = roundRobinRemote().request('account_info', {
