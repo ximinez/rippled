@@ -57,6 +57,7 @@ remote.once('connect', function() {
 });
 
 remote.on('disconnect', function() {
+  console.log('DISCONNECTED');
   process.exit();
 });
 
