@@ -10,9 +10,10 @@ remote.once('connect', function() {
       var self = this;
       var final_create;
 
+      var $ = this;
       async.waterfall([
           function (callback) {
-            var request = this.requestSubscribe(null);
+            var request = $.requestSubscribe(null);
             request.addBook({
               "both" : true,
               "taker_gets" : {
@@ -35,29 +36,29 @@ remote.once('connect', function() {
             }, true);
             */
             request.once('success', function(res) {
-              console.log(res);
+              console.log('SUBSCRIBE SUCCESS', res);
               callback(null);
             });
             request.once('error', function(err) {
-              console.log(err);
+              console.log('SUBSCRIBE ERROR', err);
               callback(err);
             });
-            this.on('book', function(m) {
-              console.log(m);
-              done();
+            $.on('transaction', function(m) {
+              console.log('TRANSACTION', m);
+              //done();
             });
             request.request();
           },
         ], function (error) {
-          // console.log("result: error=%s", error);
+          console.log("result: error=%s", error);
 
-          done();
+          // done();
         });
 });
 
 remote.on('disconnect', function() {
   process.exit();
-}
+});
 
 remote.connect();
 
