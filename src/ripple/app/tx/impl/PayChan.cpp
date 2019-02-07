@@ -112,7 +112,7 @@ namespace ripple {
 
 //------------------------------------------------------------------------------
 
-static TER
+static ChargeTER
 closeChannel(
     std::shared_ptr<SLE> const& slep,
     ApplyView& view,
@@ -232,7 +232,7 @@ PayChanCreate::preclaim(PreclaimContext const& ctx)
     return tesSUCCESS;
 }
 
-TER
+ChargeTER
 PayChanCreate::doApply()
 {
     auto const account = ctx_.tx[sfAccount];
@@ -323,7 +323,7 @@ PayChanFund::preflight(PreflightContext const& ctx)
     return preflight2(ctx);
 }
 
-TER
+ChargeTER
 PayChanFund::doApply()
 {
     Keylet const k(ltPAYCHAN, ctx_.tx[sfChannel]);
@@ -455,7 +455,7 @@ PayChanClaim::preflight(PreflightContext const& ctx)
     return preflight2(ctx);
 }
 
-TER
+ChargeTER
 PayChanClaim::doApply()
 {
     Keylet const k(ltPAYCHAN, ctx_.tx[sfChannel]);

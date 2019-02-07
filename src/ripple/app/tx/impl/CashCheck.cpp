@@ -248,7 +248,7 @@ CashCheck::preclaim(PreclaimContext const& ctx)
     return tesSUCCESS;
 }
 
-TER
+ChargeTER
 CashCheck::doApply()
 {
     // Flow requires that we operate on a PaymentSandbox, rather than

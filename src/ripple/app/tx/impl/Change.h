@@ -41,7 +41,7 @@ public:
     static NotTEC
     preflight(PreflightContext const& ctx);
 
-    TER
+    ChargeTER
     doApply() override;
     void
     preCompute() override;
@@ -56,10 +56,10 @@ public:
     preclaim(PreclaimContext const& ctx);
 
 private:
-    TER
+    ChargeTER
     applyAmendment();
 
-    TER
+    ChargeTER
     applyFee();
 
     TER

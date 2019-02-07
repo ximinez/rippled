@@ -57,7 +57,7 @@ public:
     static NotTEC
     preflight(PreflightContext const& ctx);
 
-    TER
+    ChargeTER
     doApply() override;
     void
     preCompute() override;
@@ -85,9 +85,9 @@ private:
         AccountID const& account,
         beast::Journal j);
 
-    TER
+    ChargeTER
     replaceSignerList();
-    TER
+    ChargeTER
     destroySignerList();
 
     void

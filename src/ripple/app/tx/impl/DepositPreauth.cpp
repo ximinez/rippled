@@ -104,7 +104,7 @@ DepositPreauth::preclaim(PreclaimContext const& ctx)
     return tesSUCCESS;
 }
 
-TER
+ChargeTER
 DepositPreauth::doApply()
 {
     if (ctx_.tx.isFieldPresent(sfAuthorize))

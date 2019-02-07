@@ -210,7 +210,7 @@ SetAccount::preclaim(PreclaimContext const& ctx)
     return tesSUCCESS;
 }
 
-TER
+ChargeTER
 SetAccount::doApply()
 {
     auto const sle = view().peek(keylet::account(account_));

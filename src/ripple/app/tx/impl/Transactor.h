@@ -168,7 +168,7 @@ protected:
     virtual void
     preCompute();
 
-    virtual TER
+    virtual ChargeTER
     doApply() = 0;
 
     /** Compute the minimum fee required to process a transaction

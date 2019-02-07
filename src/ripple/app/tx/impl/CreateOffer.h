@@ -58,11 +58,11 @@ public:
     preCompute() override;
 
     /** Precondition: fee collection is likely.  Attempt to create the offer. */
-    TER
+    ChargeTER
     doApply() override;
 
 private:
-    std::pair<TER, bool>
+    std::pair<ChargeTER, bool>
     applyGuts(Sandbox& view, Sandbox& view_cancel);
 
     // Determine if we are authorized to hold the asset we want to get.
@@ -128,7 +128,7 @@ private:
     // This is a central location that invokes both versions of cross
     // so the results can be compared.  Eventually this layer will be
     // removed once flowCross is determined to be stable.
-    std::pair<TER, Amounts>
+    std::pair<ChargeTER, Amounts>
     cross(Sandbox& sb, Sandbox& sbCancel, Amounts const& takerAmount);
 
     static std::string

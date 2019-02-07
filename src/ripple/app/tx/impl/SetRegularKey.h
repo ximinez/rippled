@@ -42,7 +42,7 @@ public:
     static FeeUnit64
     calculateBaseFee(ReadView const& view, STTx const& tx);
 
-    TER
+    ChargeTER
     doApply() override;
 };
 

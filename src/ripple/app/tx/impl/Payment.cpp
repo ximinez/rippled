@@ -300,7 +300,7 @@ Payment::preclaim(PreclaimContext const& ctx)
     return tesSUCCESS;
 }
 
-TER
+ChargeTER
 Payment::doApply()
 {
     auto const deliverMin = ctx_.tx[~sfDeliverMin];

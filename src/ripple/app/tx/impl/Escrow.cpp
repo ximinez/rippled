@@ -157,7 +157,7 @@ EscrowCreate::preflight(PreflightContext const& ctx)
     return preflight2(ctx);
 }
 
-TER
+ChargeTER
 EscrowCreate::doApply()
 {
     auto const closeTime = ctx_.view().info().parentCloseTime;
@@ -365,7 +365,7 @@ EscrowFinish::calculateBaseFee(ReadView const& view, STTx const& tx)
     return Transactor::calculateBaseFee(view, tx) + extraFee;
 }
 
-TER
+ChargeTER
 EscrowFinish::doApply()
 {
     auto const k = keylet::escrow(ctx_.tx[sfOwner], ctx_.tx[sfOfferSequence]);
@@ -527,7 +527,7 @@ EscrowCancel::preflight(PreflightContext const& ctx)
     return preflight2(ctx);
 }
 
-TER
+ChargeTER
 EscrowCancel::doApply()
 {
     auto const k = keylet::escrow(ctx_.tx[sfOwner], ctx_.tx[sfOfferSequence]);

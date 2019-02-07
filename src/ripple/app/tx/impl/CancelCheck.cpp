@@ -85,7 +85,7 @@ CancelCheck::preclaim(PreclaimContext const& ctx)
     return tesSUCCESS;
 }
 
-TER
+ChargeTER
 CancelCheck::doApply()
 {
     auto const sleCheck = view().peek(keylet::check(ctx_.tx[sfCheckID]));

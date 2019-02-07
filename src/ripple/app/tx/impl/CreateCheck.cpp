@@ -165,7 +165,7 @@ CreateCheck::preclaim(PreclaimContext const& ctx)
     return tesSUCCESS;
 }
 
-TER
+ChargeTER
 CreateCheck::doApply()
 {
     auto const sle = view().peek(keylet::account(account_));

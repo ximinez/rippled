@@ -39,7 +39,7 @@ public:
     static NotTEC
     preflight(PreflightContext const& ctx);
 
-    TER
+    ChargeTER
     doApply() override;
 };
 
@@ -60,7 +60,7 @@ public:
     static FeeUnit64
     calculateBaseFee(ReadView const& view, STTx const& tx);
 
-    TER
+    ChargeTER
     doApply() override;
 };
 
@@ -78,7 +78,7 @@ public:
     static NotTEC
     preflight(PreflightContext const& ctx);
 
-    TER
+    ChargeTER
     doApply() override;
 };
 

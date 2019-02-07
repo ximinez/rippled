@@ -735,7 +735,7 @@ dirAdd(
     return view.dirInsert(dir, uLedgerIndex, fDescriber);
 }
 
-TER
+ChargeTER
 trustCreate(
     ApplyView& view,
     const bool bSrcHigh,
@@ -855,7 +855,7 @@ trustCreate(
     return tesSUCCESS;
 }
 
-TER
+ChargeTER
 trustDelete(
     ApplyView& view,
     std::shared_ptr<SLE> const& sleRippleState,
@@ -895,7 +895,7 @@ trustDelete(
     return tesSUCCESS;
 }
 
-TER
+ChargeTER
 offerDelete(ApplyView& view, std::shared_ptr<SLE> const& sle, beast::Journal j)
 {
     if (!sle)

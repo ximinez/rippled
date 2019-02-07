@@ -49,7 +49,7 @@ public:
     static TER
     preclaim(PreclaimContext const& ctx);
 
-    TER
+    ChargeTER
     doApply() override;
 };
 

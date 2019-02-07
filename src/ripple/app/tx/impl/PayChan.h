@@ -42,7 +42,7 @@ public:
     static TER
     preclaim(PreclaimContext const& ctx);
 
-    TER
+    ChargeTER
     doApply() override;
 };
 
@@ -63,7 +63,7 @@ public:
     static NotTEC
     preflight(PreflightContext const& ctx);
 
-    TER
+    ChargeTER
     doApply() override;
 };
 
@@ -81,7 +81,7 @@ public:
     static NotTEC
     preflight(PreflightContext const& ctx);
 
-    TER
+    ChargeTER
     doApply() override;
 };
 

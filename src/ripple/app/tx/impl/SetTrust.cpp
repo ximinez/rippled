@@ -124,10 +124,10 @@ SetTrust::preclaim(PreclaimContext const& ctx)
     return tesSUCCESS;
 }
 
-TER
+ChargeTER
 SetTrust::doApply()
 {
-    TER terResult = tesSUCCESS;
+    ChargeTER terResult = tesSUCCESS;
 
     STAmount const saLimitAmount(ctx_.tx.getFieldAmount(sfLimitAmount));
     bool const bQualityIn(ctx_.tx.isFieldPresent(sfQualityIn));

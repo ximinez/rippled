@@ -97,7 +97,7 @@ Change::preclaim(PreclaimContext const& ctx)
     }
 }
 
-TER
+ChargeTER
 Change::doApply()
 {
     switch (ctx_.tx.getTxnType())
@@ -120,7 +120,7 @@ Change::preCompute()
     assert(account_ == beast::zero);
 }
 
-TER
+ChargeTER
 Change::applyAmendment()
 {
     uint256 amendment(ctx_.tx.getFieldH256(sfAmendment));
@@ -216,7 +216,7 @@ Change::applyAmendment()
     return tesSUCCESS;
 }
 
-TER
+ChargeTER
 Change::applyFee()
 {
     auto const k = keylet::fees();

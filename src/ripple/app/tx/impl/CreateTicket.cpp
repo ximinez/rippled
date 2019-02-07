@@ -81,7 +81,7 @@ CreateTicket::preclaim(PreclaimContext const& ctx)
     return tesSUCCESS;
 }
 
-TER
+ChargeTER
 CreateTicket::doApply()
 {
     SLE::pointer const sleAccountRoot = view().peek(keylet::account(account_));

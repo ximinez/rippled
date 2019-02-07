@@ -965,7 +965,7 @@ compareSandboxes(
     return c;
 }
 
-std::pair<TER, Amounts>
+std::pair<ChargeTER, Amounts>
 CreateOffer::cross(Sandbox& sb, Sandbox& sbCancel, Amounts const& takerAmount)
 {
     using beast::zero;
@@ -1128,7 +1128,7 @@ CreateOffer::preCompute()
     return Transactor::preCompute();
 }
 
-std::pair<TER, bool>
+std::pair<ChargeTER, bool>
 CreateOffer::applyGuts(Sandbox& sb, Sandbox& sbCancel)
 {
     using beast::zero;
@@ -1156,7 +1156,7 @@ CreateOffer::applyGuts(Sandbox& sb, Sandbox& sbCancel)
 
     auto viewJ = ctx_.app.journal("View");
 
-    TER result = tesSUCCESS;
+    ChargeTER result = tesSUCCESS;
 
     // Process a cancellation request that's passed along with an offer.
     if (cancelSequence)
@@ -1188,10 +1188,10 @@ CreateOffer::applyGuts(Sandbox& sb, Sandbox& sbCancel)
         //
         // The return code change is attached to featureDepositPreauth as a
         // convenience.  The change is not big enough to deserve a fix code.
-        TER const ter{
+        ChargeTER const ter{
             ctx_.view().rules().enabled(featureDepositPreauth)
-                ? TER{tecEXPIRED}
-                : TER{tesSUCCESS}};
+                ? ChargeTER{tecEXPIRED}
+                : ChargeTER{tesSUCCESS}};
         return {ter, true};
     }
 
@@ -1438,7 +1438,7 @@ CreateOffer::applyGuts(Sandbox& sb, Sandbox& sbCancel)
     return {tesSUCCESS, true};
 }
 
-TER
+ChargeTER
 CreateOffer::doApply()
 {
     // This is the ledger view that we work against. Transactions are applied

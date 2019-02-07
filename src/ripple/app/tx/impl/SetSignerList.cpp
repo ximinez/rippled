@@ -109,7 +109,7 @@ SetSignerList::preflight(PreflightContext const& ctx)
     return preflight2(ctx);
 }
 
-TER
+ChargeTER
 SetSignerList::doApply()
 {
     // Perform the operation preCompute() decided on.
@@ -171,7 +171,7 @@ signerCountBasedOwnerCountDelta(std::size_t entryCount)
     return 2 + static_cast<int>(entryCount);
 }
 
-static TER
+static ChargeTER
 removeSignersFromLedger(
     Application& app,
     ApplyView& view,
@@ -291,7 +291,7 @@ SetSignerList::validateQuorumAndSignerEntries(
     return tesSUCCESS;
 }
 
-TER
+ChargeTER
 SetSignerList::replaceSignerList()
 {
     auto const accountKeylet = keylet::account(account_);
@@ -301,7 +301,7 @@ SetSignerList::replaceSignerList()
     // This may be either a create or a replace.  Preemptively remove any
     // old signer list.  May reduce the reserve, so this is done before
     // checking the reserve.
-    if (TER const ter = removeSignersFromLedger(
+    if (ChargeTER const ter = removeSignersFromLedger(
             ctx_.app,
             view(),
             accountKeylet,
@@ -364,7 +364,7 @@ SetSignerList::replaceSignerList()
     return tesSUCCESS;
 }
 
-TER
+ChargeTER
 SetSignerList::destroySignerList()
 {
     auto const accountKeylet = keylet::account(account_);

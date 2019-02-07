@@ -513,6 +513,30 @@ using NotTEC = TERSubset<CanCvtToNotTEC>;
 
 //------------------------------------------------------------------------------
 
+// Use traits to build a TERSubset that can convert from *only* the TE*codes
+// that can charge a fee
+
+// NOTE: ChargeTER is useful for codes returned by doApply in transactors.
+// doApply checks checks only occur once we're sure the transaction can claim a
+// fee (but not necessarily succeed).  If doApply returned a non charge result,
+// then the queue becomes much less efficient.
+template <typename FROM>
+class CanCvtToChargeTER : public std::false_type
+{
+};
+template <>
+class CanCvtToChargeTER<TECcodes> : public std::true_type
+{
+};
+template <>
+class CanCvtToChargeTER<TEScodes> : public std::true_type
+{
+};
+
+using ChargeTER = TERSubset<CanCvtToChargeTER>;
+
+//------------------------------------------------------------------------------
+
 // Use traits to build a TERSubset that can convert from any of the TE*codes
 // enums as well as from NotTEC.
 template <typename FROM>
@@ -545,6 +569,10 @@ class CanCvtToTER<TECcodes> : public std::true_type
 };
 template <>
 class CanCvtToTER<NotTEC> : public std::true_type
+{
+};
+template <>
+class CanCvtToTER<ChargeTER> : public std::true_type
 {
 };
 

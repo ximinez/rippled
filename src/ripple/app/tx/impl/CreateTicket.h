@@ -80,7 +80,7 @@ public:
     preclaim(PreclaimContext const& ctx);
 
     /** Precondition: fee collection is likely.  Attempt to create ticket(s). */
-    TER
+    ChargeTER
     doApply() override;
 };
 

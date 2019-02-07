@@ -39,11 +39,11 @@ public:
     static TER
     preclaim(PreclaimContext const& ctx);
 
-    TER
+    ChargeTER
     doApply() override;
 
     // Interface used by DeleteAccount
-    static TER
+    static ChargeTER
     removeFromLedger(
         Application& app,
         ApplyView& view,

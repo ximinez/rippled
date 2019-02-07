@@ -267,7 +267,7 @@ dirAdd(
 
     This can set an initial balance.
 */
-[[nodiscard]] TER
+[[nodiscard]] ChargeTER
 trustCreate(
     ApplyView& view,
     const bool bSrcHigh,
@@ -286,7 +286,7 @@ trustCreate(
     std::uint32_t uSrcQualityOut,
     beast::Journal j);
 
-[[nodiscard]] TER
+[[nodiscard]] ChargeTER
 trustDelete(
     ApplyView& view,
     std::shared_ptr<SLE> const& sleRippleState,
@@ -301,7 +301,7 @@ trustDelete(
         call to view.peek()
 */
 // [[nodiscard]] // nodiscard commented out so Flow, BookTip and others compile.
-TER
+ChargeTER
 offerDelete(ApplyView& view, std::shared_ptr<SLE> const& sle, beast::Journal j);
 
 //------------------------------------------------------------------------------

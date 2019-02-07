@@ -73,7 +73,7 @@ SetRegularKey::preflight(PreflightContext const& ctx)
     return preflight2(ctx);
 }
 
-TER
+ChargeTER
 SetRegularKey::doApply()
 {
     auto const sle = view().peek(keylet::account(account_));

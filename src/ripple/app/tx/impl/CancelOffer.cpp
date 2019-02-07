@@ -73,7 +73,7 @@ CancelOffer::preclaim(PreclaimContext const& ctx)
 
 //------------------------------------------------------------------------------
 
-TER
+ChargeTER
 CancelOffer::doApply()
 {
     auto const offerSequence = ctx_.tx[sfOfferSequence];
