@@ -4122,9 +4122,97 @@ public:
             txCount -= 4;
             checkMetrics(__LINE__, env, txCount, 54, 4, 3, 256);
 
-            // From 28 expected back down to 3 in 3 "slow" ledgers.
+            // With 100% decrease percent, went from 28
+            // expected back down to 3 in 1 "slow" ledger.
 
             BEAST_EXPECT(!txCount);
+
+            // Ensure it stays stable
+            env.close(env.now() + 5s, 10000ms);
+            checkMetrics(__LINE__, env, txCount, 54, 0, 3, 256);
+            env.close(env.now() + 5s, 10000ms);
+            checkMetrics(__LINE__, env, txCount, 54, 0, 3, 256);
+        }
+
+        {
+            // Use a mostly default config
+            Env env(
+                *this, makeConfig({{"minimum_txn_in_ledger_standalone", "3"}}));
+            auto alice = Account("alice");
+
+            checkMetrics(__LINE__, env, 0, std::nullopt, 0, 3, 256);
+            env.fund(XRP(50000000), alice);
+
+            fillQueue(env, alice);
+            checkMetrics(__LINE__, env, 0, std::nullopt, 4, 3, 256);
+
+            // Verify that the numbers stay steady by creating
+            // a relatively large open ledger, then doing a slow
+            // close
+            for (int i = 0; i < 50; ++i)
+            {
+                env(noop(alice), openLedgerFee(env));
+            }
+            checkMetrics(__LINE__, env, 0, std::nullopt, 54, 3, 256);
+            // Close the ledger with a delay.
+            env.close(env.now() + 5s, 10000ms);
+
+            // expectedPerLedger should never go below 3
+            checkMetrics(__LINE__, env, 0, std::nullopt, 0, 3, 256, 9991129);
+
+            // Do it again
+            for (int i = 0; i < 50; ++i)
+            {
+                env(noop(alice), openLedgerFee(env));
+            }
+            checkMetrics(__LINE__, env, 0, std::nullopt, 50, 3, 256, 9991129);
+
+            // Close the ledger with a delay.
+            env.close(env.now() + 5s, 10000ms);
+
+            // expectedPerLedger should never go below 3
+            checkMetrics(__LINE__, env, 0, std::nullopt, 0, 3, 256, 666630336);
+
+            // we don't crash anymore
+            env(noop(alice));
+        }
+
+        {
+            // Use a "bad" config - minimum of 0. Treated as 1 for
+            // escalation calculations
+            Env env(
+                *this, makeConfig({{"minimum_txn_in_ledger_standalone", "0"}}));
+
+            checkMetrics(__LINE__, env, 0, std::nullopt, 0, 0, 256);
+            // we don't crash anymore
+            env(noop(env.master));
+
+            {
+                // The open ledger fee is 256 - as if min was 1.
+                auto const& view = *env.current();
+                auto const metrics = env.app().getTxQ().getMetrics(view);
+                BEAST_EXPECT(metrics.openLedgerFeeLevel == 256);
+                auto const openLedgerDrops = mulDiv(
+                    metrics.openLedgerFeeLevel,
+                    view.fees().base,
+                    metrics.referenceFeeLevel);
+                BEAST_EXPECT(openLedgerDrops && *openLedgerDrops + 1 == 11);
+            }
+
+            // another transaction will trigger escalation
+            env(noop(env.master));
+
+            {
+                // But the open ledger fee does grow
+                auto const& view = *env.current();
+                auto metrics = env.app().getTxQ().getMetrics(view);
+                BEAST_EXPECT(metrics.openLedgerFeeLevel == 512000);
+                auto const openLedgerDrops = mulDiv(
+                    metrics.openLedgerFeeLevel,
+                    view.fees().base,
+                    metrics.referenceFeeLevel);
+                BEAST_EXPECT(openLedgerDrops && *openLedgerDrops == 20000);
+            }
         }
     }
 

@@ -172,7 +172,7 @@ TxQ::FeeMetrics::scaleFeeLevel(Snapshot const& snapshot, OpenView const& view)
     // Transactions in the open ledger so far
     auto const current = view.txCount();
 
-    auto const target = snapshot.txnsExpected;
+    auto const target = snapshot.txnsExpected == 0 ? 1 : snapshot.txnsExpected;
     auto const multiplier = snapshot.escalationMultiplier;
 
     // Once the open ledger bypasses the target,
@@ -244,7 +244,7 @@ TxQ::FeeMetrics::escalatedSeriesFeeLevel(
     */
     auto const last = current + seriesSize - 1;
 
-    auto const target = snapshot.txnsExpected;
+    auto const target = snapshot.txnsExpected == 0 ? 1 : snapshot.txnsExpected;
     auto const multiplier = snapshot.escalationMultiplier;
 
     assert(current > target);
