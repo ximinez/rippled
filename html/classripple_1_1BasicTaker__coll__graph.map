@@ -1,0 +1,11 @@
+<map id="ripple::BasicTaker" name="ripple::BasicTaker">
+<area shape="rect" id="node1" title="State for the active party during order book or payment operations." alt="" coords="739,134,864,161"/>
+<area shape="rect" id="node2" href="$structripple_1_1Rate.html" title="Represents a transfer rate." alt="" coords="527,21,613,47"/>
+<area shape="rect" id="node3" title=" " alt="" coords="253,5,397,47"/>
+<area shape="rect" id="node4" href="$classripple_1_1Issue.html" title="A currency issued by an account." alt="" coords="525,103,615,130"/>
+<area shape="rect" id="node5" href="$classripple_1_1base__uint.html" title=" " alt="" coords="238,71,413,112"/>
+<area shape="rect" id="node6" title=" " alt="" coords="5,104,149,145"/>
+<area shape="rect" id="node7" href="$classripple_1_1base__uint.html" title=" " alt="" coords="233,136,417,177"/>
+<area shape="rect" id="node8" href="$classbeast_1_1Journal.html" title="A generic endpoint for log messages." alt="" coords="519,217,621,243"/>
+<area shape="rect" id="node9" href="$classbeast_1_1Journal_1_1Sink.html" title="Abstraction for the underlying message destination." alt="" coords="258,217,393,243"/>
+</map>

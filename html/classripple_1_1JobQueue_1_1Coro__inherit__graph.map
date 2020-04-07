@@ -1,0 +1,4 @@
+<map id="ripple::JobQueue::Coro" name="ripple::JobQueue::Coro">
+<area shape="rect" id="node1" title="Coroutines must run to completion." alt="" coords="5,95,156,121"/>
+<area shape="rect" id="node2" title=" " alt="" coords="15,5,147,47"/>
+</map>

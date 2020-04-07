@@ -1,0 +1,15 @@
+<map id="ripple::test::multi_runner_child" name="ripple::test::multi_runner_child">
+<area shape="rect" id="node1" title="A class to run a subset of unit tests." alt="" coords="944,259,1059,301"/>
+<area shape="rect" id="node2" title=" " alt="" coords="628,5,780,32"/>
+<area shape="rect" id="node3" href="$classripple_1_1test_1_1detail_1_1multi__runner__base.html" title=" " alt="" coords="633,187,775,243"/>
+<area shape="rect" id="node4" title=" " alt="" coords="292,187,451,243"/>
+<area shape="rect" id="node5" href="$structripple_1_1test_1_1detail_1_1multi__runner__base_1_1inner.html" title=" " alt="" coords="300,107,443,163"/>
+<area shape="rect" id="node6" title=" " alt="" coords="23,73,153,100"/>
+<area shape="rect" id="node7" title=" " alt="" coords="5,165,171,192"/>
+<area shape="rect" id="node8" href="$structripple_1_1test_1_1detail_1_1results.html" title=" " alt="" coords="29,234,147,275"/>
+<area shape="rect" id="node9" href="$structripple_1_1test_1_1detail_1_1case__results.html" title=" " alt="" coords="645,318,763,359"/>
+<area shape="rect" id="node10" title="STL class." alt="" coords="332,357,411,384"/>
+<area shape="rect" id="node12" href="$structripple_1_1test_1_1detail_1_1suite__results.html" title=" " alt="" coords="645,383,763,425"/>
+<area shape="rect" id="node11" title="STL class." alt="" coords="26,350,150,391"/>
+<area shape="rect" id="node13" title="STL class." alt="" coords="663,449,745,476"/>
+</map>

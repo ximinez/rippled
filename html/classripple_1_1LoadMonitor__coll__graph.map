@@ -1,0 +1,6 @@
+<map id="ripple::LoadMonitor" name="ripple::LoadMonitor">
+<area shape="rect" id="node1" title=" " alt="" coords="29,184,159,211"/>
+<area shape="rect" id="node2" title="STL class." alt="" coords="5,95,87,121"/>
+<area shape="rect" id="node3" href="$classbeast_1_1Journal.html" title="A generic endpoint for log messages." alt="" coords="111,95,213,121"/>
+<area shape="rect" id="node4" href="$classbeast_1_1Journal_1_1Sink.html" title="Abstraction for the underlying message destination." alt="" coords="95,5,229,32"/>
+</map>

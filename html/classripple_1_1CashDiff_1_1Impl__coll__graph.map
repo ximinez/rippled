@@ -1,0 +1,13 @@
+<map id="ripple::CashDiff::Impl" name="ripple::CashDiff::Impl">
+<area shape="rect" id="node1" title=" " alt="" coords="594,211,733,237"/>
+<area shape="rect" id="node2" href="$structripple_1_1detail_1_1CashSummary.html" title=" " alt="" coords="301,192,483,219"/>
+<area shape="rect" id="node3" title=" " alt="" coords="7,5,168,91"/>
+<area shape="rect" id="node4" title=" " alt="" coords="15,115,159,200"/>
+<area shape="rect" id="node5" title=" " alt="" coords="5,224,169,280"/>
+<area shape="rect" id="node6" title=" " alt="" coords="12,304,163,389"/>
+<area shape="rect" id="node7" href="$classripple_1_1ReadView.html" title="A view into a ledger." alt="" coords="333,357,451,384"/>
+<area shape="rect" id="node9" href="$classripple_1_1detail_1_1ReadViewFwdRange.html" title=" " alt="" coords="584,343,743,399"/>
+<area shape="rect" id="node11" href="$classripple_1_1detail_1_1ReadViewFwdRange.html" title=" " alt="" coords="586,486,741,527"/>
+<area shape="rect" id="node8" href="$structripple_1_1ReadView_1_1sles__type.html" title=" " alt="" coords="792,309,971,336"/>
+<area shape="rect" id="node10" href="$structripple_1_1ReadView_1_1txs__type.html" title=" " alt="" coords="795,440,967,467"/>
+</map>

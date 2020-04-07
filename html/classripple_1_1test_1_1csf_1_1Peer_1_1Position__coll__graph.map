@@ -1,0 +1,8 @@
+<map id="ripple::test::csf::Peer::Position" name="ripple::test::csf::Peer::Position">
+<area shape="rect" id="node1" title="Basic wrapper of a proposed position taken by a peer." alt="" coords="972,193,1083,234"/>
+<area shape="rect" id="node2" href="$classripple_1_1ConsensusProposal.html" title=" " alt="" coords="653,193,864,234"/>
+<area shape="rect" id="node3" href="$classripple_1_1tagged__integer.html" title=" " alt="" coords="323,101,505,142"/>
+<area shape="rect" id="node4" title=" " alt="" coords="5,5,273,179"/>
+<area shape="rect" id="node5" href="$classripple_1_1tagged__integer.html" title="A type&#45;safe wrap around standard integral types." alt="" coords="342,225,486,266"/>
+<area shape="rect" id="node6" title=" " alt="" coords="20,203,259,347"/>
+</map>

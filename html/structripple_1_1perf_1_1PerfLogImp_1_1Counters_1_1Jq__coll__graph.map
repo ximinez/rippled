@@ -1,0 +1,7 @@
+<map id="ripple::perf::PerfLogImp::Counters::Jq" name="ripple::perf::PerfLogImp::Counters::Jq">
+<area shape="rect" id="node1" title="Job Queue task performance counters." alt="" coords="73,200,227,241"/>
+<area shape="rect" id="node2" title="STL class." alt="" coords="5,103,87,130"/>
+<area shape="rect" id="node3" title="STL class." alt="" coords="111,103,189,130"/>
+<area shape="rect" id="node4" title="STL class." alt="" coords="88,5,212,47"/>
+<area shape="rect" id="node5" href="$structripple_1_1perf_1_1PerfLogImp_1_1Counters_1_1Jq_1_1Sync.html" title=" " alt="" coords="214,96,369,137"/>
+</map>

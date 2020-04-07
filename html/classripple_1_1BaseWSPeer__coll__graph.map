@@ -1,0 +1,21 @@
+<map id="ripple::BaseWSPeer&lt; Handler, Impl &gt;" name="ripple::BaseWSPeer&lt; Handler, Impl &gt;">
+<area shape="rect" id="node1" title="Represents an active WebSocket connection." alt="" coords="1171,446,1308,487"/>
+<area shape="rect" id="node2" href="$classripple_1_1BasePeer.html" title=" " alt="" coords="919,327,1095,369"/>
+<area shape="rect" id="node3" href="$classripple_1_1io__list_1_1work.html" title=" " alt="" coords="663,391,789,417"/>
+<area shape="rect" id="node4" href="$classripple_1_1io__list.html" title="Manages a set of objects performing asynchronous I/O." alt="" coords="367,489,461,516"/>
+<area shape="rect" id="node5" title="STL class." alt="" coords="179,489,260,516"/>
+<area shape="rect" id="node6" href="$structripple_1_1Port.html" title="Configuration information for a Server listening port." alt="" coords="685,335,767,361"/>
+<area shape="rect" id="node7" title=" " alt="" coords="351,423,477,465"/>
+<area shape="rect" id="node8" title=" " alt="" coords="345,293,483,334"/>
+<area shape="rect" id="node9" title="STL class." alt="" coords="180,231,259,257"/>
+<area shape="rect" id="node12" href="$classbeast_1_1WrappedSink.html" title="Wraps a Journal::Sink to prefix its output with a string." alt="" coords="657,73,795,100"/>
+<area shape="rect" id="node10" title="STL class." alt="" coords="5,223,129,265"/>
+<area shape="rect" id="node11" title=" " alt="" coords="339,358,489,399"/>
+<area shape="rect" id="node13" href="$classbeast_1_1Journal_1_1Sink.html" title="Abstraction for the underlying message destination." alt="" coords="347,61,481,88"/>
+<area shape="rect" id="node14" href="$classbeast_1_1Journal.html" title="A generic endpoint for log messages." alt="" coords="675,159,777,185"/>
+<area shape="rect" id="node15" href="$structripple_1_1WSSession.html" title=" " alt="" coords="943,453,1070,480"/>
+<area shape="rect" id="node16" title=" " alt="" coords="649,453,803,480"/>
+<area shape="rect" id="node17" title=" " alt="" coords="927,505,1087,546"/>
+<area shape="rect" id="node18" title=" " alt="" coords="651,529,801,570"/>
+<area shape="rect" id="node19" href="$classripple_1_1WSMsg.html" title=" " alt="" coords="361,540,467,567"/>
+</map>

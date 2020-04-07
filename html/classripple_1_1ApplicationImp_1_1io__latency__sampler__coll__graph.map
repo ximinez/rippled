@@ -1,0 +1,12 @@
+<map id="ripple::ApplicationImp::io_latency_sampler" name="ripple::ApplicationImp::io_latency_sampler">
+<area shape="rect" id="node1" title=" " alt="" coords="985,114,1131,155"/>
+<area shape="rect" id="node2" href="$classbeast_1_1io__latency__probe.html" title=" " alt="" coords="703,5,861,61"/>
+<area shape="rect" id="node3" title="STL class." alt="" coords="451,20,593,47"/>
+<area shape="rect" id="node4" href="$classbeast_1_1insight_1_1Event.html" title="A metric for reporting event timing." alt="" coords="713,85,851,112"/>
+<area shape="rect" id="node5" title=" " alt="" coords="447,78,597,119"/>
+<area shape="rect" id="node6" href="$classbeast_1_1insight_1_1EventImpl.html" title=" " alt="" coords="217,85,380,112"/>
+<area shape="rect" id="node7" title=" " alt="" coords="5,78,168,119"/>
+<area shape="rect" id="node8" title=" " alt="" coords="703,137,861,178"/>
+<area shape="rect" id="node9" href="$classbeast_1_1Journal.html" title="A generic endpoint for log messages." alt="" coords="731,203,833,229"/>
+<area shape="rect" id="node10" href="$classbeast_1_1Journal_1_1Sink.html" title="Abstraction for the underlying message destination." alt="" coords="455,203,589,229"/>
+</map>

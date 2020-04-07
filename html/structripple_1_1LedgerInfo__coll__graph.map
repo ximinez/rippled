@@ -1,0 +1,10 @@
+<map id="ripple::LedgerInfo" name="ripple::LedgerInfo">
+<area shape="rect" id="node1" title="Information about the notional ledger backing the view." alt="" coords="544,191,665,218"/>
+<area shape="rect" id="node2" href="$classripple_1_1XRPAmount.html" title=" " alt="" coords="288,130,419,157"/>
+<area shape="rect" id="node3" title=" " alt="" coords="33,5,177,47"/>
+<area shape="rect" id="node4" title=" " alt="" coords="5,71,204,98"/>
+<area shape="rect" id="node5" title=" " alt="" coords="11,123,198,164"/>
+<area shape="rect" id="node6" title=" " alt="" coords="9,188,201,229"/>
+<area shape="rect" id="node7" href="$classripple_1_1base__uint.html" title=" " alt="" coords="292,248,415,289"/>
+<area shape="rect" id="node8" title=" " alt="" coords="33,253,177,295"/>
+</map>

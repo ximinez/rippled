@@ -1,0 +1,7 @@
+<map id="ripple::test::csf::CollectorRefs" name="ripple::test::csf::CollectorRefs">
+<area shape="rect" id="node1" title="A container of CollectorRefs." alt="" coords="31,436,142,477"/>
+<area shape="rect" id="node2" title=" " alt="" coords="5,332,168,373"/>
+<area shape="rect" id="node3" href="$classripple_1_1test_1_1csf_1_1CollectorRef.html" title="Holds a type&#45;erased reference to an arbitray collector." alt="" coords="31,228,142,269"/>
+<area shape="rect" id="node4" title=" " alt="" coords="11,109,162,165"/>
+<area shape="rect" id="node5" href="$structripple_1_1test_1_1csf_1_1CollectorRef_1_1ICollector.html" title=" " alt="" coords="9,5,164,47"/>
+</map>

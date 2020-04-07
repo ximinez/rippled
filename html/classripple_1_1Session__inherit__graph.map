@@ -1,0 +1,8 @@
+<map id="ripple::Session" name="ripple::Session">
+<area shape="rect" id="node1" title="Persistent state information for a connection session." alt="" coords="5,100,112,127"/>
+<area shape="rect" id="node2" href="$classripple_1_1BaseHTTPPeer.html" title=" " alt="" coords="160,5,336,61"/>
+<area shape="rect" id="node4" href="$classripple_1_1BaseHTTPPeer.html" title=" " alt="" coords="161,85,335,141"/>
+<area shape="rect" id="node6" href="$classripple_1_1BaseHTTPPeer.html" title="Represents an active connection." alt="" coords="173,165,323,206"/>
+<area shape="rect" id="node3" href="$classripple_1_1PlainHTTPPeer.html" title=" " alt="" coords="384,13,535,54"/>
+<area shape="rect" id="node5" href="$classripple_1_1SSLHTTPPeer.html" title=" " alt="" coords="386,93,533,134"/>
+</map>

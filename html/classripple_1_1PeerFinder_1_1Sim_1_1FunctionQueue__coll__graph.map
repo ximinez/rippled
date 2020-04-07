@@ -1,0 +1,6 @@
+<map id="ripple::PeerFinder::Sim::FunctionQueue" name="ripple::PeerFinder::Sim::FunctionQueue">
+<area shape="rect" id="node1" title="Maintains a queue of functors that can be called later." alt="" coords="871,13,1016,54"/>
+<area shape="rect" id="node2" title=" " alt="" coords="537,5,773,61"/>
+<area shape="rect" id="node3" title=" " alt="" coords="217,5,432,61"/>
+<area shape="rect" id="node4" href="$classripple_1_1PeerFinder_1_1Sim_1_1FunctionQueue_1_1BasicWork.html" title=" " alt="" coords="5,5,151,61"/>
+</map>

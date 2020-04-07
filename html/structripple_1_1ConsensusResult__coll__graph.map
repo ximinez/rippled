@@ -1,0 +1,5 @@
+<map id="ripple::ConsensusResult&lt; Traits &gt;" name="ripple::ConsensusResult&lt; Traits &gt;">
+<area shape="rect" id="node1" title="Encapsulates the result of consensus." alt="" coords="313,46,475,87"/>
+<area shape="rect" id="node2" href="$classripple_1_1ConsensusProposal.html" title=" " alt="" coords="5,5,200,61"/>
+<area shape="rect" id="node3" href="$classripple_1_1ConsensusTimer.html" title="Measures the duration of phases of consensus." alt="" coords="24,85,181,112"/>
+</map>

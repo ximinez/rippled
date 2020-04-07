@@ -1,0 +1,6 @@
+<map id="ripple::PeerFinder::Sim::Message" name="ripple::PeerFinder::Sim::Message">
+<area shape="rect" id="node1" title=" " alt="" coords="21,288,144,329"/>
+<area shape="rect" id="node2" title=" " alt="" coords="5,199,160,225"/>
+<area shape="rect" id="node3" href="$structripple_1_1PeerFinder_1_1Endpoint.html" title="Describes a connectible peer address along with some metadata." alt="" coords="21,95,144,136"/>
+<area shape="rect" id="node4" href="$classbeast_1_1IP_1_1Endpoint.html" title="A version&#45;independent IP address and port combination." alt="" coords="18,5,147,32"/>
+</map>

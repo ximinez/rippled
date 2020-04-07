@@ -1,0 +1,9 @@
+<map id="ripple::InboundLedgersImp::acquire" name="ripple::InboundLedgersImp::acquire">
+<area shape="rect" id="node1" title=" " alt="" coords="5,155,180,197"/>
+<area shape="rect" id="node2" href="$classbeast_1_1Journal.html#a49b0713e65bb8e2c51b76fbf16252afe" title=" " alt="" coords="237,5,371,32"/>
+<area shape="rect" id="node3" href="$classripple_1_1Application.html#a25c5851322f6cb3762563fd1278c6143" title=" " alt="" coords="243,57,365,98"/>
+<area shape="rect" id="node4" href="$classripple_1_1Application.html#a5ea4991eb9c4d29e8de734016293ba33" title=" " alt="" coords="243,122,365,163"/>
+<area shape="rect" id="node5" href="$classripple_1_1base__uint.html#ad2bffc75e554b89befbb9388e07392c0" title=" " alt="" coords="243,187,365,229"/>
+<area shape="rect" id="node6" href="$classripple_1_1Stoppable.html#a836b8737444ef1133c3596e61010fa80" title="Returns true if the stoppable should stop." alt="" coords="243,253,365,294"/>
+<area shape="rect" id="node7" href="$classripple_1_1NodeStore_1_1Database.html#aad7aa12d0cc01006120761d23312d428" title="Copies a ledger stored in a different database to this one." alt="" coords="228,318,380,359"/>
+</map>

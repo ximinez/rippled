@@ -1,0 +1,11 @@
+<map id="ripple::detail::WorkSSL" name="ripple::detail::WorkSSL">
+<area shape="rect" id="node1" title=" " alt="" coords="743,103,895,129"/>
+<area shape="rect" id="node2" href="$classripple_1_1detail_1_1WorkBase.html" title=" " alt="" coords="465,30,621,71"/>
+<area shape="rect" id="node3" href="$classripple_1_1detail_1_1Work.html" title=" " alt="" coords="233,5,360,32"/>
+<area shape="rect" id="node4" title="STL class." alt="" coords="257,69,336,96"/>
+<area shape="rect" id="node5" title="STL class." alt="" coords="11,62,135,103"/>
+<area shape="rect" id="node6" title=" " alt="" coords="462,95,623,137"/>
+<area shape="rect" id="node7" href="$classripple_1_1HTTPClientSSLContext.html" title=" " alt="" coords="444,161,641,188"/>
+<area shape="rect" id="node8" href="$classbeast_1_1Journal.html" title="A generic endpoint for log messages." alt="" coords="245,161,348,188"/>
+<area shape="rect" id="node9" href="$classbeast_1_1Journal_1_1Sink.html" title="Abstraction for the underlying message destination." alt="" coords="5,161,140,188"/>
+</map>

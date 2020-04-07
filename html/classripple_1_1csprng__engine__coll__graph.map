@@ -1,0 +1,4 @@
+<map id="ripple::csprng_engine" name="ripple::csprng_engine">
+<area shape="rect" id="node1" title="A cryptographically secure random number engine." alt="" coords="5,95,148,121"/>
+<area shape="rect" id="node2" title="STL class." alt="" coords="36,5,117,32"/>
+</map>

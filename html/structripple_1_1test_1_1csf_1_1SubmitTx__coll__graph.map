@@ -1,0 +1,4 @@
+<map id="ripple::test::csf::SubmitTx" name="ripple::test::csf::SubmitTx">
+<area shape="rect" id="node1" title="A transaction submitted to a peer." alt="" coords="13,95,123,136"/>
+<area shape="rect" id="node2" href="$classripple_1_1test_1_1csf_1_1Tx.html" title="A single transaction." alt="" coords="5,5,131,32"/>
+</map>

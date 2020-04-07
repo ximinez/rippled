@@ -1,0 +1,11 @@
+<map id="ripple::test::jtx::msig::Reg" name="ripple::test::jtx::msig::Reg">
+<area shape="rect" id="node1" title=" " alt="" coords="775,34,881,75"/>
+<area shape="rect" id="node2" href="$classripple_1_1test_1_1jtx_1_1Account.html" title="Immutable cryptographic account descriptor." alt="" coords="515,79,621,121"/>
+<area shape="rect" id="node7" title=" " alt="" coords="727,105,929,175"/>
+<area shape="rect" id="node3" href="$classripple_1_1SecretKey.html" title="A secret key." alt="" coords="266,5,385,32"/>
+<area shape="rect" id="node4" href="$classripple_1_1PublicKey.html" title="A public key." alt="" coords="267,56,384,83"/>
+<area shape="rect" id="node5" title="STL class." alt="" coords="286,111,365,137"/>
+<area shape="rect" id="node6" title="STL class." alt="" coords="15,102,139,143"/>
+<area shape="rect" id="node8" href="$classripple_1_1base__uint.html" title=" " alt="" coords="233,165,417,206"/>
+<area shape="rect" id="node9" title=" " alt="" coords="5,167,149,209"/>
+</map>

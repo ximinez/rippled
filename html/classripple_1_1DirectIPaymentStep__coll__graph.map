@@ -1,0 +1,11 @@
+<map id="ripple::DirectIPaymentStep" name="ripple::DirectIPaymentStep">
+<area shape="rect" id="node1" title=" " alt="" coords="747,136,921,163"/>
+<area shape="rect" id="node2" href="$classripple_1_1DirectStepI.html" title=" " alt="" coords="537,129,697,170"/>
+<area shape="rect" id="node3" title=" " alt="" coords="249,5,420,61"/>
+<area shape="rect" id="node4" href="$classripple_1_1Step.html" title="A step in a payment path." alt="" coords="291,85,378,112"/>
+<area shape="rect" id="node5" href="$classbeast_1_1Journal.html" title="A generic endpoint for log messages." alt="" coords="283,136,386,163"/>
+<area shape="rect" id="node6" href="$classbeast_1_1Journal_1_1Sink.html" title="Abstraction for the underlying message destination." alt="" coords="10,136,145,163"/>
+<area shape="rect" id="node7" href="$classripple_1_1base__uint.html" title=" " alt="" coords="247,187,422,229"/>
+<area shape="rect" id="node8" title=" " alt="" coords="5,210,149,251"/>
+<area shape="rect" id="node9" href="$classripple_1_1base__uint.html" title=" " alt="" coords="243,253,427,294"/>
+</map>

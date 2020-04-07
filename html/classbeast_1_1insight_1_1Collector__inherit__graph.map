@@ -1,0 +1,9 @@
+<map id="beast::insight::Collector" name="beast::insight::Collector">
+<area shape="rect" id="node1" title="Interface for a manager that allows collection of metrics." alt="" coords="5,78,160,105"/>
+<area shape="rect" id="node2" href="$classbeast_1_1insight_1_1Group.html" title="A collector front&#45;end that manages a group of metrics." alt="" coords="236,21,375,47"/>
+<area shape="rect" id="node4" href="$classbeast_1_1insight_1_1NullCollector.html" title="A Collector which does not collect metrics." alt="" coords="216,78,395,105"/>
+<area shape="rect" id="node6" href="$classbeast_1_1insight_1_1StatsDCollector.html" title="A Collector that reports metrics to a StatsD server." alt="" coords="208,135,403,162"/>
+<area shape="rect" id="node3" href="$classbeast_1_1insight_1_1detail_1_1GroupImp.html" title=" " alt="" coords="454,5,589,47"/>
+<area shape="rect" id="node5" href="$classbeast_1_1insight_1_1detail_1_1NullCollectorImp.html" title=" " alt="" coords="454,71,589,112"/>
+<area shape="rect" id="node7" href="$classbeast_1_1insight_1_1detail_1_1StatsDCollectorImp.html" title=" " alt="" coords="451,136,592,177"/>
+</map>

@@ -1,0 +1,14 @@
+<map id="ripple::ValidatorList" name="ripple::ValidatorList">
+<area shape="rect" id="node1" title=" " alt="" coords="837,209,969,236"/>
+<area shape="rect" id="node2" href="$classripple_1_1ManifestCache.html" title="Remembers manifests with the highest sequence number." alt="" coords="519,45,666,72"/>
+<area shape="rect" id="node3" title="STL class." alt="" coords="265,8,347,35"/>
+<area shape="rect" id="node4" href="$classbeast_1_1Journal.html" title="A generic endpoint for log messages." alt="" coords="255,77,357,104"/>
+<area shape="rect" id="node5" href="$classbeast_1_1Journal_1_1Sink.html" title="Abstraction for the underlying message destination." alt="" coords="5,77,140,104"/>
+<area shape="rect" id="node6" title="STL class." alt="" coords="509,159,676,185"/>
+<area shape="rect" id="node7" title=" " alt="" coords="510,209,675,236"/>
+<area shape="rect" id="node8" href="$classripple_1_1TimeKeeper.html" title="Manages various times used by the server." alt="" coords="528,260,657,287"/>
+<area shape="rect" id="node9" href="$classbeast_1_1abstract__clock.html" title=" " alt="" coords="233,245,379,286"/>
+<area shape="rect" id="node10" title="STL class." alt="" coords="553,311,632,337"/>
+<area shape="rect" id="node11" title="STL class." alt="" coords="244,310,368,351"/>
+<area shape="rect" id="node12" href="$classripple_1_1PublicKey.html" title="A public key." alt="" coords="534,361,651,388"/>
+</map>

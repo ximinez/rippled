@@ -1,0 +1,14 @@
+<map id="ripple::test::csf::Submitter&lt; Distribution, Generator, Selector &gt;" name="ripple::test::csf::Submitter&lt; Distribution, Generator, Selector &gt;">
+<area shape="rect" id="node1" title="Submits transactions to a specified peer." alt="" coords="1456,54,1615,110"/>
+<area shape="rect" id="node2" href="$classripple_1_1Generator.html" title="Produces a sequence of secp256k1 key pairs." alt="" coords="921,13,1037,39"/>
+<area shape="rect" id="node4" href="$classripple_1_1test_1_1csf_1_1Selector.html" title="Invocable that returns random samples from a range according to a discrete distribution." alt="" coords="1148,61,1341,103"/>
+<area shape="rect" id="node3" title=" " alt="" coords="672,5,817,47"/>
+<area shape="rect" id="node5" href="$classripple_1_1test_1_1csf_1_1Scheduler.html" title="Simulated discrete&#45;event scheduler." alt="" coords="1189,133,1300,175"/>
+<area shape="rect" id="node6" href="$classripple_1_1qalloc__type.html" title=" " alt="" coords="683,99,807,140"/>
+<area shape="rect" id="node10" href="$classripple_1_1test_1_1csf_1_1Scheduler_1_1queue__type.html" title=" " alt="" coords="903,140,1055,181"/>
+<area shape="rect" id="node7" title=" " alt="" coords="432,99,589,140"/>
+<area shape="rect" id="node8" href="$classripple_1_1detail_1_1qalloc__impl.html" title=" " alt="" coords="235,99,365,140"/>
+<area shape="rect" id="node9" href="$classripple_1_1detail_1_1qalloc__impl_1_1block.html" title=" " alt="" coords="5,99,148,140"/>
+<area shape="rect" id="node11" href="$classbeast_1_1manual__clock.html" title=" " alt="" coords="909,205,1049,261"/>
+<area shape="rect" id="node12" href="$classbeast_1_1abstract__clock.html" title=" " alt="" coords="672,205,817,261"/>
+</map>

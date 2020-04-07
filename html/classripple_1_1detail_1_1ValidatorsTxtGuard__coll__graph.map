@@ -1,0 +1,11 @@
+<map id="ripple::detail::ValidatorsTxtGuard" name="ripple::detail::ValidatorsTxtGuard">
+<area shape="rect" id="node1" title="Write a validators.txt file and remove when done." alt="" coords="35,557,190,599"/>
+<area shape="rect" id="node2" href="$classripple_1_1test_1_1detail_1_1FileDirGuard.html" title="Write a file in a directory and remove when done." alt="" coords="53,467,172,508"/>
+<area shape="rect" id="node3" href="$classripple_1_1test_1_1detail_1_1DirGuard.html" title="Create a directory and remove it when it&#39;s done." alt="" coords="5,363,124,404"/>
+<area shape="rect" id="node4" href="$classripple_1_1test_1_1jtx_1_1path.html" title="Add a path." alt="" coords="147,370,278,397"/>
+<area shape="rect" id="node5" href="$classJson_1_1Value.html" title="Represents a JSON value." alt="" coords="168,273,257,300"/>
+<area shape="rect" id="node6" href="$unionJson_1_1Value_1_1ValueHolder.html" title=" " alt="" coords="129,184,296,211"/>
+<area shape="rect" id="node7" title="STL class." alt="" coords="154,95,271,121"/>
+<area shape="rect" id="node8" title=" " alt="" coords="163,5,201,32"/>
+<area shape="rect" id="node9" title=" " alt="" coords="225,5,264,32"/>
+</map>

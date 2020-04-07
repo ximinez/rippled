@@ -1,0 +1,12 @@
+<map id="ripple::test::jtx::nflags" name="ripple::test::jtx::nflags">
+<area shape="rect" id="node1" title="Match clear account flags." alt="" coords="796,32,903,73"/>
+<area shape="rect" id="node2" href="$classripple_1_1test_1_1jtx_1_1detail_1_1flags__helper.html" title=" " alt="" coords="515,5,643,47"/>
+<area shape="rect" id="node3" href="$classripple_1_1test_1_1jtx_1_1Account.html" title="Immutable cryptographic account descriptor." alt="" coords="525,109,632,151"/>
+<area shape="rect" id="node8" title=" " alt="" coords="748,103,951,173"/>
+<area shape="rect" id="node4" href="$classripple_1_1SecretKey.html" title="A secret key." alt="" coords="266,35,385,62"/>
+<area shape="rect" id="node5" href="$classripple_1_1PublicKey.html" title="A public key." alt="" coords="267,86,384,113"/>
+<area shape="rect" id="node6" title="STL class." alt="" coords="286,141,365,167"/>
+<area shape="rect" id="node7" title="STL class." alt="" coords="15,132,139,173"/>
+<area shape="rect" id="node9" href="$classripple_1_1base__uint.html" title=" " alt="" coords="233,195,417,236"/>
+<area shape="rect" id="node10" title=" " alt="" coords="5,197,149,239"/>
+</map>

@@ -1,0 +1,10 @@
+<map id="ripple::Consensus&lt; Adaptor &gt;" name="ripple::Consensus&lt; Adaptor &gt;">
+<area shape="rect" id="node1" title="Generic implementation of consensus algorithm." alt="" coords="577,136,709,177"/>
+<area shape="rect" id="node2" href="$structripple_1_1ConsensusCloseTimes.html" title="Stores the set of initial close times." alt="" coords="235,13,428,39"/>
+<area shape="rect" id="node3" title=" " alt="" coords="5,5,141,47"/>
+<area shape="rect" id="node4" href="$classbeast_1_1abstract__clock.html" title=" " alt="" coords="259,63,404,119"/>
+<area shape="rect" id="node5" href="$classbeast_1_1Journal.html" title="A generic endpoint for log messages." alt="" coords="280,143,383,170"/>
+<area shape="rect" id="node6" href="$classbeast_1_1Journal_1_1Sink.html" title="Abstraction for the underlying message destination." alt="" coords="6,143,141,170"/>
+<area shape="rect" id="node7" href="$classripple_1_1ConsensusTimer.html" title="Measures the duration of phases of consensus." alt="" coords="253,194,410,221"/>
+<area shape="rect" id="node8" href="$classripple_1_1Consensus_1_1MonitoredMode.html" title=" " alt="" coords="243,245,419,287"/>
+</map>

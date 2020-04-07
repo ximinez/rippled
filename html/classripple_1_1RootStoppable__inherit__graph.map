@@ -1,0 +1,7 @@
+<map id="ripple::RootStoppable" name="ripple::RootStoppable">
+<area shape="rect" id="node1" title=" " alt="" coords="171,64,315,91"/>
+<area shape="rect" id="node3" href="$classripple_1_1ApplicationImp.html" title=" " alt="" coords="363,5,508,32"/>
+<area shape="rect" id="node4" href="$structripple_1_1PerfLog__test_1_1PerfLogParent.html" title=" " alt="" coords="368,57,503,98"/>
+<area shape="rect" id="node5" href="$classripple_1_1test_1_1Stoppable__test_1_1Root.html" title=" " alt="" coords="363,122,508,163"/>
+<area shape="rect" id="node2" href="$classripple_1_1Stoppable.html" title="Provides an interface for starting and stopping." alt="" coords="5,64,123,91"/>
+</map>

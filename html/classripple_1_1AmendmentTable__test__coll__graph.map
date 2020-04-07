@@ -1,0 +1,13 @@
+<map id="ripple::AmendmentTable_test" name="ripple::AmendmentTable_test">
+<area shape="rect" id="node1" title=" " alt="" coords="997,117,1188,144"/>
+<area shape="rect" id="node2" title=" " alt="" coords="762,37,813,64"/>
+<area shape="rect" id="node3" href="$classripple_1_1Section.html" title="Holds a collection of configuration values." alt="" coords="736,148,839,175"/>
+<area shape="rect" id="node4" title=" " alt="" coords="419,183,611,254"/>
+<area shape="rect" id="node5" title="STL class." alt="" coords="207,121,285,148"/>
+<area shape="rect" id="node7" title=" " alt="" coords="435,279,595,305"/>
+<area shape="rect" id="node11" href="$classripple_1_1test_1_1SuiteJournalSink.html" title=" " alt="" coords="422,69,607,96"/>
+<area shape="rect" id="node6" title="STL class." alt="" coords="5,114,129,155"/>
+<area shape="rect" id="node8" href="$classripple_1_1test_1_1SuiteJournal.html" title=" " alt="" coords="708,88,867,115"/>
+<area shape="rect" id="node9" href="$classbeast_1_1Journal.html" title="A generic endpoint for log messages." alt="" coords="463,5,566,32"/>
+<area shape="rect" id="node10" href="$classbeast_1_1Journal_1_1Sink.html" title="Abstraction for the underlying message destination." alt="" coords="179,21,313,48"/>
+</map>

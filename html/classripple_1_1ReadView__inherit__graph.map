@@ -1,0 +1,13 @@
+<map id="ripple::ReadView" name="ripple::ReadView">
+<area shape="rect" id="node1" title="A view into a ledger." alt="" coords="5,151,124,177"/>
+<area shape="rect" id="node2" href="$classripple_1_1ApplyView.html" title="Writeable view to a ledger, for applying a transaction." alt="" coords="208,85,328,112"/>
+<area shape="rect" id="node7" href="$classripple_1_1DigestAwareReadView.html" title="ReadView that associates keys with digests." alt="" coords="172,151,364,177"/>
+<area shape="rect" id="node11" href="$classripple_1_1OpenView.html" title="Writable ledger view that accumulates state and tx changes." alt="" coords="209,201,327,228"/>
+<area shape="rect" id="node3" href="$classripple_1_1detail_1_1ApplyViewBase.html" title=" " alt="" coords="416,71,603,97"/>
+<area shape="rect" id="node4" href="$classripple_1_1ApplyViewImpl.html" title="Editable, discardable view that can build metadata for one tx." alt="" coords="662,5,807,32"/>
+<area shape="rect" id="node5" href="$classripple_1_1PaymentSandbox.html" title="A wrapper which makes credits unavailable to balances." alt="" coords="655,56,815,83"/>
+<area shape="rect" id="node6" href="$classripple_1_1Sandbox.html" title="Discardable, editable view to a ledger." alt="" coords="680,107,789,133"/>
+<area shape="rect" id="node8" href="$classripple_1_1detail_1_1CachedViewImpl.html" title=" " alt="" coords="412,151,607,177"/>
+<area shape="rect" id="node10" href="$classripple_1_1Ledger.html" title="Holds a ledger." alt="" coords="460,201,559,228"/>
+<area shape="rect" id="node9" href="$classripple_1_1CachedView.html" title="Wraps a DigestAwareReadView to provide caching." alt="" coords="669,158,801,199"/>
+</map>

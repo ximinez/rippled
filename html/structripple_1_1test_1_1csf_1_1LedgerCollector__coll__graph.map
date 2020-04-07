@@ -1,0 +1,5 @@
+<map id="ripple::test::csf::LedgerCollector" name="ripple::test::csf::LedgerCollector">
+<area shape="rect" id="node1" title="Tracks the accepted &#45;&gt; validated evolution of ledgers." alt="" coords="24,287,137,328"/>
+<area shape="rect" id="node2" href="$classripple_1_1test_1_1csf_1_1Histogram.html" title=" " alt="" coords="5,139,156,195"/>
+<area shape="rect" id="node3" title=" " alt="" coords="5,5,156,76"/>
+</map>

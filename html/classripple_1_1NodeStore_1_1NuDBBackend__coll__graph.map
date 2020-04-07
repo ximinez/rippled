@@ -1,0 +1,10 @@
+<map id="ripple::NodeStore::NuDBBackend" name="ripple::NodeStore::NuDBBackend">
+<area shape="rect" id="node1" title=" " alt="" coords="485,123,612,164"/>
+<area shape="rect" id="node2" href="$classripple_1_1NodeStore_1_1Backend.html" title="A backend used for the NodeStore." alt="" coords="235,5,362,47"/>
+<area shape="rect" id="node3" title=" " alt="" coords="233,71,364,98"/>
+<area shape="rect" id="node4" href="$classripple_1_1NodeStore_1_1Scheduler.html" title="Scheduling for asynchronous backend activity." alt="" coords="235,123,362,164"/>
+<area shape="rect" id="node5" title="STL class." alt="" coords="259,189,338,215"/>
+<area shape="rect" id="node6" title="STL class." alt="" coords="11,180,135,221"/>
+<area shape="rect" id="node7" href="$classbeast_1_1Journal.html" title="A generic endpoint for log messages." alt="" coords="247,243,350,270"/>
+<area shape="rect" id="node8" href="$classbeast_1_1Journal_1_1Sink.html" title="Abstraction for the underlying message destination." alt="" coords="5,246,140,273"/>
+</map>

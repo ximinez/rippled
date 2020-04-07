@@ -1,0 +1,18 @@
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="node1" title=" " alt="" coords="42,208,109,235"/>
+<area shape="rect" id="node2" href="$classripple_1_1feeunit_1_1TaggedFee.html" title=" " alt="" coords="200,15,369,57"/>
+<area shape="rect" id="node3" href="$classripple_1_1IOUAmount.html" title="Floating point representation of amounts with high dynamic range." alt="" coords="221,263,349,289"/>
+<area shape="rect" id="node4" href="$classripple_1_1XRPAmount.html" title=" " alt="" coords="219,212,350,239"/>
+<area shape="rect" id="node5" href="$classripple_1_1feeunit_1_1TaggedFee.html" title=" " alt="" coords="200,81,369,122"/>
+<area shape="rect" id="node6" href="$classripple_1_1feeunit_1_1TaggedFee.html" title=" " alt="" coords="200,146,369,187"/>
+<area shape="rect" id="node7" title=" " alt="" coords="39,5,112,32"/>
+<area shape="rect" id="node8" title=" " alt="" coords="5,157,145,184"/>
+<area shape="rect" id="node9" title=" " alt="" coords="40,56,111,83"/>
+<area shape="rect" id="node10" title=" " alt="" coords="22,288,129,315"/>
+<area shape="rect" id="node11" href="$structripple_1_1Rate.html" title="Represents a transfer rate." alt="" coords="241,313,328,340"/>
+<area shape="rect" id="node12" href="$classripple_1_1tagged__integer.html" title="A type&#45;safe wrap around standard integral types." alt="" coords="213,365,357,406"/>
+<area shape="rect" id="node13" href="$classripple_1_1tagged__integer.html" title=" " alt="" coords="207,430,362,471"/>
+<area shape="rect" id="node14" href="$classripple_1_1tagged__integer.html" title=" " alt="" coords="193,495,376,537"/>
+<area shape="rect" id="node15" href="$classripple_1_1tagged__integer.html" title=" " alt="" coords="201,561,368,602"/>
+<area shape="rect" id="node16" title=" " alt="" coords="22,107,129,133"/>
+</map>

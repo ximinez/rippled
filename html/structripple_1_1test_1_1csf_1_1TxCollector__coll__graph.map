@@ -1,0 +1,5 @@
+<map id="ripple::test::csf::TxCollector" name="ripple::test::csf::TxCollector">
+<area shape="rect" id="node1" title="Tracks the submission &#45;&gt; accepted &#45;&gt; validated evolution of transactions." alt="" coords="25,272,136,313"/>
+<area shape="rect" id="node2" href="$classripple_1_1test_1_1csf_1_1Histogram.html" title=" " alt="" coords="5,139,156,195"/>
+<area shape="rect" id="node3" title=" " alt="" coords="5,5,156,76"/>
+</map>
