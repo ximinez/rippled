@@ -1,5 +1,0 @@
-<map id="beast::BadLexicalCast" name="beast::BadLexicalCast">
-<area shape="rect" id="node1" title="Thrown when a conversion is not possible with LexicalCast." alt="" coords="5,155,156,181"/>
-<area shape="rect" id="node2" title="STL class." alt="" coords="31,80,130,107"/>
-<area shape="rect" id="node3" title="STL class." alt="" coords="30,5,131,32"/>
-</map>

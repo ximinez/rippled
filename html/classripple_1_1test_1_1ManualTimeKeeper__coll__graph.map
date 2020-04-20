@@ -1,6 +1,0 @@
-<map id="ripple::test::ManualTimeKeeper" name="ripple::test::ManualTimeKeeper">
-<area shape="rect" id="node1" title=" " alt="" coords="95,185,253,227"/>
-<area shape="rect" id="node2" href="$classripple_1_1TimeKeeper.html" title="Manages various times used by the server." alt="" coords="13,96,143,123"/>
-<area shape="rect" id="node3" href="$classbeast_1_1abstract__clock.html" title=" " alt="" coords="5,5,151,47"/>
-<area shape="rect" id="node4" title="STL class." alt="" coords="167,96,248,123"/>
-</map>

@@ -1,9 +1,0 @@
-<map id="ripple::BasicConfig" name="ripple::BasicConfig">
-<area shape="rect" id="node1" title="Holds unparsed configuration information." alt="" coords="1085,52,1213,79"/>
-<area shape="rect" id="node2" title=" " alt="" coords="856,37,1001,93"/>
-<area shape="rect" id="node3" href="$classripple_1_1Section.html" title="Holds a collection of configuration values." alt="" coords="648,120,751,147"/>
-<area shape="rect" id="node4" title=" " alt="" coords="363,67,555,138"/>
-<area shape="rect" id="node5" title="STL class." alt="" coords="179,163,257,189"/>
-<area shape="rect" id="node7" title=" " alt="" coords="379,163,539,189"/>
-<area shape="rect" id="node6" title="STL class." alt="" coords="5,155,129,197"/>
-</map>

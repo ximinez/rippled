@@ -1,5 +1,0 @@
-<map id="ripple::JobTypeInfo" name="ripple::JobTypeInfo">
-<area shape="rect" id="node1" title="Holds all the &#39;static&#39; information about a job, which does not change." alt="" coords="5,185,136,212"/>
-<area shape="rect" id="node2" title="STL class." alt="" coords="31,96,110,123"/>
-<area shape="rect" id="node3" title="STL class." alt="" coords="9,5,133,47"/>
-</map>

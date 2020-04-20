@@ -1,7 +1,0 @@
-<map id="ripple::RPC::Status" name="ripple::RPC::Status">
-<area shape="rect" id="node1" title="Status represents the results of an operation that might fail." alt="" coords="40,275,171,301"/>
-<area shape="rect" id="node2" title="STL class." alt="" coords="5,185,107,212"/>
-<area shape="rect" id="node3" title=" " alt="" coords="131,185,291,212"/>
-<area shape="rect" id="node4" title="STL class." alt="" coords="171,96,250,123"/>
-<area shape="rect" id="node5" title="STL class." alt="" coords="149,5,273,47"/>
-</map>

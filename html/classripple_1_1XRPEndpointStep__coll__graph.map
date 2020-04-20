@@ -1,8 +1,0 @@
-<map id="ripple::XRPEndpointStep&lt; TDerived &gt;" name="ripple::XRPEndpointStep&lt; TDerived &gt;">
-<area shape="rect" id="node1" title=" " alt="" coords="531,78,693,119"/>
-<area shape="rect" id="node2" title=" " alt="" coords="243,5,451,61"/>
-<area shape="rect" id="node3" href="$classbeast_1_1Journal.html" title="A generic endpoint for log messages." alt="" coords="295,85,398,112"/>
-<area shape="rect" id="node4" href="$classbeast_1_1Journal_1_1Sink.html" title="Abstraction for the underlying message destination." alt="" coords="10,85,145,112"/>
-<area shape="rect" id="node5" href="$classripple_1_1base__uint.html" title=" " alt="" coords="255,137,439,178"/>
-<area shape="rect" id="node6" title=" " alt="" coords="5,137,149,178"/>
-</map>

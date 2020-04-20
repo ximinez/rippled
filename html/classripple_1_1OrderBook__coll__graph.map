@@ -1,9 +1,0 @@
-<map id="ripple::OrderBook" name="ripple::OrderBook">
-<area shape="rect" id="node1" title="Describes a serialized ledger entry for an order book." alt="" coords="984,38,1105,65"/>
-<area shape="rect" id="node2" href="$classripple_1_1base__uint.html" title=" " alt="" coords="441,5,564,47"/>
-<area shape="rect" id="node3" title=" " alt="" coords="5,64,149,105"/>
-<area shape="rect" id="node6" href="$classripple_1_1base__uint.html" title=" " alt="" coords="238,64,413,105"/>
-<area shape="rect" id="node7" href="$classripple_1_1base__uint.html" title=" " alt="" coords="233,129,417,171"/>
-<area shape="rect" id="node4" href="$classripple_1_1Book.html" title="Specifies an order book." alt="" coords="801,67,891,94"/>
-<area shape="rect" id="node5" href="$classripple_1_1Issue.html" title="A currency issued by an account." alt="" coords="588,73,679,99"/>
-</map>

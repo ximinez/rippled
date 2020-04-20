@@ -1,6 +1,0 @@
-<map id="ripple::Workers::Callback" name="ripple::Workers::Callback">
-<area shape="rect" id="node1" title="Called to perform tasks as needed." alt="" coords="130,5,293,32"/>
-<area shape="rect" id="node2" href="$classripple_1_1JobQueue.html" title="A pool of threads to perform work." alt="" coords="5,87,124,114"/>
-<area shape="rect" id="node3" href="$classripple_1_1NodeStore_1_1TaskQueue.html" title=" " alt="" coords="148,80,275,121"/>
-<area shape="rect" id="node4" href="$structripple_1_1Workers__test_1_1TestCallback.html" title=" " alt="" coords="299,80,435,121"/>
-</map>

@@ -1,9 +1,0 @@
-<map id="ripple::AmendmentTableImpl" name="ripple::AmendmentTableImpl">
-<area shape="rect" id="node1" title="Track the list of &quot;amendments&quot;." alt="" coords="516,93,703,120"/>
-<area shape="rect" id="node2" href="$classripple_1_1AmendmentTable.html" title="The amendment table stores the list of enabled and potential amendments." alt="" coords="248,5,409,32"/>
-<area shape="rect" id="node3" title=" " alt="" coords="255,57,403,98"/>
-<area shape="rect" id="node4" href="$structripple_1_1AmendmentSet.html" title="The status of all amendments requested in a given window." alt="" coords="5,64,155,91"/>
-<area shape="rect" id="node5" title="STL class." alt="" coords="288,123,369,149"/>
-<area shape="rect" id="node6" href="$classbeast_1_1Journal.html" title="A generic endpoint for log messages." alt="" coords="277,173,380,200"/>
-<area shape="rect" id="node7" href="$classbeast_1_1Journal_1_1Sink.html" title="Abstraction for the underlying message destination." alt="" coords="13,173,147,200"/>
-</map>

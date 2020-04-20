@@ -1,5 +1,0 @@
-<map id="ripple::test::csf::WrongPrevLedger" name="ripple::test::csf::WrongPrevLedger">
-<area shape="rect" id="node1" title="Peer detected a wrong prior ledger during consensus." alt="" coords="599,64,725,105"/>
-<area shape="rect" id="node2" href="$classripple_1_1tagged__integer.html" title=" " alt="" coords="360,64,515,105"/>
-<area shape="rect" id="node3" title=" " alt="" coords="5,5,311,164"/>
-</map>

@@ -1,6 +1,0 @@
-<map id="beast::insight::Counter" name="beast::insight::Counter">
-<area shape="rect" id="node1" title="A metric for measuring an integral value." alt="" coords="18,289,167,316"/>
-<area shape="rect" id="node2" title=" " alt="" coords="16,185,169,227"/>
-<area shape="rect" id="node3" href="$classbeast_1_1insight_1_1CounterImpl.html" title=" " alt="" coords="5,96,180,123"/>
-<area shape="rect" id="node4" title=" " alt="" coords="5,5,180,47"/>
-</map>

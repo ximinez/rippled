@@ -1,8 +1,0 @@
-<map id="ripple::TypedField&lt; T &gt;" name="ripple::TypedField&lt; T &gt;">
-<area shape="rect" id="node1" title="A field with a type known at compile time." alt="" coords="5,282,157,309"/>
-<area shape="rect" id="node2" href="$classripple_1_1SField.html" title="Identifies fields." alt="" coords="113,185,209,212"/>
-<area shape="rect" id="node3" title=" " alt="" coords="182,275,317,316"/>
-<area shape="rect" id="node4" title="STL class." alt="" coords="59,96,138,123"/>
-<area shape="rect" id="node5" title="STL class." alt="" coords="37,5,161,47"/>
-<area shape="rect" id="node6" href="$classJson_1_1StaticString.html" title="Lightweight wrapper to tag static string." alt="" coords="162,96,286,123"/>
-</map>

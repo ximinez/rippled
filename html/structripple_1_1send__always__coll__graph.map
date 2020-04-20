@@ -1,7 +1,0 @@
-<map id="ripple::send_always" name="ripple::send_always">
-<area shape="rect" id="node1" title="Sends a message to all peers." alt="" coords="104,317,239,344"/>
-<area shape="rect" id="node2" title=" " alt="" coords="97,213,246,255"/>
-<area shape="rect" id="node3" href="$classripple_1_1Message.html" title=" " alt="" coords="115,124,227,151"/>
-<area shape="rect" id="node4" title=" " alt="" coords="5,5,164,47"/>
-<area shape="rect" id="node5" title=" " alt="" coords="188,13,331,39"/>
-</map>

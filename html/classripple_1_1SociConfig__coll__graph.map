@@ -1,5 +1,0 @@
-<map id="ripple::SociConfig" name="ripple::SociConfig">
-<area shape="rect" id="node1" title="SociConfig is used when a client wants to delay opening a soci::session after parsing the config para..." alt="" coords="7,185,128,212"/>
-<area shape="rect" id="node2" title="STL class." alt="" coords="28,96,107,123"/>
-<area shape="rect" id="node3" title="STL class." alt="" coords="5,5,129,47"/>
-</map>

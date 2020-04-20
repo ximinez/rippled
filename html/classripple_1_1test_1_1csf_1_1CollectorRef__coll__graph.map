@@ -1,5 +1,0 @@
-<map id="ripple::test::csf::CollectorRef" name="ripple::test::csf::CollectorRef">
-<area shape="rect" id="node1" title="Holds a type&#45;erased reference to an arbitray collector." alt="" coords="27,228,138,269"/>
-<area shape="rect" id="node2" title=" " alt="" coords="7,109,158,165"/>
-<area shape="rect" id="node3" href="$structripple_1_1test_1_1csf_1_1CollectorRef_1_1ICollector.html" title=" " alt="" coords="5,5,160,47"/>
-</map>

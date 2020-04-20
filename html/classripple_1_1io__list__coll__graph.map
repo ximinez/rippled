@@ -1,4 +1,0 @@
-<map id="ripple::io_list" name="ripple::io_list">
-<area shape="rect" id="node1" title="Manages a set of objects performing asynchronous I/O." alt="" coords="5,95,99,121"/>
-<area shape="rect" id="node2" title="STL class." alt="" coords="11,5,93,32"/>
-</map>
