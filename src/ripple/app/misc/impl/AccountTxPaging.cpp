@@ -119,8 +119,7 @@ accountTxPage(
     {
         sql = boost::str(
             boost::format(
-                prefix +
-                (R"(AccountTransactions.LedgerSeq BETWEEN '%u' AND '%u'
+                prefix + (R"(AccountTransactions.LedgerSeq BETWEEN '%u' AND '%u'
              ORDER BY AccountTransactions.LedgerSeq ASC,
              AccountTransactions.TxnSeq ASC
              LIMIT %u;)")) %
@@ -153,8 +152,7 @@ accountTxPage(
     {
         sql = boost::str(
             boost::format(
-                prefix +
-                (R"(AccountTransactions.LedgerSeq BETWEEN '%u' AND '%u'
+                prefix + (R"(AccountTransactions.LedgerSeq BETWEEN '%u' AND '%u'
              ORDER BY AccountTransactions.LedgerSeq DESC,
              AccountTransactions.TxnSeq DESC
              LIMIT %u;)")) %
