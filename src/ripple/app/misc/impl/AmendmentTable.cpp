@@ -224,7 +224,7 @@ private:
     DatabaseCon& db_;
 
     // Finds or creates state.  Must be called with mutex_ locked.
-    AmendmentState*
+    AmendmentState&
     add(uint256 const& amendment, std::lock_guard<std::mutex> const& sl);
 
     // Finds existing state.  Must be called with mutex_ locked.
@@ -348,18 +348,22 @@ AmendmentTableImpl::AmendmentTableImpl(
         return exists;
     }();
 
+    auto getName = [](auto const& amd) {
+        if (amd.second.empty())
+            return featureToName(amd.first);
+        return amd.second;
+    };
     // Parse supported amendments
     for (auto const& a : parseSection(supported))
     {
-        if (auto s = add(a.first, sl))
-        {
-            JLOG(j_.debug()) << "Amendment " << a.first << " is supported.";
+        AmendmentState& s = add(a.first, sl);
 
-            if (!a.second.empty())
-                s->name = a.second;
+        JLOG(j_.debug()) << "Amendment " << a.first << " (" << a.second
+                         << ") is supported.";
 
-            s->supported = true;
-        }
+        s.name = getName(a);
+
+        s.supported = true;
     }
 
     hash_set<uint256> detect_conflict;
@@ -375,7 +379,7 @@ AmendmentTableImpl::AmendmentTableImpl(
         else
         {  // Otherwise transfer config data into the table
             detect_conflict.insert(a.first);
-            persistVote(a.first, a.second, false);  // un-veto
+            persistVote(a.first, getName(a), false);  // un-veto
         }
     }
 
@@ -393,7 +397,7 @@ AmendmentTableImpl::AmendmentTableImpl(
         {  // Otherwise transfer config data into the table
             if (detect_conflict.count(a.first) == 0)
             {
-                persistVote(a.first, a.second, true);  // veto
+                persistVote(a.first, getName(a), true);  // veto
             }
             else
             {
@@ -441,25 +445,23 @@ AmendmentTableImpl::AmendmentTableImpl(
         }
         else  // un-veto
         {
-            if (auto s = add(amend_hash, sl))
-            {
-                JLOG(j_.debug()) << "Amendment {" << *amendment_name << ", "
-                                 << amend_hash << "} is un-vetoed.";
-                if (!amendment_name->empty())
-                    s->name = *amendment_name;
-                s->vetoed = false;
-            }
+            auto s = add(amend_hash, sl);
+            JLOG(j_.debug()) << "Amendment {" << *amendment_name << ", "
+                             << amend_hash << "} is un-vetoed.";
+            if (!amendment_name->empty())
+                s.name = *amendment_name;
+            s.vetoed = false;
         }
     }
 }
 
-AmendmentState*
+AmendmentState&
 AmendmentTableImpl::add(
     uint256 const& amendmentHash,
     std::lock_guard<std::mutex> const&)
 {
     // call with the mutex held
-    return &amendmentMap_[amendmentHash];
+    return amendmentMap_[amendmentHash];
 }
 
 AmendmentState*
@@ -522,12 +524,12 @@ bool
 AmendmentTableImpl::veto(uint256 const& amendment)
 {
     std::lock_guard sl(mutex_);
-    auto s = add(amendment, sl);
+    AmendmentState& s = add(amendment, sl);
 
-    if (s->vetoed)
+    if (s.vetoed)
         return false;
-    s->vetoed = true;
-    persistVote(amendment, s->name, s->vetoed);
+    s.vetoed = true;
+    persistVote(amendment, s.name, s.vetoed);
     return true;
 }
 
@@ -535,7 +537,7 @@ bool
 AmendmentTableImpl::unVeto(uint256 const& amendment)
 {
     std::lock_guard sl(mutex_);
-    auto s = get(amendment, sl);
+    AmendmentState* const s = get(amendment, sl);
 
     if (!s || !s->vetoed)
         return false;
@@ -548,14 +550,14 @@ bool
 AmendmentTableImpl::enable(uint256 const& amendment)
 {
     std::lock_guard sl(mutex_);
-    auto s = add(amendment, sl);
+    AmendmentState& s = add(amendment, sl);
 
-    if (s->enabled)
+    if (s.enabled)
         return false;
 
-    s->enabled = true;
+    s.enabled = true;
 
-    if (!s->supported)
+    if (!s.supported)
     {
         JLOG(j_.error()) << "Unsupported amendment " << amendment
                          << " activated.";
@@ -569,7 +571,7 @@ bool
 AmendmentTableImpl::isEnabled(uint256 const& amendment) const
 {
     std::lock_guard sl(mutex_);
-    auto s = get(amendment, sl);
+    AmendmentState const* s = get(amendment, sl);
     return s && s->enabled;
 }
 
@@ -577,7 +579,7 @@ bool
 AmendmentTableImpl::isSupported(uint256 const& amendment) const
 {
     std::lock_guard sl(mutex_);
-    auto s = get(amendment, sl);
+    AmendmentState const* s = get(amendment, sl);
     return s && s->supported;
 }
 
@@ -611,6 +613,7 @@ AmendmentTableImpl::doValidation(std::set<uint256> const& enabled) const
                 (enabled.count(e.first) == 0))
             {
                 amendments.push_back(e.first);
+                JLOG(j_.info()) << "Voting for amendment " << e.second.name;
             }
         }
     }
@@ -730,12 +733,12 @@ AmendmentTableImpl::doValidatedLedger(
     firstUnsupportedExpected_.reset();
     for (auto const& [hash, time] : majority)
     {
-        auto s = add(hash, sl);
+        AmendmentState& s = add(hash, sl);
 
-        if (s->enabled)
+        if (s.enabled)
             continue;
 
-        if (!s->supported)
+        if (!s.supported)
         {
             JLOG(j_.info()) << "Unsupported amendment " << hash
                             << " reached majority at " << to_string(time);
@@ -801,7 +804,7 @@ AmendmentTableImpl::getJson(uint256 const& amendmentID) const
 
     {
         std::lock_guard sl(mutex_);
-        auto a = get(amendmentID, sl);
+        AmendmentState const* a = get(amendmentID, sl);
         if (a)
             injectJson(jAmendment, amendmentID, *a, sl);
     }
