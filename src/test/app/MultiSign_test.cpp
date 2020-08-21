@@ -1556,6 +1556,13 @@ public:
         BEAST_EXPECT(jss::passphrase.c_str() == b);
         BEAST_EXPECT(jss::passphrase.c_str() == jss::passphrase.c_str());
 
+        static auto a = jss::passphrase.c_str();
+        auto b = jss::passphrase.c_str();
+        BEAST_EXPECT(a == b);                        // fails
+        BEAST_EXPECT(a == jss::passphrase.c_str());  // fails
+        BEAST_EXPECT(jss::passphrase.c_str() == b);
+        BEAST_EXPECT(jss::passphrase.c_str() == jss::passphrase.c_str());
+
         // The reserve required on a signer list changes based on.
         // featureMultiSignReserve.  Test both with and without.
         testAll(all - featureMultiSignReserve);
