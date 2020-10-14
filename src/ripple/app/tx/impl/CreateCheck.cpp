@@ -79,7 +79,7 @@ CreateCheck::preflight(PreflightContext const& ctx)
     return preflight2(ctx);
 }
 
-TER
+NotTEM
 CreateCheck::preclaim(PreclaimContext const& ctx)
 {
     AccountID const dstId{ctx.tx[sfDestination]};

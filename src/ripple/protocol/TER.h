@@ -514,7 +514,44 @@ using NotTEC = TERSubset<CanCvtToNotTEC>;
 //------------------------------------------------------------------------------
 
 // Use traits to build a TERSubset that can convert from any of the TE*codes
-// enums as well as from NotTEC.
+// enums *except* TEMcodes: NotTEM
+
+// NOTE: NotTEM is useful for codes returned by preclaim in
+// transactors. TEM codes should only be returned by preflight and doApply.
+// Preflight because it picks up problems intrinsic to the transaction
+// independent of the ledger, and doApply because some information in the ledger
+// will not change in a meaningful way to make a transaction valid.
+template <typename FROM>
+class CanCvtToNotTEM : public std::false_type
+{
+};
+template <>
+class CanCvtToNotTEM<TELcodes> : public std::true_type
+{
+};
+template <>
+class CanCvtToNotTEM<TEFcodes> : public std::true_type
+{
+};
+template <>
+class CanCvtToNotTEM<TERcodes> : public std::true_type
+{
+};
+template <>
+class CanCvtToNotTEM<TECcodes> : public std::true_type
+{
+};
+template <>
+class CanCvtToNotTEM<TEScodes> : public std::true_type
+{
+};
+
+using NotTEM = TERSubset<CanCvtToNotTEM>;
+
+//------------------------------------------------------------------------------
+
+// Use traits to build a TERSubset that can convert from any of the TE*codes
+// enums as well as from NotTEC and NotTEM.
 template <typename FROM>
 class CanCvtToTER : public std::false_type
 {
@@ -545,6 +582,10 @@ class CanCvtToTER<TECcodes> : public std::true_type
 };
 template <>
 class CanCvtToTER<NotTEC> : public std::true_type
+{
+};
+template <>
+class CanCvtToTER<NotTEM> : public std::true_type
 {
 };
 

@@ -150,7 +150,7 @@ nonObligationDeleter(LedgerEntryType t)
 
 }  // namespace
 
-TER
+NotTEM
 DeleteAccount::preclaim(PreclaimContext const& ctx)
 {
     AccountID const account{ctx.tx[sfAccount]};

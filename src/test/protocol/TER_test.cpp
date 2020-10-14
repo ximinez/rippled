@@ -167,15 +167,6 @@ struct TER_test : public beast::unit_test::suite
                 std::is_assignable<To_t&, From_t const&>::value, "Assign err");
         };
 
-        // Verify the right types convert to NotTEC.
-        NotTEC const notTec;
-        isConvertable(telLOCAL_ERROR, notTec);
-        isConvertable(temMALFORMED, notTec);
-        isConvertable(tefFAILURE, notTec);
-        isConvertable(terRETRY, notTec);
-        isConvertable(tesSUCCESS, notTec);
-        isConvertable(notTec, notTec);
-
         // Lambda that verifies types and not assignable or convertible.
         auto notConvertible = [](auto from, auto to) {
             using To_t = std::decay_t<decltype(to)>;
@@ -188,11 +179,34 @@ struct TER_test : public beast::unit_test::suite
                 !std::is_assignable<To_t&, From_t const&>::value, "Assign err");
         };
 
+        // Verify the right types convert to NotTEC.
+        NotTEC const notTec;
+        isConvertable(telLOCAL_ERROR, notTec);
+        isConvertable(temMALFORMED, notTec);
+        isConvertable(tefFAILURE, notTec);
+        isConvertable(terRETRY, notTec);
+        isConvertable(tesSUCCESS, notTec);
+        isConvertable(notTec, notTec);
+
         // Verify types that shouldn't convert to NotTEC.
         TER const ter;
         notConvertible(tecCLAIM, notTec);
         notConvertible(ter, notTec);
         notConvertible(4, notTec);
+
+        // Verify the right types convert to NotTEM.
+        NotTEM const notTem;
+        isConvertable(telLOCAL_ERROR, notTem);
+        isConvertable(tecCLAIM, notTem);
+        isConvertable(tefFAILURE, notTem);
+        isConvertable(terRETRY, notTem);
+        isConvertable(tesSUCCESS, notTem);
+        isConvertable(notTem, notTem);
+
+        // Verify types that shouldn't convert to NotTEM.
+        notConvertible(temMALFORMED, notTem);
+        notConvertible(ter, notTem);
+        notConvertible(4, notTem);
 
         // Verify the right types convert to TER.
         isConvertable(telLOCAL_ERROR, ter);
@@ -202,6 +216,7 @@ struct TER_test : public beast::unit_test::suite
         isConvertable(tesSUCCESS, ter);
         isConvertable(tecCLAIM, ter);
         isConvertable(notTec, ter);
+        isConvertable(notTem, ter);
         isConvertable(ter, ter);
 
         // Verify that you can't convert from int to ter.

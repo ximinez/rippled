@@ -78,7 +78,7 @@ DepositPreauth::preflight(PreflightContext const& ctx)
     return preflight2(ctx);
 }
 
-TER
+NotTEM
 DepositPreauth::preclaim(PreclaimContext const& ctx)
 {
     // Determine which operation we're performing: authorizing or unauthorizing.

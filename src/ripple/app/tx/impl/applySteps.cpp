@@ -143,7 +143,7 @@ invoke_preflight(PreflightContext const& ctx)
     class functions for Transactor and derived classes.
 */
 template <class T>
-static TER
+static NotTEM
 invoke_preclaim(PreclaimContext const& ctx)
 {
     // If the transactor requires a valid account and the transaction doesn't
@@ -152,7 +152,7 @@ invoke_preclaim(PreclaimContext const& ctx)
 
     if (id != beast::zero)
     {
-        TER result = T::checkSeqProxy(ctx.view, ctx.tx, ctx.j);
+        NotTEM result = T::checkSeqProxy(ctx.view, ctx.tx, ctx.j);
 
         if (result != tesSUCCESS)
             return result;
@@ -176,7 +176,7 @@ invoke_preclaim(PreclaimContext const& ctx)
     return T::preclaim(ctx);
 }
 
-static TER
+static NotTEM
 invoke_preclaim(PreclaimContext const& ctx)
 {
     switch (ctx.tx.getTxnType())
@@ -225,7 +225,7 @@ invoke_preclaim(PreclaimContext const& ctx)
             return invoke_preclaim<Change>(ctx);
         default:
             assert(false);
-            return temUNKNOWN;
+            return tefINTERNAL;
     }
 }
 

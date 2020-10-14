@@ -32,7 +32,7 @@ ApplyContext::ApplyContext(
     Application& app_,
     OpenView& base,
     STTx const& tx_,
-    TER preclaimResult_,
+    NotTEM preclaimResult_,
     FeeUnit64 baseFee_,
     ApplyFlags flags,
     beast::Journal journal_)

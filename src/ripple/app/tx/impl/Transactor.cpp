@@ -164,7 +164,7 @@ Transactor::minimumFee(
     return scaleFeeLoad(baseFee, app.getFeeTrack(), fees, flags & tapUNLIMITED);
 }
 
-TER
+NotTEM
 Transactor::checkFee(PreclaimContext const& ctx, FeeUnit64 baseFee)
 {
     if (!ctx.tx[sfFee].native())
@@ -776,7 +776,7 @@ Transactor::operator()()
     }
 #endif
 
-    auto result = ctx_.preclaimResult;
+    TER result = ctx_.preclaimResult;
     if (result == tesSUCCESS)
         result = apply();
 

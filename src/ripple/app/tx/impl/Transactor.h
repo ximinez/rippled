@@ -132,7 +132,7 @@ public:
     static NotTEC
     checkPriorTxAndLastLedger(PreclaimContext const& ctx);
 
-    static TER
+    static NotTEM
     checkFee(PreclaimContext const& ctx, FeeUnit64 baseFee);
 
     static NotTEC
@@ -142,7 +142,7 @@ public:
     static FeeUnit64
     calculateBaseFee(ReadView const& view, STTx const& tx);
 
-    static TER
+    static NotTEM
     preclaim(PreclaimContext const& ctx)
     {
         // Most transactors do nothing

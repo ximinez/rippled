@@ -206,7 +206,7 @@ Payment::preflight(PreflightContext const& ctx)
     return preflight2(ctx);
 }
 
-TER
+NotTEM
 Payment::preclaim(PreclaimContext const& ctx)
 {
     // Ripple if source or destination is non-native or if there are paths.

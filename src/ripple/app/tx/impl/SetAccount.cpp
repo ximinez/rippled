@@ -176,7 +176,7 @@ SetAccount::preflight(PreflightContext const& ctx)
     return preflight2(ctx);
 }
 
-TER
+NotTEM
 SetAccount::preclaim(PreclaimContext const& ctx)
 {
     auto const id = ctx.tx[sfAccount];
@@ -203,7 +203,8 @@ SetAccount::preclaim(PreclaimContext const& ctx)
         if (!dirIsEmpty(ctx.view, keylet::ownerDir(id)))
         {
             JLOG(ctx.j.trace()) << "Retry: Owner directory not empty.";
-            return (ctx.flags & tapRETRY) ? TER{terOWNERS} : TER{tecOWNERS};
+            return (ctx.flags & tapRETRY) ? NotTEM{terOWNERS}
+                                          : NotTEM{tecOWNERS};
         }
     }
 

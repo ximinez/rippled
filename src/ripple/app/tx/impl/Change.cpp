@@ -75,7 +75,7 @@ Change::preflight(PreflightContext const& ctx)
     return tesSUCCESS;
 }
 
-TER
+NotTEM
 Change::preclaim(PreclaimContext const& ctx)
 {
     // If tapOPEN_LEDGER is resurrected into ApplyFlags,

@@ -190,7 +190,7 @@ PayChanCreate::preflight(PreflightContext const& ctx)
     return preflight2(ctx);
 }
 
-TER
+NotTEM
 PayChanCreate::preclaim(PreclaimContext const& ctx)
 {
     auto const account = ctx.tx[sfAccount];

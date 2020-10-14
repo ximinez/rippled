@@ -76,7 +76,7 @@ public:
     preflight(PreflightContext const& ctx);
 
     /** Enforce constraints beyond those of the Transactor base class. */
-    static TER
+    static NotTEM
     preclaim(PreclaimContext const& ctx);
 
     /** Precondition: fee collection is likely.  Attempt to create ticket(s). */

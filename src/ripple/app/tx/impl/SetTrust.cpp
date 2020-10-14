@@ -81,7 +81,7 @@ SetTrust::preflight(PreflightContext const& ctx)
     return preflight2(ctx);
 }
 
-TER
+NotTEM
 SetTrust::preclaim(PreclaimContext const& ctx)
 {
     auto const id = ctx.tx[sfAccount];

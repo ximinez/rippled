@@ -50,7 +50,7 @@ CancelCheck::preflight(PreflightContext const& ctx)
     return preflight2(ctx);
 }
 
-TER
+NotTEM
 CancelCheck::preclaim(PreclaimContext const& ctx)
 {
     auto const sleCheck = ctx.view.read(keylet::check(ctx.tx[sfCheckID]));

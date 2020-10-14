@@ -1449,7 +1449,7 @@ redeemIOU(
     return tefINTERNAL;
 }
 
-TER
+NotTEM
 transferXRP(
     ApplyView& view,
     AccountID const& from,
@@ -1475,8 +1475,8 @@ transferXRP(
         // VFALCO Its unfortunate we have to keep
         //        mutating these TER everywhere
         // FIXME: this logic should be moved to callers maybe?
-        return view.open() ? TER{telFAILED_PROCESSING}
-                           : TER{tecFAILED_PROCESSING};
+        return view.open() ? NotTEM{telFAILED_PROCESSING}
+                           : NotTEM{tecFAILED_PROCESSING};
     }
 
     // Decrement XRP balance.

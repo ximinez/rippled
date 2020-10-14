@@ -52,7 +52,7 @@ public:
         return FeeUnit64{0};
     }
 
-    static TER
+    static NotTEM
     preclaim(PreclaimContext const& ctx);
 
 private:

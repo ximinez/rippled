@@ -127,7 +127,7 @@ CreateOffer::preflight(PreflightContext const& ctx)
     return preflight2(ctx);
 }
 
-TER
+NotTEM
 CreateOffer::preclaim(PreclaimContext const& ctx)
 {
     auto const id = ctx.tx[sfAccount];
@@ -191,8 +191,8 @@ CreateOffer::preclaim(PreclaimContext const& ctx)
         // The return code change is attached to featureChecks as a convenience.
         // The change is not big enough to deserve its own amendment.
         return ctx.view.rules().enabled(featureDepositPreauth)
-            ? TER{tecEXPIRED}
-            : TER{tesSUCCESS};
+            ? NotTEM{tecEXPIRED}
+            : NotTEM{tesSUCCESS};
     }
 
     // Make sure that we are authorized to hold what the taker will pay us.
@@ -211,7 +211,7 @@ CreateOffer::preclaim(PreclaimContext const& ctx)
     return tesSUCCESS;
 }
 
-TER
+NotTEM
 CreateOffer::checkAcceptAsset(
     ReadView const& view,
     ApplyFlags const flags,
@@ -229,7 +229,8 @@ CreateOffer::checkAcceptAsset(
         JLOG(j.warn()) << "delay: can't receive IOUs from non-existent issuer: "
                        << to_string(issue.account);
 
-        return (flags & tapRETRY) ? TER{terNO_ACCOUNT} : TER{tecNO_ISSUER};
+        return (flags & tapRETRY) ? NotTEM{terNO_ACCOUNT}
+                                  : NotTEM{tecNO_ISSUER};
     }
 
     // This code is attached to the DepositPreauth amendment as a matter of
@@ -246,7 +247,7 @@ CreateOffer::checkAcceptAsset(
 
         if (!trustLine)
         {
-            return (flags & tapRETRY) ? TER{terNO_LINE} : TER{tecNO_LINE};
+            return (flags & tapRETRY) ? NotTEM{terNO_LINE} : NotTEM{tecNO_LINE};
         }
 
         // Entries have a canonical representation, determined by a
@@ -262,7 +263,7 @@ CreateOffer::checkAcceptAsset(
             JLOG(j.debug())
                 << "delay: can't receive IOUs from issuer without auth.";
 
-            return (flags & tapRETRY) ? TER{terNO_AUTH} : TER{tecNO_AUTH};
+            return (flags & tapRETRY) ? NotTEM{terNO_AUTH} : NotTEM{tecNO_AUTH};
         }
     }
 

@@ -51,7 +51,7 @@ CancelOffer::preflight(PreflightContext const& ctx)
 
 //------------------------------------------------------------------------------
 
-TER
+NotTEM
 CancelOffer::preclaim(PreclaimContext const& ctx)
 {
     auto const id = ctx.tx[sfAccount];

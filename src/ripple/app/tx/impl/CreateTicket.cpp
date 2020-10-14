@@ -53,7 +53,7 @@ CreateTicket::preflight(PreflightContext const& ctx)
     return preflight2(ctx);
 }
 
-TER
+NotTEM
 CreateTicket::preclaim(PreclaimContext const& ctx)
 {
     auto const id = ctx.tx[sfAccount];

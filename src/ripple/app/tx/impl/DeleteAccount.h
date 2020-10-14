@@ -49,7 +49,7 @@ public:
     static FeeUnit64
     calculateBaseFee(ReadView const& view, STTx const& tx);
 
-    static TER
+    static NotTEM
     preclaim(PreclaimContext const& ctx);
 
     TER

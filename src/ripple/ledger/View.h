@@ -348,7 +348,7 @@ redeemIOU(
     Issue const& issue,
     beast::Journal j);
 
-[[nodiscard]] TER
+[[nodiscard]] NotTEM
 transferXRP(
     ApplyView& view,
     AccountID const& from,

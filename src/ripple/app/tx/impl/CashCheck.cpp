@@ -78,7 +78,7 @@ CashCheck::preflight(PreflightContext const& ctx)
     return preflight2(ctx);
 }
 
-TER
+NotTEM
 CashCheck::preclaim(PreclaimContext const& ctx)
 {
     auto const sleCheck = ctx.view.read(keylet::check(ctx.tx[sfCheckID]));

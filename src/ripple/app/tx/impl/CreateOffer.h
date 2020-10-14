@@ -50,7 +50,7 @@ public:
     preflight(PreflightContext const& ctx);
 
     /** Enforce constraints beyond those of the Transactor base class. */
-    static TER
+    static NotTEM
     preclaim(PreclaimContext const& ctx);
 
     /** Gather information beyond what the Transactor base class gathers. */
@@ -66,7 +66,7 @@ private:
     applyGuts(Sandbox& view, Sandbox& view_cancel);
 
     // Determine if we are authorized to hold the asset we want to get.
-    static TER
+    static NotTEM
     checkAcceptAsset(
         ReadView const& view,
         ApplyFlags const flags,
