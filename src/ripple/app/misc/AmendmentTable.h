@@ -22,6 +22,7 @@
 
 #include <ripple/app/ledger/Ledger.h>
 #include <ripple/core/ConfigSections.h>
+#include <ripple/protocol/Feature.h>
 #include <ripple/protocol/Protocol.h>
 #include <ripple/protocol/STValidation.h>
 
@@ -166,7 +167,7 @@ std::unique_ptr<AmendmentTable>
 make_AmendmentTable(
     Application& app,
     std::chrono::seconds majorityTime,
-    Section const& supported,
+    std::vector<FeatureInfo> const& supported,
     Section const& enabled,
     Section const& vetoed,
     beast::Journal journal);

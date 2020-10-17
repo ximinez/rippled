@@ -252,7 +252,7 @@ public:
     AmendmentTableImpl(
         Application& app,
         std::chrono::seconds majorityTime,
-        Section const& supported,
+        std::vector<FeatureInfo> const& supported,
         Section const& enabled,
         Section const& vetoed,
         beast::Journal journal);
@@ -313,7 +313,7 @@ public:
 AmendmentTableImpl::AmendmentTableImpl(
     Application& app,
     std::chrono::seconds majorityTime,
-    Section const& supported,
+    std::vector<FeatureInfo> const& supported,
     Section const& enabled,
     Section const& vetoed,
     beast::Journal journal)
@@ -348,22 +348,25 @@ AmendmentTableImpl::AmendmentTableImpl(
         return exists;
     }();
 
-    auto getName = [](auto const& amd) {
-        if (amd.second.empty())
-            return featureToName(amd.first);
-        return amd.second;
+    auto getName2 = [](auto const& amendment, auto const& name) {
+        if (name.empty())
+            return featureToName(amendment);
+        return name;
+    };
+    auto getName = [&getName2](auto const& amd) {
+        return getName2(amd.first, amd.second);
     };
     // Parse supported amendments
-    for (auto const& a : parseSection(supported))
+    for (auto const& [name, amendment, defaultVote] : supported)
     {
-        AmendmentState& s = add(a.first, sl);
+        AmendmentState& s = add(amendment, sl);
 
-        JLOG(j_.debug()) << "Amendment " << a.first << " (" << a.second
+        s.name = getName2(amendment, name);
+        JLOG(j_.debug()) << "Amendment " << amendment << " (" << s.name
                          << ") is supported.";
 
-        s.name = getName(a);
-
         s.supported = true;
+        s.vetoed = defaultVote == DefaultVote::yes ? false : true;
     }
 
     hash_set<uint256> detect_conflict;
@@ -816,7 +819,7 @@ std::unique_ptr<AmendmentTable>
 make_AmendmentTable(
     Application& app,
     std::chrono::seconds majorityTime,
-    Section const& supported,
+    std::vector<FeatureInfo> const& supported,
     Section const& enabled,
     Section const& vetoed,
     beast::Journal journal)

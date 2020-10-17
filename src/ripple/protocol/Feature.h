@@ -22,9 +22,9 @@
 
 #include <ripple/basics/base_uint.h>
 #include <boost/container/flat_map.hpp>
-#include <boost/optional.hpp>
 #include <array>
 #include <bitset>
+#include <optional>
 #include <string>
 
 /**
@@ -36,7 +36,7 @@
  *    for the feature at the bottom
  * 2) Add a uint256 definition for the feature to the corresponding source
  *    file (Feature.cpp). Use `registerFeature` to create the feature with
- *    the feature's name, `Supported::no`, and `DefaultVote::no`. This
+ *    the feature's name, `Supported::no`, and `DefaultVote::abstain`. This
  *    should be the only place the feature's name appears in code as a string.
  * 3) Use the uint256 as the parameter to `view.rules.enabled()` to
  *    control flow into new code that this feature limits.
@@ -45,8 +45,8 @@
  * 5) When the feature is ready to be ENABLED, change the `registerFeature`
  *    to get `DefaultVote::yes`.
  * In general, any newly supported amendments (`Supported::yes`) should have
- * a `DefaultVote::no` for at least one full release cycle. High priority bug
- * fixes can be an exception to this rule of thumb.
+ * a `DefaultVote::abstain` for at least one full release cycle. High priority
+ * bug fixes can be an exception to this rule of thumb.
  *
  * When a feature has been enabled for several years, the conditional code
  * may be removed, and the feature "retired". To retire a feature:
@@ -55,7 +55,7 @@
  *    section at the end of the file.
  * 3) CHANGE the name of the variable to start with "retired".
  * 4) CHANGE the parameters of the `registerFeature` call to `Supported::yes`
- *    and `DefaultVote::no`.
+ *    and `DefaultVote::abstain`.
  * The feature must remain registered and supported indefinitely because it
  * still exists in the ledger, but there is no need to vote for it because
  * there's nothing to vote for. If it is removed completely from the code, any
@@ -66,6 +66,21 @@
 
 namespace ripple {
 
+enum class DefaultVote : bool { abstain = false, yes };
+
+struct FeatureInfo
+{
+    FeatureInfo() = delete;
+    FeatureInfo(std::string const& n, uint256 const& f, DefaultVote v)
+        : name(n), feature(f), vote(v)
+    {
+    }
+
+    std::string const name;
+    uint256 const feature;
+    DefaultVote const vote;
+};
+
 namespace detail {
 
 // This value SHOULD be equal to the number of amendments registered in
@@ -74,23 +89,23 @@ namespace detail {
 // the actual number of amendments. An assert on startup will verify this.
 static constexpr std::size_t numFeatures = 42;
 
-/** Amendments that this server supports and will vote for by default.
+/** Amendments that this server supports and the suggested default vote.
    Whether they are enabled depends on the Rules defined in the validated
    ledger */
-std::vector<std::string> const&
+std::map<std::string, DefaultVote> const&
 supportedAmendments();
 
 /** Amendments that this server won't vote for by default. */
-std::vector<std::string> const&
-downVotedAmendments();
+std::size_t
+numDownVotedAmendments();
 
 /** Amendments that this server will vote for by default. */
-std::vector<std::string> const&
-upVotedAmendments();
+std::size_t
+numUpVotedAmendments();
 
 }  // namespace detail
 
-boost::optional<uint256>
+std::optional<uint256>
 getRegisteredFeature(std::string const& name);
 
 size_t
