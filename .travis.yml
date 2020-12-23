@@ -21,7 +21,8 @@ services:
   - docker
 
 stages:
-  - windep-vcpkg
+  - windep-vcpkg1
+  - windep-vcpkg2
   - windep-boost
   - build
 
@@ -70,14 +71,15 @@ matrix:
     # allow the rest of the builds to continue. They may succeed if the
     # dependency is already cached. These do not need to be retried if
     # _any_ of the Windows builds succeed.
-    - stage: windep-vcpkg
+    - stage: windep-vcpkg1
+    - stage: windep-vcpkg2
     - stage: windep-boost
-  exclude:
-    - compiler: gcc-8
-    - compiler: clang-8
-    - compiler: clang-9
-    - os: osx
-    - os: windows
+  #exclude:
+  #  - compiler: gcc-8
+  #  - compiler: clang-8
+  #  - compiler: clang-9
+  #  - os: osx
+  #  - os: windows
 
   # https://docs.travis-ci.com/user/build-config-yaml#usage-of-yaml-anchors-and-aliases
   include:
@@ -374,8 +376,8 @@ matrix:
           -DCMAKE_VERBOSE_MAKEFILE=ON
           -DCMAKE_TOOLCHAIN_FILE=${VCPKG_DIR}/scripts/buildsystems/vcpkg.cmake
           -DVCPKG_TARGET_TRIPLET=x64-windows-static"
-      stage: windep-vcpkg
-      name: prereq-vcpkg
+      stage: windep-vcpkg1
+      name: prereq-vcpkg1
       install:
         - choco upgrade cmake.install
         - choco install ninja visualstudio2017-workload-vctools -y
@@ -383,8 +385,17 @@ matrix:
         - df -h
         - env
         - travis_wait ${MAX_TIME_MIN} bin/sh/install-vcpkg.sh openssl
-        - travis_wait ${MAX_TIME_MIN} bin/sh/install-vcpkg.sh grpc
         - travis_wait ${MAX_TIME_MIN} bin/sh/install-vcpkg.sh libarchive[lz4]
+      stage: windep-vcpkg2
+      name: prereq-keep-vcpkg2
+      install:
+        - choco upgrade cmake.install
+        - choco install ninja visualstudio2017-workload-vctools -y
+      script:
+        - df -h
+        - env
+        # grpc takes a while to install, so it needs its own stage
+        - travis_wait ${MAX_TIME_MIN} bin/sh/install-vcpkg.sh grpc
         # TBD consider rocksdb via vcpkg if/when we can build with the
         # vcpkg version
         # - travis_wait ${MAX_TIME_MIN} bin/sh/install-vcpkg.sh rocksdb[snappy,lz4,zlib]

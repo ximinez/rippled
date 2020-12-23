@@ -27,11 +27,11 @@ jobs:
         BUILD_TYPE: [ Debug, Release ]
         unity: [ "unity=OFF", "unity=ON" ]
         canfail: [ false ]
-        exclude:
-            - CC: "clang-8"
-            - CC: "clang-9"
-            - CC: "gcc-8"
-            - BUILD_TYPE: "Debug"
+        #exclude:
+        #    - CC: "clang-8"
+        #    - CC: "clang-9"
+        #    - CC: "gcc-8"
+        #    - BUILD_TYPE: "Debug"
         include:
             # This include overrides the combo built in the matrix
             - CC: "gcc-9"
@@ -91,8 +91,8 @@ jobs:
         BUILD_TYPE: [ Debug, Release ]
         unity: [ "OFF", "ON" ]
         canfail: [ false ]
-        exclude:
-          - CC: "clang-10"
+        #exclude:
+        #  - CC: "clang-10"
     # https://docs.github.com/en/free-pro-team@latest/actions/reference/workflow-syntax-for-github-actions#jobsjob_idcontinue-on-error
     continue-on-error: ${{ matrix.canfail }}
     container:
