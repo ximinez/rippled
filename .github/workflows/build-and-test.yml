@@ -4,13 +4,13 @@ on: [push, pull_request]
 env:
   CMAKE_EXTRA_ARGS: "-Dwerr=ON -Dwextra=ON"
   NINJA_BUILD: true
-#   CACHE_DIR: ${{ env.GITHUB_WORKSPACE }}/_cache
-#   NIH_CACHE_ROOT: ${{ env.CACHE_DIR }}/nih_c
-#   PARALLEL_TESTS: true
+  CACHE_DIR: ${{ github.workspace }}/_cache
+  NIH_CACHE_ROOT: ${{ github.workspace }}/_cache/nih_c
+  PARALLEL_TESTS: true
   USE_CCACHE: true
-#   CCACHE_BASEDIR: ${{ env.GITHUB_WORKSPACE }}
-#   CCACHE_NOHASHDIR: true
-#   CCACHE_DIR: ${{ env.CACHE_DIR }}/ccache
+  CCACHE_BASEDIR: ${{ github.workspace }}
+  CCACHE_NOHASHDIR: true
+  CCACHE_DIR: ${{ github.workspace }}/ccache
 
 jobs:
   linux1:
@@ -51,19 +51,19 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-#       - name: cache
-#         uses: actions/cache@v2
-#         env:
-#           cache-name: linux-cache
-#         with:
-#           path: ${{ env.CACHE_DIR }}
-#           key:  ${{ runner.os }}-build-${{ env.cache-name }}
+      - name: cache
+        uses: actions/cache@v2
+        with:
+          path: ${{ env.CACHE_DIR }}
+          key:  ${{ runner.os }}-build-${{ hashfiles('**/CMakeFiles.txt', '**/Builds/CMake/*', '**/Builds/CMake/deps/*') }}-${{ toJson(matrix) }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ hashfiles('**/CMakeFiles.txt', '**/Builds/CMake/*', '**/Builds/CMake/deps/*') }}
       - name: Dump-environment
         run: |
           env
           set | grep =
-#       - name: cache stats before
-#         run: ccache -s
+      - name: ccache stats before
+        run: ccache -s
       - name: Build and test
         shell: bash
         run: |
@@ -73,6 +73,8 @@ jobs:
           echo NUM_PROCESSORS is ${NUM_PROCESSORS}
           if [ "${CMAKE_ADD}" != "" ] ; then export CMAKE_EXTRA_ARGS="${CMAKE_EXTRA_ARGS} ${CMAKE_ADD}"; fi
           bin/ci/ubuntu/build-and-test.sh
+      - name: ccache stats after
+        run: ccache -s
       - name: Debug output
         if: always()
         shell: bash
@@ -103,19 +105,19 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-#       - name: cache
-#         uses: actions/cache@v2
-#         env:
-#           cache-name: linux-cache
-#         with:
-#           path: ${{ env.CACHE_DIR }}
-#           key:  ${{ runner.os }}-build-${{ env.cache-name }}
+      - name: cache
+        uses: actions/cache@v2
+        with:
+          path: ${{ env.CACHE_DIR }}
+          key:  ${{ runner.os }}-build-${{ hashfiles('**/CMakeFiles.txt', '**/Builds/CMake/*', '**/Builds/CMake/deps/*') }}-${{ toJson(matrix) }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ hashfiles('**/CMakeFiles.txt', '**/Builds/CMake/*', '**/Builds/CMake/deps/*') }}
       - name: Dump-environment
         run: |
           env
           set | grep =
-#       - name: cache stats before
-#         run: ccache -s
+      - name: ccache stats before
+        run: ccache -s
       - name: Configure
         shell: bash
         #run: bin/ci/ubuntu/build-in-docker.sh
@@ -136,9 +138,9 @@ jobs:
       - name: Run tests
         run: |
           echo Running $( nproc ) parallel tests
-          build/rippled --unittest --unittest-jobs=$( nproc )
-#       - name: cache stats after
-#         run: ccache -s
+          build/rippled --unittest --unittest-jobs=$( nproc ) --quiet --unittest-log
+      - name: ccache stats after
+        run: ccache -s
       - name: Debug output
         if: always()
         shell: bash
