@@ -55,7 +55,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ${{ env.CACHE_DIR }}
-          key:  ${{ runner.os }}-build-${{ hashfiles('**/CMakeFiles.txt', '**/Builds/CMake/*', '**/Builds/CMake/deps/*') }}-${{ toJson(matrix) }}
+          key:  ${{ runner.os }}-build-${{ hashfiles('**/CMakeFiles.txt', '**/Builds/CMake/*', '**/Builds/CMake/deps/*') }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}
           restore-keys: |
             ${{ runner.os }}-build-${{ hashfiles('**/CMakeFiles.txt', '**/Builds/CMake/*', '**/Builds/CMake/deps/*') }}
       - name: Dump-environment
@@ -109,7 +109,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ${{ env.CACHE_DIR }}
-          key:  ${{ runner.os }}-build-${{ hashfiles('**/CMakeFiles.txt', '**/Builds/CMake/*', '**/Builds/CMake/deps/*') }}-${{ toJson(matrix) }}
+          key:  ${{ runner.os }}-build-${{ hashfiles('**/CMakeFiles.txt', '**/Builds/CMake/*', '**/Builds/CMake/deps/*') }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}
           restore-keys: |
             ${{ runner.os }}-build-${{ hashfiles('**/CMakeFiles.txt', '**/Builds/CMake/*', '**/Builds/CMake/deps/*') }}
       - name: Dump-environment
