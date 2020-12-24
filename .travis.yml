@@ -386,6 +386,7 @@ matrix:
         - env
         - travis_wait ${MAX_TIME_MIN} bin/sh/install-vcpkg.sh openssl
         - travis_wait ${MAX_TIME_MIN} bin/sh/install-vcpkg.sh libarchive[lz4]
+    - <<: *windows
       stage: windep-vcpkg2
       name: prereq-keep-vcpkg2
       install:
