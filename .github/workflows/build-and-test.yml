@@ -10,7 +10,7 @@ env:
   USE_CCACHE: true
   CCACHE_BASEDIR: ${{ github.workspace }}
   CCACHE_NOHASHDIR: true
-  CCACHE_DIR: ${{ github.workspace }}/ccache
+  CCACHE_DIR: ${{ github.workspace }}/_cache/ccache
 
 jobs:
   linux1:
@@ -55,7 +55,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ${{ env.CACHE_DIR }}
-          key:  ${{ runner.os }}-build-${{ hashfiles('**/CMakeFiles.txt', '**/Builds/CMake/*', '**/Builds/CMake/deps/*') }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}
+          key:  ${{ runner.os }}-build-${{ hashfiles('**/CMakeFiles.txt', '**/Builds/CMake/*', '**/Builds/CMake/deps/*') }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.UNITY }}
           restore-keys: |
             ${{ runner.os }}-build-${{ hashfiles('**/CMakeFiles.txt', '**/Builds/CMake/*', '**/Builds/CMake/deps/*') }}
       - name: Dump-environment
@@ -91,7 +91,7 @@ jobs:
         # docker image has clang 10 & gcc 7,8
         CC: [ "gcc-8", "clang-10" ]
         BUILD_TYPE: [ Debug, Release ]
-        unity: [ "OFF", "ON" ]
+        unity: [ "unity=OFF", "unity=ON" ]
         canfail: [ false ]
         #exclude:
         #  - CC: "clang-10"
@@ -102,6 +102,7 @@ jobs:
     env:
       CC: ${{ matrix.CC }}
       BUILD_TYPE: ${{ matrix.BUILD_TYPE }}
+      CMAKE_ADD: "-D${{ matrix.unity }} -DBoost_NO_BOOST_CMAKE=ON ${{ matrix.CMAKE_ADD }}"
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -109,29 +110,29 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ${{ env.CACHE_DIR }}
-          key:  ${{ runner.os }}-build-${{ hashfiles('**/CMakeFiles.txt', '**/Builds/CMake/*', '**/Builds/CMake/deps/*') }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}
+          key:  ${{ runner.os }}-build-${{ hashfiles('**/CMakeFiles.txt', '**/Builds/CMake/*', '**/Builds/CMake/deps/*') }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.UNITY }}
           restore-keys: |
             ${{ runner.os }}-build-${{ hashfiles('**/CMakeFiles.txt', '**/Builds/CMake/*', '**/Builds/CMake/deps/*') }}
       - name: Dump-environment
         run: |
           env
           set | grep =
-      - name: ccache stats before
-        run: ccache -s
+      # No ccache in this image
+      # - name: ccache stats before
+      #   run: ccache -s
       - name: Configure
         shell: bash
-        #run: bin/ci/ubuntu/build-in-docker.sh
         run: |
           export CXX=${CC/gcc/g++}
           export CXX=${CXX/clang/clang++}
+          if [ "${CMAKE_ADD}" != "" ] ; then export CMAKE_EXTRA_ARGS="${CMAKE_EXTRA_ARGS} ${CMAKE_ADD}"; fi
           cmake --version
           ${CC} --version
           ${CXX} --version
           mkdir build
           cd build
-          cmake -Dunity=${{ matrix.unity }} -DBoost_NO_BOOST_CMAKE=ON ${{ env.CMAKE_EXTRA_ARGS }} ..
+          cmake -DCMAKE_BUILD_TYPE=${BUILD_TYPE} ${CMAKE_EXTRA_ARGS} ..
       - name: Build rippled
-        #run: bin/ci/ubuntu/build-in-docker.sh
         run: |
           echo Building with $( nproc ) jobs
           cmake --build build --target rippled --config ${{ env.BUILD_TYPE }} -j $( nproc )
@@ -139,8 +140,18 @@ jobs:
         run: |
           echo Running $( nproc ) parallel tests
           build/rippled --unittest --unittest-jobs=$( nproc ) --quiet --unittest-log
-      - name: ccache stats after
-        run: ccache -s
+      - name: Build and test
+        shell: bash
+        run: |
+          export CXX=${CC/gcc/g++}
+          export CXX=${CXX/clang/clang++}
+          export NUM_PROCESSORS=${NUM_PROCESSORS:-$( nproc )}
+          echo NUM_PROCESSORS is ${NUM_PROCESSORS}
+          if [ "${CMAKE_ADD}" != "" ] ; then export CMAKE_EXTRA_ARGS="${CMAKE_EXTRA_ARGS} ${CMAKE_ADD}"; fi
+          bin/ci/ubuntu/build-and-test.sh
+      # No ccache in this image
+      # - name: ccache stats after
+      #   run: ccache -s
       - name: Debug output
         if: always()
         shell: bash
