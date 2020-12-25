@@ -84,7 +84,7 @@ if [[ ${VERBOSE_BUILD:-} == true ]]; then
     fi
 fi
 
-if [[ ${USE_CCACHE:-} == true ]] && $( type -a ccache ); then
+if [[ ${USE_CCACHE:-} == true ]] && type -a ccache; then
     echo "using ccache with basedir [${CCACHE_BASEDIR:-}]"
     CMAKE_EXTRA_ARGS+=" -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache"
 fi

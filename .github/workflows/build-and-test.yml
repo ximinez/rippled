@@ -117,9 +117,10 @@ jobs:
         run: |
           env
           set | grep =
-      # No ccache in this image
-      # - name: ccache stats before
-      #   run: ccache -s
+      - name: ccache install and stats before
+        run: |
+          apt install ccache
+          ccache -s
 #      - name: Configure
 #        shell: bash
 #        run: |
@@ -149,9 +150,8 @@ jobs:
           echo NUM_PROCESSORS is ${NUM_PROCESSORS}
           if [ "${CMAKE_ADD}" != "" ] ; then export CMAKE_EXTRA_ARGS="${CMAKE_EXTRA_ARGS} ${CMAKE_ADD}"; fi
           bin/ci/ubuntu/build-and-test.sh
-      # No ccache in this image
-      # - name: ccache stats after
-      #   run: ccache -s
+      - name: ccache stats after
+        run: ccache -s
       - name: Debug output
         if: always()
         shell: bash
