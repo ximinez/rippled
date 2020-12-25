@@ -120,26 +120,26 @@ jobs:
       # No ccache in this image
       # - name: ccache stats before
       #   run: ccache -s
-      - name: Configure
-        shell: bash
-        run: |
-          export CXX=${CC/gcc/g++}
-          export CXX=${CXX/clang/clang++}
-          if [ "${CMAKE_ADD}" != "" ] ; then export CMAKE_EXTRA_ARGS="${CMAKE_EXTRA_ARGS} ${CMAKE_ADD}"; fi
-          cmake --version
-          ${CC} --version
-          ${CXX} --version
-          mkdir build
-          cd build
-          cmake -DCMAKE_BUILD_TYPE=${BUILD_TYPE} ${CMAKE_EXTRA_ARGS} ..
-      - name: Build rippled
-        run: |
-          echo Building with $( nproc ) jobs
-          cmake --build build --target rippled --config ${{ env.BUILD_TYPE }} -j $( nproc )
-      - name: Run tests
-        run: |
-          echo Running $( nproc ) parallel tests
-          build/rippled --unittest --unittest-jobs=$( nproc ) --quiet --unittest-log
+#      - name: Configure
+#        shell: bash
+#        run: |
+#          export CXX=${CC/gcc/g++}
+#          export CXX=${CXX/clang/clang++}
+#          if [ "${CMAKE_ADD}" != "" ] ; then export CMAKE_EXTRA_ARGS="${CMAKE_EXTRA_ARGS} ${CMAKE_ADD}"; fi
+#          cmake --version
+#          ${CC} --version
+#          ${CXX} --version
+#          mkdir build
+#          cd build
+#          cmake -DCMAKE_BUILD_TYPE=${BUILD_TYPE} ${CMAKE_EXTRA_ARGS} ..
+#      - name: Build rippled
+#        run: |
+#          echo Building with $( nproc ) jobs
+#          cmake --build build --target rippled --config ${{ env.BUILD_TYPE }} -j $( nproc )
+#      - name: Run tests
+#        run: |
+#          echo Running $( nproc ) parallel tests
+#          build/rippled --unittest --unittest-jobs=$( nproc ) --quiet --unittest-log
       - name: Build and test
         shell: bash
         run: |
