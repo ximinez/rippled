@@ -52,6 +52,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
       - name: cache
+        continue-on-error: true
         uses: actions/cache@v2
         with:
           path: ${{ env.CACHE_DIR }}
@@ -107,6 +108,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
       - name: cache
+        continue-on-error: true
         uses: actions/cache@v2
         with:
           path: ${{ env.CACHE_DIR }}
