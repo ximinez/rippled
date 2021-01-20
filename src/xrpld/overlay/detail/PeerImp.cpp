@@ -1959,9 +1959,8 @@ PeerImp::onValidatorListMessage(
 
     auto const hash = sha512Half(manifest, blobs, version);
 
-    JLOG(p_journal_.debug())
-        << "Received " << messageType << " from " << remote_address_.to_string()
-        << " (" << id_ << ")";
+    JLOG(p_journal_.debug()) << "Received " << messageType << " from "
+                             << remote_address_.to_string();
 
     if (!app_.getHashRouter().addSuppressionPeer(hash, id_))
     {
@@ -1972,6 +1971,24 @@ PeerImp::onValidatorListMessage(
         // will add up if the peer is misbehaving.
         fee_ = Resource::feeUnwantedData;
         return;
+    }
+
+    {
+        JLOG(p_journal_.debug()) << "Manifest: " << base64_decode(manifest);
+        JLOG(p_journal_.debug()) << "Version: " << version;
+        JLOG(p_journal_.debug()) << "Hash: " << hash;
+        std::size_t count = 1;
+        for (auto const& blob : blobs)
+        {
+            JLOG(p_journal_.debug())
+                << "Blob " << count << " Signature: " << blob.signature;
+            JLOG(p_journal_.debug())
+                << "Blob " << count << " blob: " << base64_decode(blob.blob);
+            JLOG(p_journal_.debug())
+                << "Blob " << count << " manifest: "
+                << (blob.manifest ? base64_decode(*blob.manifest) : "NONE");
+            ++count;
+        }
     }
 
     auto const applyResult = app_.validators().applyListsAndBroadcast(
@@ -2111,7 +2128,7 @@ PeerImp::onValidatorListMessage(
                 break;
             case ListDisposition::stale:
                 JLOG(p_journal_.warn())
-                    << "Ignored " << count << "stale " << messageType
+                    << "Ignored " << count << " stale " << messageType
                     << "(s) from peer " << remote_address_;
                 break;
             case ListDisposition::untrusted:
@@ -2121,12 +2138,12 @@ PeerImp::onValidatorListMessage(
                 break;
             case ListDisposition::unsupported_version:
                 JLOG(p_journal_.warn())
-                    << "Ignored " << count << "unsupported version "
+                    << "Ignored " << count << " unsupported version "
                     << messageType << "(s) from peer " << remote_address_;
                 break;
             case ListDisposition::invalid:
                 JLOG(p_journal_.warn())
-                    << "Ignored " << count << "invalid " << messageType
+                    << "Ignored " << count << " invalid " << messageType
                     << "(s) from peer " << remote_address_;
                 break;
             default:
