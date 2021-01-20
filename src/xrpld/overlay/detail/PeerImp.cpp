@@ -2142,6 +2142,24 @@ PeerImp::onValidatorListMessage(
         return;
     }
 
+    {
+        JLOG(p_journal_.debug()) << "Manifest: " << base64_decode(manifest);
+        JLOG(p_journal_.debug()) << "Version: " << version;
+        JLOG(p_journal_.debug()) << "Hash: " << hash;
+        std::size_t count = 1;
+        for (auto const& blob : blobs)
+        {
+            JLOG(p_journal_.debug())
+                << "Blob " << count << " Signature: " << blob.signature;
+            JLOG(p_journal_.debug())
+                << "Blob " << count << " blob: " << base64_decode(blob.blob);
+            JLOG(p_journal_.debug())
+                << "Blob " << count << " manifest: "
+                << (blob.manifest ? base64_decode(*blob.manifest) : "NONE");
+            ++count;
+        }
+    }
+
     auto const applyResult = app_.validators().applyListsAndBroadcast(
         manifest,
         version,
