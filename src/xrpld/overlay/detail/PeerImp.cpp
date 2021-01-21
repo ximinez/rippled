@@ -828,6 +828,46 @@ PeerImp::domain() const
 // Protocol logic
 
 void
+logVLBlob(beast::Journal j, ValidatorBlobInfo const& blob, std::size_t count)
+{
+    auto const stream = j.trace();
+    JLOG(stream) << "Blob " << count << " Signature: " << blob.signature;
+    JLOG(stream) << "Blob " << count << " blob: " << base64_decode(blob.blob);
+    JLOG(stream) << "Blob " << count << " manifest: "
+                 << (blob.manifest ? base64_decode(*blob.manifest) : "NONE");
+}
+
+void
+logVLBlob(
+    beast::Journal j,
+    std::pair<std::size_t, ValidatorBlobInfo> const& blob,
+    std::size_t count)
+{
+    logVLBlob(j, blob.second, count);
+}
+
+template <class TBlobs>
+void
+logVL(
+    beast::Journal j,
+    std::string const& manifest,
+    std::uint32_t version,
+    TBlobs const& blobs,
+    uint256 const& hash)
+{
+    auto const stream = j.trace();
+    JLOG(stream) << "Manifest: " << manifest;
+    JLOG(stream) << "Version: " << version;
+    JLOG(stream) << "Hash: " << hash;
+    std::size_t count = 1;
+    for (auto const& blob : blobs)
+    {
+        logVLBlob(j, blob, count);
+        ++count;
+    }
+}
+
+void
 PeerImp::doProtocolStart()
 {
     onReadMessage(error_code(), 0);
@@ -1974,6 +2014,8 @@ PeerImp::onValidatorListMessage(
         return;
     }
 
+    logVL(p_journal_, manifest, version, blobs, hash);
+
     auto const applyResult = app_.validators().applyListsAndBroadcast(
         manifest,
         version,
@@ -2004,14 +2046,8 @@ PeerImp::onValidatorListMessage(
 
             assert(applyResult.publisherKey);
             auto const& pubKey = *applyResult.publisherKey;
-#ifndef NDEBUG
-            if (auto const iter = publisherListSequences_.find(pubKey);
-                iter != publisherListSequences_.end())
-            {
-                assert(iter->second < applyResult.sequence);
-            }
-#endif
-            publisherListSequences_[pubKey] = applyResult.sequence;
+            if (publisherListSequences_[pubKey] < applyResult.sequence)
+                publisherListSequences_[pubKey] = applyResult.sequence;
         }
         break;
         case ListDisposition::same_sequence:
@@ -2026,8 +2062,31 @@ PeerImp::onValidatorListMessage(
         }
 #endif  // !NDEBUG
 
+            [[fallthrough]];
+        case ListDisposition::stale: {
+            auto const [pubKey, currentPeerSeq] = [&]() {
+                std::lock_guard<std::mutex> sl(recentLock_);
+                auto const& pubKey = *applyResult.publisherKey;
+                auto const& current = publisherListSequences_[pubKey];
+                assert(applyResult.sequence && applyResult.publisherKey);
+                assert(current <= applyResult.sequence);
+                return std::make_pair(
+                    pubKey, current ? current : applyResult.sequence);
+            }();
+            if (currentPeerSeq <= applyResult.sequence)
+            {
+                auto const [sentmanifest, sentversion, sentblobs, senthash] =
+                    app_.validators().sendLatestValidatorLists(
+                        *this,
+                        currentPeerSeq,
+                        pubKey,
+                        app_.getHashRouter(),
+                        p_journal_);
+                logVL(
+                    p_journal_, sentmanifest, sentversion, sentblobs, senthash);
+            }
+        }
         break;
-        case ListDisposition::stale:
         case ListDisposition::untrusted:
         case ListDisposition::invalid:
         case ListDisposition::unsupported_version:
@@ -2111,7 +2170,7 @@ PeerImp::onValidatorListMessage(
                 break;
             case ListDisposition::stale:
                 JLOG(p_journal_.warn())
-                    << "Ignored " << count << "stale " << messageType
+                    << "Ignored " << count << " stale " << messageType
                     << "(s) from peer " << remote_address_;
                 break;
             case ListDisposition::untrusted:
@@ -2121,12 +2180,12 @@ PeerImp::onValidatorListMessage(
                 break;
             case ListDisposition::unsupported_version:
                 JLOG(p_journal_.warn())
-                    << "Ignored " << count << "unsupported version "
+                    << "Ignored " << count << " unsupported version "
                     << messageType << "(s) from peer " << remote_address_;
                 break;
             case ListDisposition::invalid:
                 JLOG(p_journal_.warn())
-                    << "Ignored " << count << "invalid " << messageType
+                    << "Ignored " << count << " invalid " << messageType
                     << "(s) from peer " << remote_address_;
                 break;
             default:

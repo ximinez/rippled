@@ -359,7 +359,7 @@ public:
     static std::vector<ValidatorBlobInfo>
     parseBlobs(protocol::TMValidatorListCollection const& body);
 
-    static void
+    static std::optional<std::string>
     sendValidatorList(
         Peer& peer,
         std::uint64_t peerSequence,
@@ -370,6 +370,18 @@ public:
         std::map<std::size_t, ValidatorBlobInfo> const& blobInfos,
         HashRouter& hashRouter,
         beast::Journal j);
+
+    std::tuple<
+        std::string,
+        std::uint32_t,
+        std::map<std::size_t, ValidatorBlobInfo>,
+        uint256>
+    sendLatestValidatorLists(
+        Peer& peer,
+        std::uint64_t peerSequence,
+        PublicKey const& publisherKey,
+        HashRouter& hashRouter,
+        beast::Journal j) const;
 
     [[nodiscard]] static std::pair<std::size_t, std::size_t>
     buildValidatorListMessages(
@@ -804,7 +816,7 @@ private:
         HashRouter& hashRouter,
         beast::Journal j);
 
-    static void
+    static std::optional<std::string>
     sendValidatorList(
         Peer& peer,
         std::uint64_t peerSequence,
