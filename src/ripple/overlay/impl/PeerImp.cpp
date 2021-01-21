@@ -2039,14 +2039,8 @@ PeerImp::onValidatorListMessage(
 
             assert(applyResult.publisherKey);
             auto const& pubKey = *applyResult.publisherKey;
-#ifndef NDEBUG
-            if (auto const iter = publisherListSequences_.find(pubKey);
-                iter != publisherListSequences_.end())
-            {
-                assert(iter->second < applyResult.sequence);
-            }
-#endif
-            publisherListSequences_[pubKey] = applyResult.sequence;
+            if (publisherListSequences_[pubKey] < applyResult.sequence)
+                publisherListSequences_[pubKey] = applyResult.sequence;
         }
         break;
         case ListDisposition::same_sequence:
@@ -2061,8 +2055,24 @@ PeerImp::onValidatorListMessage(
         }
 #endif  // !NDEBUG
 
+            [[fallthrough]];
+        case ListDisposition::stale: {
+            auto const [pubKey, currentPeerSeq] = [&]() {
+                std::lock_guard<std::mutex> sl(recentLock_);
+                auto const& pubKey = *applyResult.publisherKey;
+                auto const& current = publisherListSequences_[pubKey];
+                assert(applyResult.sequence && applyResult.publisherKey);
+                assert(current <= applyResult.sequence);
+                return std::make_pair(
+                    pubKey, current ? current : applyResult.sequence);
+            }();
+            if (currentPeerSeq <= applyResult.sequence)
+            {
+                app_.validators().sendLatestValidatorLists(
+                    *this, pubKey, currentPeerSeq);
+            }
+        }
         break;
-        case ListDisposition::stale:
         case ListDisposition::untrusted:
         case ListDisposition::invalid:
         case ListDisposition::unsupported_version:
