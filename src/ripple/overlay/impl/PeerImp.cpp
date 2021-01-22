@@ -811,6 +811,46 @@ PeerImp::domain() const
 // Protocol logic
 
 void
+logVLBlob(beast::Journal j, ValidatorBlobInfo const& blob, std::size_t count)
+{
+    auto const stream = j.trace();
+    JLOG(stream) << "Blob " << count << " Signature: " << blob.signature;
+    JLOG(stream) << "Blob " << count << " blob: " << base64_decode(blob.blob);
+    JLOG(stream) << "Blob " << count << " manifest: "
+                 << (blob.manifest ? base64_decode(*blob.manifest) : "NONE");
+}
+
+void
+logVLBlob(
+    beast::Journal j,
+    std::pair<std::size_t, ValidatorBlobInfo> const& blob,
+    std::size_t count)
+{
+    logVLBlob(j, blob.second, count);
+}
+
+template <class TBlobs>
+void
+logVL(
+    beast::Journal j,
+    std::string const& manifest,
+    std::uint32_t version,
+    TBlobs const& blobs,
+    uint256 const& hash)
+{
+    auto const stream = j.trace();
+    JLOG(stream) << "Manifest: " << manifest;
+    JLOG(stream) << "Version: " << version;
+    JLOG(stream) << "Hash: " << hash;
+    std::size_t count = 1;
+    for (auto const& blob : blobs)
+    {
+        logVLBlob(j, blob, count);
+        ++count;
+    }
+}
+
+void
 PeerImp::doProtocolStart()
 {
     onReadMessage(error_code(), 0);
@@ -825,7 +865,7 @@ PeerImp::doProtocolStart()
                 PublicKey const& pubKey,
                 std::size_t maxSequence,
                 uint256 const& hash) {
-                ValidatorList::sendValidatorList(
+                auto const messageType = ValidatorList::sendValidatorList(
                     *this,
                     0,
                     pubKey,
@@ -835,6 +875,14 @@ PeerImp::doProtocolStart()
                     blobInfos,
                     app_.getHashRouter(),
                     p_journal_);
+
+                if (messageType)
+                {
+                    JLOG(p_journal_.debug())
+                        << "Sent " << *messageType << " to "
+                        << remote_address_.to_string();
+                    logVL(p_journal_, manifest, version, blobInfos, {});
+                }
 
                 // Don't send it next time.
                 app_.getHashRouter().addSuppressionPeer(hash, id_);
@@ -2008,23 +2056,7 @@ PeerImp::onValidatorListMessage(
         return;
     }
 
-    {
-        JLOG(p_journal_.debug()) << "Manifest: " << base64_decode(manifest);
-        JLOG(p_journal_.debug()) << "Version: " << version;
-        JLOG(p_journal_.debug()) << "Hash: " << hash;
-        std::size_t count = 1;
-        for (auto const& blob : blobs)
-        {
-            JLOG(p_journal_.debug())
-                << "Blob " << count << " Signature: " << blob.signature;
-            JLOG(p_journal_.debug())
-                << "Blob " << count << " blob: " << base64_decode(blob.blob);
-            JLOG(p_journal_.debug())
-                << "Blob " << count << " manifest: "
-                << (blob.manifest ? base64_decode(*blob.manifest) : "NONE");
-            ++count;
-        }
-    }
+    logVL(p_journal_, manifest, version, blobs, hash);
 
     auto const applyResult = app_.validators().applyListsAndBroadcast(
         manifest,
@@ -2085,8 +2117,15 @@ PeerImp::onValidatorListMessage(
             }();
             if (currentPeerSeq <= applyResult.sequence)
             {
-                app_.validators().sendLatestValidatorLists(
-                    *this, pubKey, currentPeerSeq);
+                auto const [sentmanifest, sentversion, sentblobs, senthash] =
+                    app_.validators().sendLatestValidatorLists(
+                        *this,
+                        currentPeerSeq,
+                        pubKey,
+                        app_.getHashRouter(),
+                        p_journal_);
+                logVL(
+                    p_journal_, sentmanifest, sentversion, sentblobs, senthash);
             }
         }
         break;
