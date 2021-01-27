@@ -689,7 +689,7 @@ ValidatorList::sendLatestValidatorLists(
     std::vector<ValidatorList::MessageWithHash> messages;
     std::map<std::size_t, ValidatorBlobInfo> blobInfos;
 
-    if (!publisherLists_.count(publisherKey) == 0)
+    if (publisherLists_.count(publisherKey) == 0)
         return {};
     ValidatorList::PublisherListCollection const& lists =
         publisherLists_.at(publisherKey);
@@ -702,8 +702,6 @@ ValidatorList::sendLatestValidatorLists(
     if (peerSequence < maxSequence)
     {
         buildBlobInfos(blobInfos, lists);
-        auto const v2 =
-            peer.supportsFeature(ProtocolFeature::ValidatorList2Propagation);
         sendValidatorList(
             peer,
             peerSequence,
