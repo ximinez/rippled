@@ -27,7 +27,7 @@ jobs:
         CC: [ "gcc-9", "clang-8" , "clang-9" , "gcc-8" ]
         BUILD_TYPE: [ Debug, Release ]
         unity: [ "unity=OFF", "unity=ON" ]
-        #canfail: [ false ]
+        canfail: [ false ]
         #exclude:
         #    - CC: "clang-8"
         #    - CC: "clang-9"
@@ -45,6 +45,7 @@ jobs:
               unity: "unity=ON"
               CMAKE_ADD: "-DCMAKE_UNITY_BUILD_BATCH_SIZE=7"
               BUILD: "gcc-9 Release unity"
+              canfail: false
 #            # Reporting mode
 #            - CMAKE_ADD: "-Dreporting=ON"
 #              CC: "clang-8"
