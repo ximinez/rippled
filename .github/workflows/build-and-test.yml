@@ -40,12 +40,12 @@ jobs:
             #
             # gcc-9 Release unity runs out of memory, so build smaller
             # unity files.
-            - name: "gcc-9 Release unity"
-              CC: "gcc-9"
+            - CC: "gcc-9"
               BUILD_TYPE: "Release"
               CMAKE_ADD: "-DCMAKE_UNITY_BUILD_BATCH_SIZE=7"
               unity: "unity=ON"
               canfail: false
+              name: "base"
             # Reporting mode
             - name: "Reporting, clang-8, debug"
               CMAKE_ADD: "-Dreporting=ON"
