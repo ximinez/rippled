@@ -23,16 +23,17 @@ jobs:
       matrix:
         # Current travis: gcc-8 clang-8 gcc-9 clang-9
         # docker image has clang 7,8,9 & gcc 6,7,8,9
-        name: [ "" ]
+        build: [ "" ]
         CC: [ "gcc-9", "clang-8" , "clang-9" , "gcc-8" ]
         BUILD_TYPE: [ Debug, Release ]
         unity: [ "unity=OFF", "unity=ON" ]
         canfail: [ false ]
-        #exclude:
+        exclude:
         #    - CC: "clang-8"
         #    - CC: "clang-9"
         #    - CC: "gcc-8"
         #    - BUILD_TYPE: "Debug"
+             - build: ""
         include:
             # Special cases which add to or override the cases in the
             # matrix.
@@ -43,82 +44,83 @@ jobs:
               BUILD_TYPE: "Release"
               unity: "unity=ON"
               CMAKE_ADD: "-DCMAKE_UNITY_BUILD_BATCH_SIZE=7"
+              build: "gcc-9 Release unity"
             # Reporting mode
             - CMAKE_ADD: "-Dreporting=ON"
               CC: "clang-8"
               BUILD_TYPE: "Debug"
-              name: "Reporting, clang-8, debug"
+              build: "Reporting, clang-8, debug"
             # Coverage builds
             - CMAKE_ADD: "-Dcoverage=ON"
               CC: "gcc-8"
               BUILD_TYPE: "Debug"
               TARGET: coverage_report
               SKIP_TESTS: true
-              name: "Coverage, gcc-8"
+              build: "Coverage, gcc-8"
             - CMAKE_ADD: "-Dcoverage=ON"
               CC: "clang-8"
               BUILD_TYPE: "Debug"
               TARGET: coverage_report
               SKIP_TESTS: true
-              name: "Coverage, clang-8"
+              build: "Coverage, clang-8"
             # Manual tests
             - MANUAL_TESTS: true
               CC: "gcc-8"
               BUILD_TYPE: Debug
-              name: "Manual tests, gcc-8, debug"
+              build: "Manual tests, gcc-8, debug"
             - MANUAL_TESTS: true
               CC: "gcc-8"
               BUILD_TEST: "Release"
               CMAKE_ADD: "-Dassert=ON -Dunity=OFF"
-              name: "Manual tests, gcc-8, release"
+              build: "Manual tests, gcc-8, release"
             # asan
             - CMAKE_ADD: "-Dsan=address"
               CC: "clang-8"
               BUILD_TYPE: Release
               ASAN_OPTIONS: "print_stats=true:atexit=true"
               PARALLEL_TESTS: false
-              name: "asan, clang-8"
+              build: "asan, clang-8"
             # ubsan
             - CMAKE_ADD: "-Dsan=undefined"
               CC: "clang-8"
               BUILD_TYPE: Release
               UBSAN_OPTIONS: "print_stacktrace=1:report_error_type=1"
               PARALLEL_TESTS: false
-              name: "ubsan, clang-8"
+              build: "ubsan, clang-8"
             # tsan
             # current tsan failure *might* be related to:
             # https://github.com/google/sanitizers/issues/1104
             #  but we can't get it to run, so leave it disabled for now
             - CMAKE_ADD: "-Dsan=thread"
               CC: "clang-8"
-              name: "tsan, clang-8"
+              build: "tsan, clang-8"
               BUILD_TYPE: "Release"
               TSAN_OPTIONS: "history_size=3 external_symbolizer_path=/usr/bin/llvm-symbolizer verbosity=1"
               PARALLEL_TESTS: false
             # dynamic lib builds
             - CMAKE_ADD: "-Dstatic=OFF"
               CC: "gcc-8"
-              name: "non-static, gcc-8"
+              build: "non-static, gcc-8"
               BUILD_TYPE: Debug
             - CMAKE_ADD: "-Dstatic=OFF -DBUILD_SHARED_LIBS=ON"
               CC: "gcc-8"
-              name: "non-static + BUILD_SHARED_LIBS, gcc-8"
+              build: "non-static + BUILD_SHARED_LIBS, gcc-8"
               BUILD_TYPE: Debug
             # makefile
             - NINJA_BUILD: false
               CC: "gcc-8"
-              name: "makefile generator, gcc-8"
+              build: "makefile generator, gcc-8"
               BUILD_TYPE: Debug
             # verify build with min version of cmake
             - CMAKE_EXE: /opt/local/cmake-3.9/bin/cmake
               CC: "gcc-8"
-              name: "min cmake version"
+              build: "min cmake version"
               BUILD_TYPE: Debug
               SKIP_TESTS: true
             # validator keys project as subproj of rippled
             - TARGET: validator-keys
               CC: "gcc-8"
-              name: "validator-keys"
+              build: "validator-keys"
               BUILD_TYPE: Debug
               CMAKE_ADD: "-Dvalidator_keys=ON"
     # https://docs.github.com/en/free-pro-team@latest/actions/reference/workflow-syntax-for-github-actions#jobsjob_idcontinue-on-error
