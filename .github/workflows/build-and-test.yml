@@ -23,6 +23,7 @@ jobs:
       matrix:
         # Current travis: gcc-8 clang-8 gcc-9 clang-9
         # docker image has clang 7,8,9 & gcc 6,7,8,9
+        name: [ "" ]
         CC: [ "gcc-9", "clang-8" , "clang-9" , "gcc-8" ]
         BUILD_TYPE: [ Debug, Release ]
         unity: [ "unity=OFF", "unity=ON" ]
@@ -155,15 +156,15 @@ jobs:
           echo NUM_PROCESSORS is ${NUM_PROCESSORS}
           # Override environment variables that don't work smoothly
           # using env:
-          if [[ "${{ matrix.PARALLEL_TESTS }}" != "" ]]; then export PARALLEL_TESTS="${{ matrix.PARALLEL_TESTS }} ; fi
-          if [[ "${{ matrix.TARGET }}" != "" ]]; then export TARGET="${{ matrix.TARGET }} ; fi
-          if [[ "${{ matrix.SKIP_TESTS }}" != "" ]]; then export SKIP_TESTS="${{ matrix.SKIP_TESTS }} ; fi
-          if [[ "${{ matrix.MANUAL_TESTS }}" != "" ]]; then export MANUAL_TESTS="${{ matrix.MANUAL_TESTS }} ; fi
-          if [[ "${{ matrix.ASAN_OPTIONS }}" != "" ]]; then export ASAN_OPTIONS="${{ matrix.ASAN_OPTIONS }} ; fi
-          if [[ "${{ matrix.UBSAN_OPTIONS }}" != "" ]]; then export UBSAN_OPTIONS="${{ matrix.UBSAN_OPTIONS }} ; fi
-          if [[ "${{ matrix.TSAN_OPTIONS }}" != "" ]]; then export TSAN_OPTIONS="${{ matrix.TSAN_OPTIONS }} ; fi
-          if [[ "${{ matrix.NINJA_BUILD }}" != "" ]]; then export NINJA_BUILD="${{ matrix.NINJA_BUILD }} ; fi
-          if [[ "${{ matrix.CMAKE_EXE }}" != "" ]]; then export CMAKE_EXE="${{ matrix.CMAKE_EXE }} ; fi
+          if [[ "${{ matrix.PARALLEL_TESTS }}" != "" ]]; then export PARALLEL_TESTS="${{ matrix.PARALLEL_TESTS }}" ; fi
+          if [[ "${{ matrix.TARGET }}" != "" ]]; then export TARGET="${{ matrix.TARGET }}" ; fi
+          if [[ "${{ matrix.SKIP_TESTS }}" != "" ]]; then export SKIP_TESTS="${{ matrix.SKIP_TESTS }}" ; fi
+          if [[ "${{ matrix.MANUAL_TESTS }}" != "" ]]; then export MANUAL_TESTS="${{ matrix.MANUAL_TESTS }}" ; fi
+          if [[ "${{ matrix.ASAN_OPTIONS }}" != "" ]]; then export ASAN_OPTIONS="${{ matrix.ASAN_OPTIONS }}" ; fi
+          if [[ "${{ matrix.UBSAN_OPTIONS }}" != "" ]]; then export UBSAN_OPTIONS="${{ matrix.UBSAN_OPTIONS }}" ; fi
+          if [[ "${{ matrix.TSAN_OPTIONS }}" != "" ]]; then export TSAN_OPTIONS="${{ matrix.TSAN_OPTIONS }}" ; fi
+          if [[ "${{ matrix.NINJA_BUILD }}" != "" ]]; then export NINJA_BUILD="${{ matrix.NINJA_BUILD }}" ; fi
+          if [[ "${{ matrix.CMAKE_EXE }}" != "" ]]; then export CMAKE_EXE="${{ matrix.CMAKE_EXE }}" ; fi
           if [ "${CMAKE_ADD}" != "" ] ; then export CMAKE_EXTRA_ARGS="${CMAKE_EXTRA_ARGS} ${CMAKE_ADD}"; fi
           # Do the build
           bin/ci/ubuntu/build-and-test.sh
