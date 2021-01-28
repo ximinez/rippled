@@ -28,12 +28,12 @@ jobs:
         BUILD_TYPE: [ Debug, Release ]
         unity: [ "unity=OFF", "unity=ON" ]
         canfail: [ false ]
-        exclude:
+        #exclude:
         #    - CC: "clang-8"
         #    - CC: "clang-9"
         #    - CC: "gcc-8"
         #    - BUILD_TYPE: "Debug"
-             - build: ""
+        #    - build: ""
         include:
             # Special cases which add to or override the cases in the
             # matrix.
