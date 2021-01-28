@@ -23,113 +23,139 @@ jobs:
       matrix:
         # Current travis: gcc-8 clang-8 gcc-9 clang-9
         # docker image has clang 7,8,9 & gcc 6,7,8,9
-        BUILD: [ "matrix" ]
         CC: [ "gcc-9", "clang-8" , "clang-9" , "gcc-8" ]
         BUILD_TYPE: [ Debug, Release ]
         unity: [ "unity=OFF", "unity=ON" ]
         canfail: [ false ]
+        name: [ "base" ]
         #exclude:
         #    - CC: "clang-8"
         #    - CC: "clang-9"
         #    - CC: "gcc-8"
         #    - BUILD_TYPE: "Debug"
-        #    - BUILD: ""
+        #    - name: ""
         include:
             # Special cases which add to or override the cases in the
             # matrix.
             #
             # gcc-9 Release unity runs out of memory, so build smaller
             # unity files.
-            - CC: "gcc-9"
+            - name: "gcc-9 Release unity"
+              CC: "gcc-9"
               BUILD_TYPE: "Release"
-              unity: "unity=ON"
               CMAKE_ADD: "-DCMAKE_UNITY_BUILD_BATCH_SIZE=7"
-              BUILD: "gcc-9 Release unity"
+              unity: "unity=ON"
               canfail: false
-#            # Reporting mode
-#            - CMAKE_ADD: "-Dreporting=ON"
-#              CC: "clang-8"
-#              BUILD_TYPE: "Debug"
-#              BUILD: "Reporting, clang-8, debug"
-#            # Coverage builds
-#            - CMAKE_ADD: "-Dcoverage=ON"
-#              CC: "gcc-8"
-#              BUILD_TYPE: "Debug"
-#              TARGET: coverage_report
-#              SKIP_TESTS: true
-#              BUILD: "Coverage, gcc-8"
-#            - CMAKE_ADD: "-Dcoverage=ON"
-#              CC: "clang-8"
-#              BUILD_TYPE: "Debug"
-#              TARGET: coverage_report
-#              SKIP_TESTS: true
-#              BUILD: "Coverage, clang-8"
-#            # Manual tests
-#            - MANUAL_TESTS: true
-#              CC: "gcc-8"
-#              BUILD_TYPE: Debug
-#              BUILD: "Manual tests, gcc-8, debug"
-#            - MANUAL_TESTS: true
-#              CC: "gcc-8"
-#              BUILD_TEST: "Release"
-#              CMAKE_ADD: "-Dassert=ON -Dunity=OFF"
-#              BUILD: "Manual tests, gcc-8, release"
-#            # asan
-#            - CMAKE_ADD: "-Dsan=address"
-#              CC: "clang-8"
-#              BUILD_TYPE: Release
-#              ASAN_OPTIONS: "print_stats=true:atexit=true"
-#              PARALLEL_TESTS: false
-#              BUILD: "asan, clang-8"
-#            # ubsan
-#            - CMAKE_ADD: "-Dsan=undefined"
-#              CC: "clang-8"
-#              BUILD_TYPE: Release
-#              UBSAN_OPTIONS: "print_stacktrace=1:report_error_type=1"
-#              PARALLEL_TESTS: false
-#              BUILD: "ubsan, clang-8"
-#            # tsan
-#            # current tsan failure *might* be related to:
-#            # https://github.com/google/sanitizers/issues/1104
-#            #  but we can't get it to run, so leave it disabled for now
-#            - CMAKE_ADD: "-Dsan=thread"
-#              CC: "clang-8"
-#              BUILD: "tsan, clang-8"
-#              BUILD_TYPE: "Release"
-#              TSAN_OPTIONS: "history_size=3 external_symbolizer_path=/usr/bin/llvm-symbolizer verbosity=1"
-#              PARALLEL_TESTS: false
-#            # dynamic lib builds
-#            - CMAKE_ADD: "-Dstatic=OFF"
-#              CC: "gcc-8"
-#              BUILD: "non-static, gcc-8"
-#              BUILD_TYPE: Debug
-#            - CMAKE_ADD: "-Dstatic=OFF -DBUILD_SHARED_LIBS=ON"
-#              CC: "gcc-8"
-#              BUILD: "non-static + BUILD_SHARED_LIBS, gcc-8"
-#              BUILD_TYPE: Debug
-#            # makefile
-#            - NINJA_BUILD: false
-#              CC: "gcc-8"
-#              BUILD: "makefile generator, gcc-8"
-#              BUILD_TYPE: Debug
-#            # verify build with min version of cmake
-#            - CMAKE_EXE: /opt/local/cmake-3.9/bin/cmake
-#              CC: "gcc-8"
-#              BUILD: "min cmake version"
-#              BUILD_TYPE: Debug
-#              SKIP_TESTS: true
-#            # validator keys project as subproj of rippled
-#            - TARGET: validator-keys
-#              CC: "gcc-8"
-#              BUILD: "validator-keys"
-#              BUILD_TYPE: Debug
-#              CMAKE_ADD: "-Dvalidator_keys=ON"
+            # Reporting mode
+            - name: "Reporting, clang-8, debug"
+              CMAKE_ADD: "-Dreporting=ON"
+              CC: "clang-8"
+              BUILD_TYPE: "Debug"
+              unity: "unity=ON"
+              canfail: false
+            # Coverage builds
+            - name: "Coverage, gcc-8"
+              CMAKE_ADD: "-Dcoverage=ON"
+              CC: "gcc-8"
+              BUILD_TYPE: "Debug"
+              TARGET: coverage_report
+              SKIP_TESTS: true
+              unity: "unity=ON"
+              canfail: false
+            - name: "Coverage, clang-8"
+              CMAKE_ADD: "-Dcoverage=ON"
+              CC: "clang-8"
+              BUILD_TYPE: "Debug"
+              TARGET: coverage_report
+              SKIP_TESTS: true
+              unity: "unity=ON"
+              canfail: false
+            # Manual tests
+            - name: "Manual tests, gcc-8, debug"
+              MANUAL_TESTS: true
+              CC: "gcc-8"
+              BUILD_TYPE: Debug
+              unity: "unity=ON"
+              canfail: false
+            - name: "Manual tests, gcc-8, release"
+              MANUAL_TESTS: true
+              CC: "gcc-8"
+              BUILD_TEST: "Release"
+              CMAKE_ADD: "-Dassert=ON -Dunity=OFF"
+              unity: "unity=ON"
+              canfail: false
+            # asan
+            - name: "asan, clang-8"
+              ASAN_OPTIONS: "print_stats=true:atexit=true"
+              CMAKE_ADD: "-Dsan=address"
+              CC: "clang-8"
+              BUILD_TYPE: Release
+              PARALLEL_TESTS: false
+              unity: "unity=ON"
+              canfail: false
+            # ubsan
+            - name: "ubsan, clang-8"
+              UBSAN_OPTIONS: "print_stacktrace=1:report_error_type=1"
+              CMAKE_ADD: "-Dsan=undefined"
+              CC: "clang-8"
+              BUILD_TYPE: Release
+              PARALLEL_TESTS: false
+              unity: "unity=ON"
+              canfail: false
+            # tsan
+            # current tsan failure *might* be related to:
+            # https://github.com/google/sanitizers/issues/1104
+            #  but we can't get it to run, so leave it disabled for now
+            - name: "tsan, clang-8"
+              TSAN_OPTIONS: "history_size=3 external_symbolizer_path=/usr/bin/llvm-symbolizer verbosity=1"
+              CMAKE_ADD: "-Dsan=thread"
+              CC: "clang-8"
+              BUILD_TYPE: "Release"
+              PARALLEL_TESTS: false
+              unity: "unity=ON"
+              canfail: true
+            # dynamic lib builds
+            - name: "non-static, gcc-8"
+              CMAKE_ADD: "-Dstatic=OFF"
+              CC: "gcc-8"
+              BUILD_TYPE: Debug
+              unity: "unity=ON"
+              canfail: true
+            - name: "non-static + BUILD_SHARED_LIBS, gcc-8"
+              CMAKE_ADD: "-Dstatic=OFF -DBUILD_SHARED_LIBS=ON"
+              CC: "gcc-8"
+              BUILD_TYPE: Debug
+              unity: "unity=ON"
+              canfail: true
+            # makefile
+            - name: "makefile generator, gcc-8"
+              NINJA_BUILD: false
+              CC: "gcc-8"
+              BUILD_TYPE: Debug
+              unity: "unity=ON"
+              canfail: true
+            # verify build with min version of cmake
+            - name: "min cmake version"
+              CMAKE_EXE: /opt/local/cmake-3.9/bin/cmake
+              CC: "gcc-8"
+              BUILD_TYPE: Debug
+              SKIP_TESTS: true
+              unity: "unity=ON"
+              canfail: true
+            # validator keys project as subproj of rippled
+            - name: "validator-keys"
+              TARGET: validator-keys
+              CC: "gcc-8"
+              BUILD_TYPE: Debug
+              CMAKE_ADD: "-Dvalidator_keys=ON"
+              unity: "unity=ON"
+              canfail: true
     # https://docs.github.com/en/free-pro-team@latest/actions/reference/workflow-syntax-for-github-actions#jobsjob_idcontinue-on-error
     continue-on-error: ${{ matrix.canfail }}
     container:
       image: "rippleci/rippled-ci-builder:2020-01-08"
     env:
-      BUILD: ${{ matrix.BUILD }}
+      name: ${{ matrix.name }}
       CC: ${{ matrix.CC }}
       BUILD_TYPE: ${{ matrix.BUILD_TYPE }}
       CMAKE_ADD: "-D${{ matrix.unity }} ${{ matrix.CMAKE_ADD }}"
@@ -142,7 +168,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ${{ env.CACHE_DIR }}
-          key:  ${{ runner.os }}-build-${{ hashfiles('**/CMakeFiles.txt', '**/Builds/CMake/*', '**/Builds/CMake/deps/*') }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.UNITY }}
+          key:  ${{ runner.os }}-build-${{ hashfiles('**/CMakeFiles.txt', '**/Builds/CMake/*', '**/Builds/CMake/deps/*') }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.UNITY }}-${{ matrix.name }}
           restore-keys: |
             ${{ runner.os }}-build-${{ hashfiles('**/CMakeFiles.txt', '**/Builds/CMake/*', '**/Builds/CMake/deps/*') }}
       - name: Dump-environment
