@@ -44,7 +44,7 @@ jobs:
               BUILD_TYPE: "Release"
               unity: "unity=ON"
               CMAKE_ADD: "-DCMAKE_UNITY_BUILD_BATCH_SIZE=7"
-#              BUILD: "gcc-9 Release unity"
+              BUILD: "gcc-9 Release unity"
 #            # Reporting mode
 #            - CMAKE_ADD: "-Dreporting=ON"
 #              CC: "clang-8"
