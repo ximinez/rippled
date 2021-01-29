@@ -193,16 +193,29 @@ jobs:
           env
           set | grep =
       - name: Clean up space
+        shell: bash
         run: |
           time df -h
-          time du -sh ${{ env.CACHE_DIR }} build
+          for dir in ${{ env.CACHE_DIR }} build
+          do
+            if [[ -e "${dir}" ]]
+            then
+                time du -sh "${dir}"
+            fi
+          done
           # sudo swapoff -a
           # sudo rm -f /swapfile
           sudo apt clean
           docker rm $(docker ps -q -f 'status=exited')
           docker rmi $(docker images -q -f "dangling=true")
           time df -h
-          time du -sh ${{ env.CACHE_DIR }} build
+          for dir in ${{ env.CACHE_DIR }} build
+          do
+            if [[ -e "${dir}" ]]
+            then
+                time du -sh "${dir}"
+            fi
+          done
       - name: ccache stats before
         run: ccache -s
       - name: Build and test
@@ -233,7 +246,13 @@ jobs:
         shell: bash
         run: |
           time df -h
-          time du -sh ${{ env.CACHE_DIR }} ${{ env.NIH_CACHE_ROOT }} ${{ env.CCACHE_DIR }} build
+          for dir in ${{ env.CACHE_DIR }} ${{ env.NIH_CACHE_ROOT }} ${{ env.CCACHE_DIR }} build
+          do
+            if [[ -e "${dir}" ]]
+            then
+                time du -sh "${dir}"
+            fi
+          done
           if [ -e build ] ; then find build \( -name CMakeOutput.log -o -name CMakeError.log \) -ls -exec cat {} \; ; fi
       - name: Debug output artifacts
         if: always()
@@ -293,16 +312,29 @@ jobs:
           env
           set | grep =
       - name: Clean up space
+        shell: bash
         run: |
           time df -h
-          time du -sh ${{ env.CACHE_DIR }} build
+          for dir in ${{ env.CACHE_DIR }} build
+          do
+            if [[ -e "${dir}" ]]
+            then
+                time du -sh "${dir}"
+            fi
+          done
           # sudo swapoff -a
           # sudo rm -f /swapfile
           sudo apt clean
           docker rm $(docker ps -q -f 'status=exited')
           docker rmi $(docker images -q -f "dangling=true")
           time df -h
-          time du -sh ${{ env.CACHE_DIR }} build
+          for dir in ${{ env.CACHE_DIR }} build
+          do
+            if [[ -e "${dir}" ]]
+            then
+                time du -sh "${dir}"
+            fi
+          done
       - name: ccache install and stats before
         run: |
           apt install ccache
@@ -343,7 +375,13 @@ jobs:
         shell: bash
         run: |
           time df -h
-          time du -sh ${{ env.CACHE_DIR }} build
+          for dir in ${{ env.CACHE_DIR }} ${{ env.NIH_CACHE_ROOT }} ${{ env.CCACHE_DIR }} build
+          do
+            if [[ -e "${dir}" ]]
+            then
+                time du -sh "${dir}"
+            fi
+          done
           if [ -e build ] ; then find build \( -name CMakeOutput.log -o -name CMakeError.log \) -ls -exec cat {} \; ; fi
       - name: Debug output artifacts
         if: always()
