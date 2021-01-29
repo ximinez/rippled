@@ -13,6 +13,65 @@ env:
   CCACHE_DIR: ${{ github.workspace }}/_cache/ccache
 
 jobs:
+  linux-cache:
+    name: Initialize linux cache
+    runs-on: ubuntu-18.04
+    timeout-minutes: 720
+    container:
+      image: "rippleci/rippled-ci-builder:2020-01-08"
+    env:
+      # These options are chosen arbitrarily
+      CC: "clang-8"
+      BUILD_TYPE: "Debug"
+      CMAKE_EXTRA_ARGS: "-Dwerr=ON -Dwextra=ON -Dunity=ON"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: cache
+        continue-on-error: true
+        uses: actions/cache@v2
+        with:
+          path: ${{ env.CACHE_DIR }}
+          key:  ${{ runner.os }}-build-${{ hashfiles('**/CMakeFiles.txt', '**/Builds/CMake/*', '**/Builds/CMake/deps/*') }}
+      - name: CMake
+        shell: bash
+        run: |
+          export CXX=${CC/gcc/g++}
+          export CXX=${CXX/clang/clang++}
+          cmake --version
+          ${CC} --version
+          ${CXX} --version
+          dir="build/$( basename ${CXX} ).${BUILD_TYPE}"
+          mkdir "${dir}"
+          cd "${dir}"
+          cmake -DCMAKE_BUILD_TYPE=${BUILD_TYPE} ${CMAKE_EXTRA_ARGS} ../..
+      - name: Debug output
+        if: always()
+        shell: bash
+        continue-on-error: true
+        run: |
+          time df -h
+          for dir in ${{ env.CACHE_DIR }} ${{ env.NIH_CACHE_ROOT }} ${{ env.CCACHE_DIR }} build
+          do
+            if [[ -e "${dir}" ]]
+            then
+                time du -sh "${dir}"
+            else
+                find -name $( basename "${dir}" ) -type d -print -exec du -sh {} \; || \
+                echo "Not found: ${dir}"
+            fi
+          done
+          if [ -e build ] ; then find build \( -name CMakeOutput.log -o -name CMakeError.log \) -ls -exec cat {} \; ; fi
+      - name: Debug output artifacts
+        if: always()
+        uses: actions/upload-artifact@v2
+        continue-on-error: true
+        with:
+          name: debug-output
+          retention-days: 7
+          path: |
+            build/**/CMakeOutput.log
+            build/**/CMakeError.log
   linux1:
     name: Linux 1
     runs-on: ubuntu-18.04
@@ -203,7 +262,7 @@ jobs:
                 time du -sh "${dir}"
             else
                 find -name $( basename "${dir}" ) -type d -print -exec du -sh {} \; || \
-                echo "Not found: ${dir}
+                echo "Not found: ${dir}"
             fi
           done
           # swapoff -a
@@ -225,7 +284,7 @@ jobs:
                 time du -sh "${dir}"
             else
                 find -name $( basename "${dir}" ) -type d -print -exec du -sh {} \; || \
-                echo "Not found: ${dir}
+                echo "Not found: ${dir}"
             fi
           done
       - name: ccache stats before
@@ -256,6 +315,7 @@ jobs:
       - name: Debug output
         if: always()
         shell: bash
+        continue-on-error: true
         run: |
           time df -h
           for dir in ${{ env.CACHE_DIR }} ${{ env.NIH_CACHE_ROOT }} ${{ env.CCACHE_DIR }} build
@@ -265,7 +325,7 @@ jobs:
                 time du -sh "${dir}"
             else
                 find -name $( basename "${dir}" ) -type d -print -exec du -sh {} \; || \
-                echo "Not found: ${dir}
+                echo "Not found: ${dir}"
             fi
           done
           if [ -e build ] ; then find build \( -name CMakeOutput.log -o -name CMakeError.log \) -ls -exec cat {} \; ; fi
@@ -338,7 +398,7 @@ jobs:
                 time du -sh "${dir}"
             else
                 find -name $( basename "${dir}" ) -type d -print -exec du -sh {} \; || \
-                echo "Not found: ${dir}
+                echo "Not found: ${dir}"
             fi
           done
           # swapoff -a
@@ -360,7 +420,7 @@ jobs:
                 time du -sh "${dir}"
             else
                 find -name $( basename "${dir}" ) -type d -print -exec du -sh {} \; || \
-                echo "Not found: ${dir}
+                echo "Not found: ${dir}"
             fi
           done
       - name: ccache install and stats before
@@ -401,6 +461,7 @@ jobs:
       - name: Debug output
         if: always()
         shell: bash
+        continue-on-error: true
         run: |
           time df -h
           for dir in ${{ env.CACHE_DIR }} ${{ env.NIH_CACHE_ROOT }} ${{ env.CCACHE_DIR }} build
@@ -410,7 +471,7 @@ jobs:
                 time du -sh "${dir}"
             else
                 find -name $( basename "${dir}" ) -type d -print -exec du -sh {} \; || \
-                echo "Not found: ${dir}
+                echo "Not found: ${dir}"
             fi
           done
           if [ -e build ] ; then find build \( -name CMakeOutput.log -o -name CMakeError.log \) -ls -exec cat {} \; ; fi
