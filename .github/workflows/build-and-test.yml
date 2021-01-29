@@ -202,6 +202,7 @@ jobs:
             then
                 time du -sh "${dir}"
             else
+                find -name $( basename "${dir}" ) -type d -print -exec du -sh {} \; || \
                 echo "Not found: ${dir}
             fi
           done
@@ -223,6 +224,7 @@ jobs:
             then
                 time du -sh "${dir}"
             else
+                find -name $( basename "${dir}" ) -type d -print -exec du -sh {} \; || \
                 echo "Not found: ${dir}
             fi
           done
@@ -262,6 +264,7 @@ jobs:
             then
                 time du -sh "${dir}"
             else
+                find -name $( basename "${dir}" ) -type d -print -exec du -sh {} \; || \
                 echo "Not found: ${dir}
             fi
           done
@@ -334,6 +337,7 @@ jobs:
             then
                 time du -sh "${dir}"
             else
+                find -name $( basename "${dir}" ) -type d -print -exec du -sh {} \; || \
                 echo "Not found: ${dir}
             fi
           done
@@ -355,6 +359,7 @@ jobs:
             then
                 time du -sh "${dir}"
             else
+                find -name $( basename "${dir}" ) -type d -print -exec du -sh {} \; || \
                 echo "Not found: ${dir}
             fi
           done
@@ -404,6 +409,7 @@ jobs:
             then
                 time du -sh "${dir}"
             else
+                find -name $( basename "${dir}" ) -type d -print -exec du -sh {} \; || \
                 echo "Not found: ${dir}
             fi
           done
