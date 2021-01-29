@@ -42,7 +42,7 @@ jobs:
           ${CC} --version
           ${CXX} --version
           dir="build/$( basename ${CXX} ).${BUILD_TYPE}"
-          mkdir "${dir}"
+          mkdir -p "${dir}"
           cd "${dir}"
           cmake -DCMAKE_BUILD_TYPE=${BUILD_TYPE} ${CMAKE_EXTRA_ARGS} ../..
       - name: Debug output
