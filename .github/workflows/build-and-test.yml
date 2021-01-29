@@ -205,9 +205,15 @@ jobs:
           done
           # swapoff -a
           # rm -f /swapfile
-          apt clean
-          docker rm $(docker ps -q -f 'status=exited')
-          docker rmi $(docker images -q -f "dangling=true")
+          if type -a apt
+          then
+            apt clean
+          fi
+          if type -a docker
+          then
+            docker rm $(docker ps -q -f 'status=exited')
+            docker rmi $(docker images -q -f "dangling=true")
+          fi
           time df -h
           for dir in ${{ env.CACHE_DIR }} build
           do
@@ -324,9 +330,15 @@ jobs:
           done
           # swapoff -a
           # rm -f /swapfile
-          apt clean
-          docker rm $(docker ps -q -f 'status=exited')
-          docker rmi $(docker images -q -f "dangling=true")
+          if type -a apt
+          then
+            apt clean
+          fi
+          if type -a docker
+          then
+            docker rm $(docker ps -q -f 'status=exited')
+            docker rmi $(docker images -q -f "dangling=true")
+          fi
           time df -h
           for dir in ${{ env.CACHE_DIR }} build
           do
