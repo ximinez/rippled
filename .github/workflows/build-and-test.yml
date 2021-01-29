@@ -74,6 +74,7 @@ jobs:
             build/**/CMakeError.log
   linux1:
     name: Linux 1
+    needs: linux-cache
     runs-on: ubuntu-18.04
     timeout-minutes: 720
     # if: commit_message !~ /travis_run_/ OR commit_message =~ /travis_run_linux/
@@ -350,6 +351,7 @@ jobs:
             build/**/rippled
   linux2:
     name: Linux 2
+    needs: linux-cache
     runs-on: ubuntu-18.04
     timeout-minutes: 720
     # if: commit_message !~ /travis_run_/ OR commit_message =~ /travis_run_linux/
