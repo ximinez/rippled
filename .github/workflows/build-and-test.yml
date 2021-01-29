@@ -27,7 +27,7 @@ jobs:
         BUILD_TYPE: [ Debug, Release ]
         unity: [ "unity=OFF", "unity=ON" ]
         canfail: [ false ]
-        name: [ "base" ]
+        name: [ "" ]
         #exclude:
         #    - CC: "clang-8"
         #    - CC: "clang-9"
@@ -38,6 +38,9 @@ jobs:
             # Special cases which add to or override the cases in the
             # matrix.
             #
+            # Note that "name" is used in the cache key, which cannot
+            # contain commas (',').
+            #
             # gcc-9 Release unity runs out of memory, so build smaller
             # unity files.
             - CC: "gcc-9"
@@ -45,16 +48,16 @@ jobs:
               CMAKE_ADD: "-DCMAKE_UNITY_BUILD_BATCH_SIZE=7"
               unity: "unity=ON"
               canfail: false
-              name: "base"
+              name: ""
             # Reporting mode
-            - name: "Reporting, clang-8, debug"
+            - name: "Reporting clang-8 debug"
               CMAKE_ADD: "-Dreporting=ON"
               CC: "clang-8"
               BUILD_TYPE: "Debug"
               unity: "unity=ON"
               canfail: false
             # Coverage builds
-            - name: "Coverage, gcc-8"
+            - name: "Coverage gcc-8"
               CMAKE_ADD: "-Dcoverage=ON"
               CC: "gcc-8"
               BUILD_TYPE: "Debug"
@@ -62,7 +65,7 @@ jobs:
               SKIP_TESTS: true
               unity: "unity=ON"
               canfail: false
-            - name: "Coverage, clang-8"
+            - name: "Coverage clang-8"
               CMAKE_ADD: "-Dcoverage=ON"
               CC: "clang-8"
               BUILD_TYPE: "Debug"
@@ -71,13 +74,13 @@ jobs:
               unity: "unity=ON"
               canfail: false
             # Manual tests
-            - name: "Manual tests, gcc-8, debug"
+            - name: "Manual tests gcc-8 debug"
               MANUAL_TESTS: true
               CC: "gcc-8"
               BUILD_TYPE: Debug
               unity: "unity=ON"
               canfail: false
-            - name: "Manual tests, gcc-8, release"
+            - name: "Manual tests gcc-8 release"
               MANUAL_TESTS: true
               CC: "gcc-8"
               BUILD_TEST: "Release"
@@ -85,7 +88,7 @@ jobs:
               unity: "unity=ON"
               canfail: false
             # asan
-            - name: "asan, clang-8"
+            - name: "asan clang-8"
               ASAN_OPTIONS: "print_stats=true:atexit=true"
               CMAKE_ADD: "-Dsan=address"
               CC: "clang-8"
@@ -94,7 +97,7 @@ jobs:
               unity: "unity=ON"
               canfail: false
             # ubsan
-            - name: "ubsan, clang-8"
+            - name: "ubsan clang-8"
               UBSAN_OPTIONS: "print_stacktrace=1:report_error_type=1"
               CMAKE_ADD: "-Dsan=undefined"
               CC: "clang-8"
@@ -106,7 +109,7 @@ jobs:
             # current tsan failure *might* be related to:
             # https://github.com/google/sanitizers/issues/1104
             #  but we can't get it to run, so leave it disabled for now
-            - name: "tsan, clang-8"
+            - name: "tsan clang-8"
               TSAN_OPTIONS: "history_size=3 external_symbolizer_path=/usr/bin/llvm-symbolizer verbosity=1"
               CMAKE_ADD: "-Dsan=thread"
               CC: "clang-8"
@@ -115,20 +118,20 @@ jobs:
               unity: "unity=ON"
               canfail: true
             # dynamic lib builds
-            - name: "non-static, gcc-8"
+            - name: "non-static gcc-8"
               CMAKE_ADD: "-Dstatic=OFF"
               CC: "gcc-8"
               BUILD_TYPE: Debug
               unity: "unity=ON"
               canfail: true
-            - name: "non-static + BUILD_SHARED_LIBS, gcc-8"
+            - name: "non-static BUILD_SHARED_LIBS gcc-8"
               CMAKE_ADD: "-Dstatic=OFF -DBUILD_SHARED_LIBS=ON"
               CC: "gcc-8"
               BUILD_TYPE: Debug
               unity: "unity=ON"
               canfail: true
             # makefile
-            - name: "makefile generator, gcc-8"
+            - name: "makefile generator gcc-8"
               NINJA_BUILD: false
               CC: "gcc-8"
               BUILD_TYPE: Debug
