@@ -203,9 +203,9 @@ jobs:
                 time du -sh "${dir}"
             fi
           done
-          # sudo swapoff -a
-          # sudo rm -f /swapfile
-          sudo apt clean
+          # swapoff -a
+          # rm -f /swapfile
+          apt clean
           docker rm $(docker ps -q -f 'status=exited')
           docker rmi $(docker images -q -f "dangling=true")
           time df -h
@@ -322,9 +322,9 @@ jobs:
                 time du -sh "${dir}"
             fi
           done
-          # sudo swapoff -a
-          # sudo rm -f /swapfile
-          sudo apt clean
+          # swapoff -a
+          # rm -f /swapfile
+          apt clean
           docker rm $(docker ps -q -f 'status=exited')
           docker rmi $(docker images -q -f "dangling=true")
           time df -h
