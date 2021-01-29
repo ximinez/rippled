@@ -302,7 +302,7 @@ jobs:
           done
       - name: ccache install and stats before
         run: |
-          if \! type -a ccache
+          if ! type -a ccache
           then
             apt install ccache
           fi
@@ -358,7 +358,7 @@ jobs:
             build/**/CMakeOutput.log
             build/**/CMakeError.log
       - name: rippled executable artifact
-        if: always()
+        if: ${{ matrix.TARGET }} != "validator-keys"
         uses: actions/upload-artifact@v2
         continue-on-error: true
         with:
@@ -366,3 +366,12 @@ jobs:
           retention-days: 7
           path: |
             build/**/rippled
+      - name: validator-keys executable artifact
+        if: ${{ matrix.TARGET }} == "validator-keys"
+        uses: actions/upload-artifact@v2
+        continue-on-error: true
+        with:
+          name: validator-keys
+          retention-days: 7
+          path: |
+            build/**/validator-keys
