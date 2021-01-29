@@ -201,6 +201,8 @@ jobs:
             if [[ -e "${dir}" ]]
             then
                 time du -sh "${dir}"
+            else
+                echo "Not found: ${dir}
             fi
           done
           # swapoff -a
@@ -220,6 +222,8 @@ jobs:
             if [[ -e "${dir}" ]]
             then
                 time du -sh "${dir}"
+            else
+                echo "Not found: ${dir}
             fi
           done
       - name: ccache stats before
@@ -257,22 +261,25 @@ jobs:
             if [[ -e "${dir}" ]]
             then
                 time du -sh "${dir}"
+            else
+                echo "Not found: ${dir}
             fi
           done
           if [ -e build ] ; then find build \( -name CMakeOutput.log -o -name CMakeError.log \) -ls -exec cat {} \; ; fi
       - name: Debug output artifacts
         if: always()
         uses: actions/upload-artifact@v2
+        continue-on-error: true
         with:
           name: debug-output
           retention-days: 7
           path: |
-            build/CMakeOutput.log
-            build/CMakeError.log
-            manifest.txt
+            build/**/CMakeOutput.log
+            build/**/CMakeError.log
       - name: rippled executable artifact
         if: always()
         uses: actions/upload-artifact@v2
+        continue-on-error: true
         with:
           name: rippled
           retention-days: 7
@@ -326,6 +333,8 @@ jobs:
             if [[ -e "${dir}" ]]
             then
                 time du -sh "${dir}"
+            else
+                echo "Not found: ${dir}
             fi
           done
           # swapoff -a
@@ -345,6 +354,8 @@ jobs:
             if [[ -e "${dir}" ]]
             then
                 time du -sh "${dir}"
+            else
+                echo "Not found: ${dir}
             fi
           done
       - name: ccache install and stats before
@@ -392,22 +403,25 @@ jobs:
             if [[ -e "${dir}" ]]
             then
                 time du -sh "${dir}"
+            else
+                echo "Not found: ${dir}
             fi
           done
           if [ -e build ] ; then find build \( -name CMakeOutput.log -o -name CMakeError.log \) -ls -exec cat {} \; ; fi
       - name: Debug output artifacts
         if: always()
         uses: actions/upload-artifact@v2
+        continue-on-error: true
         with:
           name: debug-output
           retention-days: 7
           path: |
-            build/CMakeOutput.log
-            build/CMakeError.log
-            manifest.txt
+            build/**/CMakeOutput.log
+            build/**/CMakeError.log
       - name: rippled executable artifact
         if: always()
         uses: actions/upload-artifact@v2
+        continue-on-error: true
         with:
           name: rippled
           retention-days: 7
