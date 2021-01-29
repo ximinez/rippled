@@ -72,8 +72,8 @@ jobs:
           path: |
             build/**/CMakeOutput.log
             build/**/CMakeError.log
-  linux1:
-    name: Linux 1
+  linux:
+    name: Linux
     needs: linux-cache
     runs-on: ubuntu-18.04
     timeout-minutes: 720
@@ -83,18 +83,26 @@ jobs:
       matrix:
         # Current travis: gcc-8 clang-8 gcc-9 clang-9
         # docker image has clang 7,8,9 & gcc 6,7,8,9
-        CC: [ "gcc-9", "clang-8" , "clang-9" , "gcc-8" ]
+        CC: [ "gcc-8", "gcc-9", "clang-8", "clang-9", "clang-10" ]
         BUILD_TYPE: [ Debug, Release ]
         unity: [ "unity=OFF", "unity=ON" ]
         canfail: [ false ]
-        image: [ "rippleci/rippled-ci-builder:2020-01-08" ]
+        image: [ "rippleci/rippled-ci-builder:2020-01-08", "rippleci/rippled-ci-builder:2944b78d22db" ]
         name: [ "" ]
-        #exclude:
-        #    - CC: "clang-8"
-        #    - CC: "clang-9"
-        #    - CC: "gcc-8"
-        #    - BUILD_TYPE: "Debug"
-        #    - name: ""
+        exclude:
+            # The 2020-01-08 image doesn't have clang-10
+            - image: "rippleci/rippled-ci-builder:2020-01-08"
+              CC: "clang-10"
+            # The 2020-01-08 image has the other compilers, so
+            # don't build on the other one
+            - image: "rippleci/rippled-ci-builder:2944b78d22db"
+              CC: "gcc-8"
+            - image: "rippleci/rippled-ci-builder:2944b78d22db"
+              CC: "gcc-9"
+            - image: "rippleci/rippled-ci-builder:2944b78d22db"
+              CC: "clang-8"
+            - image: "rippleci/rippled-ci-builder:2944b78d22db"
+              CC: "clang-9"
         include:
             # Special cases which add to or override the cases in the
             # matrix.
@@ -102,6 +110,9 @@ jobs:
             # Note that "name" is used in the cache key, which cannot
             # contain commas (',').
             #
+            # The builds with the 2944b78d22db image need a boost extra
+            - image: "rippleci/rippled-ci-builder:2944b78d22db"
+              CMAKE_ADD: "-DBoost_NO_BOOST_CMAKE=ON"
             # gcc-9 Release unity runs out of memory, so build smaller
             # unity files.
             - CC: "gcc-9"
@@ -289,8 +300,13 @@ jobs:
                 echo "Not found: ${dir}"
             fi
           done
-      - name: ccache stats before
-        run: ccache -s
+      - name: ccache install and stats before
+        run: |
+          if \! type -a ccache
+          then
+            apt install ccache
+          fi
+          ccache -s
       - name: Build and test
         shell: bash
         run: |
@@ -311,154 +327,6 @@ jobs:
           if [[ "${{ matrix.CMAKE_EXE }}" != "" ]]; then export CMAKE_EXE="${{ matrix.CMAKE_EXE }}" ; fi
           if [ "${CMAKE_ADD}" != "" ] ; then export CMAKE_EXTRA_ARGS="${CMAKE_EXTRA_ARGS} ${CMAKE_ADD}"; fi
           # Do the build
-          bin/ci/ubuntu/build-and-test.sh
-      - name: ccache stats after
-        run: ccache -s
-      - name: Debug output
-        if: always()
-        shell: bash
-        continue-on-error: true
-        run: |
-          time df -h
-          for dir in ${{ env.CACHE_DIR }} ${{ env.NIH_CACHE_ROOT }} ${{ env.CCACHE_DIR }} build
-          do
-            if [[ -e "${dir}" ]]
-            then
-                time du -sh "${dir}"
-            else
-                find -name $( basename "${dir}" ) -type d -print -exec du -sh {} \; || \
-                echo "Not found: ${dir}"
-            fi
-          done
-          if [ -e build ] ; then find build \( -name CMakeOutput.log -o -name CMakeError.log \) -ls -exec cat {} \; ; fi
-      - name: Debug output artifacts
-        if: always()
-        uses: actions/upload-artifact@v2
-        continue-on-error: true
-        with:
-          name: debug-output
-          retention-days: 7
-          path: |
-            build/**/CMakeOutput.log
-            build/**/CMakeError.log
-      - name: rippled executable artifact
-        if: always()
-        uses: actions/upload-artifact@v2
-        continue-on-error: true
-        with:
-          name: rippled
-          retention-days: 7
-          path: |
-            build/**/rippled
-  linux2:
-    name: Linux 2
-    needs: linux-cache
-    runs-on: ubuntu-18.04
-    timeout-minutes: 720
-    # if: commit_message !~ /travis_run_/ OR commit_message =~ /travis_run_linux/
-    strategy:
-      fail-fast: false
-      matrix:
-        # Current travis: gcc-8 clang-8 gcc-9 clang-9
-        # docker image has clang 10 & gcc 7,8
-        CC: [ "gcc-8", "clang-10" ]
-        BUILD_TYPE: [ Debug, Release ]
-        unity: [ "unity=OFF", "unity=ON" ]
-        canfail: [ false ]
-        #exclude:
-        #  - CC: "clang-10"
-    # https://docs.github.com/en/free-pro-team@latest/actions/reference/workflow-syntax-for-github-actions#jobsjob_idcontinue-on-error
-    continue-on-error: ${{ matrix.canfail }}
-    container:
-      image: "rippleci/rippled-ci-builder:2944b78d22db"
-    env:
-      CC: ${{ matrix.CC }}
-      BUILD_TYPE: ${{ matrix.BUILD_TYPE }}
-      CMAKE_ADD: "-D${{ matrix.unity }} -DBoost_NO_BOOST_CMAKE=ON ${{ matrix.CMAKE_ADD }}"
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-      - name: cache
-        continue-on-error: true
-        uses: actions/cache@v2
-        with:
-          path: ${{ env.CACHE_DIR }}
-          key:  ${{ runner.os }}-build-${{ hashfiles('**/CMakeFiles.txt', '**/Builds/CMake/*', '**/Builds/CMake/deps/*') }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.UNITY }}
-          restore-keys: |
-            ${{ runner.os }}-build-${{ hashfiles('**/CMakeFiles.txt', '**/Builds/CMake/*', '**/Builds/CMake/deps/*') }}-src
-            ${{ runner.os }}-build-${{ hashfiles('**/CMakeFiles.txt', '**/Builds/CMake/*', '**/Builds/CMake/deps/*') }}
-      - name: Dump-environment
-        run: |
-          env
-          set | grep =
-      - name: Clean up space
-        shell: bash
-        run: |
-          time df -h
-          for dir in ${{ env.CACHE_DIR }} build
-          do
-            if [[ -e "${dir}" ]]
-            then
-                time du -sh "${dir}"
-            else
-                find -name $( basename "${dir}" ) -type d -print -exec du -sh {} \; || \
-                echo "Not found: ${dir}"
-            fi
-          done
-          # swapoff -a
-          # rm -f /swapfile
-          if type -a apt
-          then
-            apt clean
-          fi
-          if type -a docker
-          then
-            docker rm $(docker ps -q -f 'status=exited')
-            docker rmi $(docker images -q -f "dangling=true")
-          fi
-          time df -h
-          for dir in ${{ env.CACHE_DIR }} build
-          do
-            if [[ -e "${dir}" ]]
-            then
-                time du -sh "${dir}"
-            else
-                find -name $( basename "${dir}" ) -type d -print -exec du -sh {} \; || \
-                echo "Not found: ${dir}"
-            fi
-          done
-      - name: ccache install and stats before
-        run: |
-          apt install ccache
-          ccache -s
-#      - name: Configure
-#        shell: bash
-#        run: |
-#          export CXX=${CC/gcc/g++}
-#          export CXX=${CXX/clang/clang++}
-#          if [ "${CMAKE_ADD}" != "" ] ; then export CMAKE_EXTRA_ARGS="${CMAKE_EXTRA_ARGS} ${CMAKE_ADD}"; fi
-#          cmake --version
-#          ${CC} --version
-#          ${CXX} --version
-#          mkdir build
-#          cd build
-#          cmake -DCMAKE_BUILD_TYPE=${BUILD_TYPE} ${CMAKE_EXTRA_ARGS} ..
-#      - name: Build rippled
-#        run: |
-#          echo Building with $( nproc ) jobs
-#          cmake --build build --target rippled --config ${{ env.BUILD_TYPE }} -j $( nproc )
-#      - name: Run tests
-#        run: |
-#          echo Running $( nproc ) parallel tests
-#          build/rippled --unittest --unittest-jobs=$( nproc ) --quiet --unittest-log
-      - name: Build and test
-        shell: bash
-        run: |
-          export CXX=${CC/gcc/g++}
-          export CXX=${CXX/clang/clang++}
-          export NUM_PROCESSORS=${NUM_PROCESSORS:-$( nproc )}
-          echo NUM_PROCESSORS is ${NUM_PROCESSORS}
-          if [ "${CMAKE_ADD}" != "" ] ; then export CMAKE_EXTRA_ARGS="${CMAKE_EXTRA_ARGS} ${CMAKE_ADD}"; fi
           bin/ci/ubuntu/build-and-test.sh
       - name: ccache stats after
         run: ccache -s
