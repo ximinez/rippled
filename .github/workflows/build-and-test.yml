@@ -27,6 +27,7 @@ jobs:
         BUILD_TYPE: [ Debug, Release ]
         unity: [ "unity=OFF", "unity=ON" ]
         canfail: [ false ]
+        image: [ "rippleci/rippled-ci-builder:2020-01-08" ]
         name: [ "" ]
         #exclude:
         #    - CC: "clang-8"
@@ -48,6 +49,7 @@ jobs:
               CMAKE_ADD: "-DCMAKE_UNITY_BUILD_BATCH_SIZE=7"
               unity: "unity=ON"
               canfail: false
+              image: "rippleci/rippled-ci-builder:2020-01-08"
               name: ""
             # Reporting mode
             - name: "Reporting clang-8 debug"
@@ -55,6 +57,7 @@ jobs:
               CC: "clang-8"
               BUILD_TYPE: "Debug"
               unity: "unity=ON"
+              image: "rippleci/rippled-ci-builder:2020-01-08"
               canfail: false
             # Coverage builds
             - name: "Coverage gcc-8"
@@ -64,6 +67,7 @@ jobs:
               TARGET: coverage_report
               SKIP_TESTS: true
               unity: "unity=ON"
+              image: "rippleci/rippled-ci-builder:2020-01-08"
               canfail: false
             - name: "Coverage clang-8"
               CMAKE_ADD: "-Dcoverage=ON"
@@ -72,6 +76,7 @@ jobs:
               TARGET: coverage_report
               SKIP_TESTS: true
               unity: "unity=ON"
+              image: "rippleci/rippled-ci-builder:2020-01-08"
               canfail: false
             # Manual tests
             - name: "Manual tests gcc-8 debug"
@@ -79,6 +84,7 @@ jobs:
               CC: "gcc-8"
               BUILD_TYPE: Debug
               unity: "unity=ON"
+              image: "rippleci/rippled-ci-builder:2020-01-08"
               canfail: false
             - name: "Manual tests gcc-8 release"
               MANUAL_TESTS: true
@@ -86,6 +92,7 @@ jobs:
               BUILD_TEST: "Release"
               CMAKE_ADD: "-Dassert=ON -Dunity=OFF"
               unity: "unity=ON"
+              image: "rippleci/rippled-ci-builder:2020-01-08"
               canfail: false
             # asan
             - name: "asan clang-8"
@@ -95,6 +102,7 @@ jobs:
               BUILD_TYPE: Release
               PARALLEL_TESTS: false
               unity: "unity=ON"
+              image: "rippleci/rippled-ci-builder:2020-01-08"
               canfail: false
             # ubsan
             - name: "ubsan clang-8"
@@ -104,6 +112,7 @@ jobs:
               BUILD_TYPE: Release
               PARALLEL_TESTS: false
               unity: "unity=ON"
+              image: "rippleci/rippled-ci-builder:2020-01-08"
               canfail: false
             # tsan
             # current tsan failure *might* be related to:
@@ -117,18 +126,21 @@ jobs:
               PARALLEL_TESTS: false
               unity: "unity=ON"
               canfail: true
+              image: "rippleci/rippled-ci-builder:2020-01-08"
             # dynamic lib builds
             - name: "non-static gcc-8"
               CMAKE_ADD: "-Dstatic=OFF"
               CC: "gcc-8"
               BUILD_TYPE: Debug
               unity: "unity=ON"
+              image: "rippleci/rippled-ci-builder:2020-01-08"
               canfail: true
             - name: "non-static BUILD_SHARED_LIBS gcc-8"
               CMAKE_ADD: "-Dstatic=OFF -DBUILD_SHARED_LIBS=ON"
               CC: "gcc-8"
               BUILD_TYPE: Debug
               unity: "unity=ON"
+              image: "rippleci/rippled-ci-builder:2020-01-08"
               canfail: true
             # makefile
             - name: "makefile generator gcc-8"
@@ -136,6 +148,7 @@ jobs:
               CC: "gcc-8"
               BUILD_TYPE: Debug
               unity: "unity=ON"
+              image: "rippleci/rippled-ci-builder:2020-01-08"
               canfail: true
             # verify build with min version of cmake
             - name: "min cmake version"
@@ -144,6 +157,7 @@ jobs:
               BUILD_TYPE: Debug
               SKIP_TESTS: true
               unity: "unity=ON"
+              image: "rippleci/rippled-ci-builder:2020-01-08"
               canfail: true
             # validator keys project as subproj of rippled
             - name: "validator-keys"
@@ -152,13 +166,13 @@ jobs:
               BUILD_TYPE: Debug
               CMAKE_ADD: "-Dvalidator_keys=ON"
               unity: "unity=ON"
+              image: "rippleci/rippled-ci-builder:2020-01-08"
               canfail: true
     # https://docs.github.com/en/free-pro-team@latest/actions/reference/workflow-syntax-for-github-actions#jobsjob_idcontinue-on-error
     continue-on-error: ${{ matrix.canfail }}
     container:
-      image: "rippleci/rippled-ci-builder:2020-01-08"
+      image: ${{ matrix.image }}
     env:
-      name: ${{ matrix.name }}
       CC: ${{ matrix.CC }}
       BUILD_TYPE: ${{ matrix.BUILD_TYPE }}
       CMAKE_ADD: "-D${{ matrix.unity }} ${{ matrix.CMAKE_ADD }}"
@@ -178,6 +192,17 @@ jobs:
         run: |
           env
           set | grep =
+      - name: Clean up space
+        run: |
+          time df -h
+          time du -sh ${{ env.CACHE_DIR }} build
+          # sudo swapoff -a
+          # sudo rm -f /swapfile
+          sudo apt clean
+          docker rm $(docker ps -q -f 'status=exited')
+          docker rmi $(docker images -q -f "dangling=true")
+          time df -h
+          time du -sh ${{ env.CACHE_DIR }} build
       - name: ccache stats before
         run: ccache -s
       - name: Build and test
@@ -206,7 +231,28 @@ jobs:
       - name: Debug output
         if: always()
         shell: bash
-        run: if [ -e build ] ; then find build \( -name CMakeOutput.log -o -name CMakeError.log \) -ls -exec cat {} \; ; fi
+        run: |
+          time df -h
+          time du -sh ${{ env.CACHE_DIR }} ${{ env.NIH_CACHE_ROOT }} ${{ env.CCACHE_DIR }} build
+          if [ -e build ] ; then find build \( -name CMakeOutput.log -o -name CMakeError.log \) -ls -exec cat {} \; ; fi
+      - name: Debug output artifacts
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: debug-output
+          retention-days: 7
+          path: |
+            build/CMakeOutput.log
+            build/CMakeError.log
+            manifest.txt
+      - name: rippled executable artifact
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: rippled
+          retention-days: 7
+          path: |
+            build/**/rippled
   linux2:
     name: Linux 2
     runs-on: ubuntu-18.04
@@ -246,6 +292,17 @@ jobs:
         run: |
           env
           set | grep =
+      - name: Clean up space
+        run: |
+          time df -h
+          time du -sh ${{ env.CACHE_DIR }} build
+          # sudo swapoff -a
+          # sudo rm -f /swapfile
+          sudo apt clean
+          docker rm $(docker ps -q -f 'status=exited')
+          docker rmi $(docker images -q -f "dangling=true")
+          time df -h
+          time du -sh ${{ env.CACHE_DIR }} build
       - name: ccache install and stats before
         run: |
           apt install ccache
@@ -284,4 +341,25 @@ jobs:
       - name: Debug output
         if: always()
         shell: bash
-        run: if [ -e build ] ; then find build \( -name CMakeOutput.log -o -name CMakeError.log \) -ls -exec cat {} \; ; fi
+        run: |
+          time df -h
+          time du -sh ${{ env.CACHE_DIR }} build
+          if [ -e build ] ; then find build \( -name CMakeOutput.log -o -name CMakeError.log \) -ls -exec cat {} \; ; fi
+      - name: Debug output artifacts
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: debug-output
+          retention-days: 7
+          path: |
+            build/CMakeOutput.log
+            build/CMakeError.log
+            manifest.txt
+      - name: rippled executable artifact
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: rippled
+          retention-days: 7
+          path: |
+            build/**/rippled
