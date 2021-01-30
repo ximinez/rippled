@@ -370,7 +370,7 @@ jobs:
             build/**/rippled
             !build/**/_INSTALLED_/**
       - name: validator-keys executable artifact
-        if: "${{ matrix.TARGET }}" == "validator-keys"
+        if: ${{ matrix.TARGET }} == "validator-keys"
         uses: actions/upload-artifact@v2
         continue-on-error: true
         with:
