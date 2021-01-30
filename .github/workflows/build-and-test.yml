@@ -358,16 +358,17 @@ jobs:
             build/**/CMakeOutput.log
             build/**/CMakeError.log
       - name: rippled executable artifact
-        if: ${{ matrix.TARGET }} != "validator-keys"
+        if: "${{ matrix.TARGET }}" != "validator-keys"
         uses: actions/upload-artifact@v2
         continue-on-error: true
         with:
-          name: rippled
+          name: rippled-${{ matrix.name }}
           retention-days: 7
           path: |
             build/**/rippled
+            !build/**/_INSTALLED_/**
       - name: validator-keys executable artifact
-        if: ${{ matrix.TARGET }} == "validator-keys"
+        if: "${{ matrix.TARGET }}" == "validator-keys"
         uses: actions/upload-artifact@v2
         continue-on-error: true
         with:
@@ -375,3 +376,4 @@ jobs:
           retention-days: 7
           path: |
             build/**/validator-keys
+            !build/**/_INSTALLED_/**
