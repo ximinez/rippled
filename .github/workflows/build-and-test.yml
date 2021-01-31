@@ -45,6 +45,9 @@ jobs:
           mkdir -p "${dir}"
           cd "${dir}"
           cmake -DCMAKE_BUILD_TYPE=${BUILD_TYPE} ${CMAKE_EXTRA_ARGS} ../..
+          # Keep only the src dir
+          find ${NIH_CACHE_ROOT} -type d -maxdepth 3
+          # rm -rfv
       - name: Debug output
         if: always()
         shell: bash
@@ -300,13 +303,16 @@ jobs:
                 echo "Not found: ${dir}"
             fi
           done
-      - name: ccache install and stats before
+      - name: ccache install
+        if: image: "rippleci/rippled-ci-builder:2944b78d22db"
+        shell: bash
         run: |
           if ! type -a ccache
           then
             apt install ccache
           fi
-          ccache -s
+      - name: ccache stats before
+        run: ccache -s
       - name: Build and test
         shell: bash
         run: |
