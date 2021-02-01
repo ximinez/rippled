@@ -201,7 +201,7 @@ jobs:
               TARGET: coverage_report
               SKIP_TESTS: true
               unity: "unity=ON"
-              image: "rippleci/rippled-ci-builder:2020-01-08"
+              image: "rippled-ci-builder:2020-01-08"
               canfail: false
             - name: "Coverage clang-8"
               CMAKE_ADD: "-Dcoverage=ON"
@@ -392,7 +392,7 @@ jobs:
             fi
           done
       - name: ccache install
-        if: ${{ matrix.image }} == "rippleci/rippled-ci-builder:2944b78d22db"
+        if: ${{ matrix.image }} == "rippled-ci-builder:2944b78d22db"
         shell: bash
         run: |
           if ! type -a ccache
