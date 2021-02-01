@@ -39,6 +39,7 @@ jobs:
           - CCs: "clang-10"
             image: "rippleci/rippled-ci-builder:2944b78d22db" 
             makefiles: "false"
+            CMAKE_ADD: "-DBoost_NO_BOOST_CMAKE=ON"
     container:
       image: ${{ matrix.image }}
     steps:
@@ -66,8 +67,9 @@ jobs:
               ${CC} --version
               ${CXX} --version
               dir="build/$( basename ${CXX} ).${BUILD_TYPE}"
-              mkdir -p "${dir}"
+              mkdir -pv "${dir}"
               cd "${dir}"
+              if [ "${{ matrix.CMAKE_ADD }}" != "" ] ; then export CMAKE_EXTRA_ARGS="${CMAKE_EXTRA_ARGS} ${{ matrix.CMAKE_ADD }}"; fi
               cmake -DCMAKE_BUILD_TYPE=${BUILD_TYPE} ${CMAKE_EXTRA_ARGS} ../..
             done
           done
