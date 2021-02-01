@@ -36,18 +36,18 @@ jobs:
         # to add another build for the other image
         ninja_ccs: [ "gcc-8 gcc-9 clang-8 clang-9" ]
         ninja_types: [ "Debug Release" ]
-        image: [ "rippleci/rippled-ci-builder:2020-01-08" ]
+        image: [ "rippled-ci-builder:2020-01-08" ]
         make_ccs: [ "gcc-8" ]
         make_types: [ "Debug" ]
         include:
           - ninja_ccs: "clang-10"
             ninja_types: "Debug Release"
-            image: "rippleci/rippled-ci-builder:2944b78d22db"
+            image: "rippled-ci-builder:2944b78d22db"
             make_ccs: ""
             make_types: ""
             CMAKE_ADD: "-DBoost_NO_BOOST_CMAKE=ON"
     container:
-      image: ${{ matrix.image }}
+      image: rippleci/${{ matrix.image }}
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -150,21 +150,21 @@ jobs:
         BUILD_TYPE: [ Debug, Release ]
         unity: [ "unity=OFF", "unity=ON" ]
         canfail: [ false ]
-        image: [ "rippleci/rippled-ci-builder:2020-01-08", "rippleci/rippled-ci-builder:2944b78d22db" ]
+        image: [ "rippled-ci-builder:2020-01-08", "rippled-ci-builder:2944b78d22db" ]
         name: [ "" ]
         exclude:
             # The 2020-01-08 image doesn't have clang-10
-            - image: "rippleci/rippled-ci-builder:2020-01-08"
+            - image: "rippled-ci-builder:2020-01-08"
               CC: "clang-10"
             # The 2020-01-08 image has the other compilers, so
             # don't build on the other one
-            - image: "rippleci/rippled-ci-builder:2944b78d22db"
+            - image: "rippled-ci-builder:2944b78d22db"
               CC: "gcc-8"
-            - image: "rippleci/rippled-ci-builder:2944b78d22db"
+            - image: "rippled-ci-builder:2944b78d22db"
               CC: "gcc-9"
-            - image: "rippleci/rippled-ci-builder:2944b78d22db"
+            - image: "rippled-ci-builder:2944b78d22db"
               CC: "clang-8"
-            - image: "rippleci/rippled-ci-builder:2944b78d22db"
+            - image: "rippled-ci-builder:2944b78d22db"
               CC: "clang-9"
         include:
             # Special cases which add to or override the cases in the
@@ -174,7 +174,7 @@ jobs:
             # contain commas (',').
             #
             # The builds with the 2944b78d22db image need a boost extra
-            - image: "rippleci/rippled-ci-builder:2944b78d22db"
+            - image: "rippled-ci-builder:2944b78d22db"
               CMAKE_ADD: "-DBoost_NO_BOOST_CMAKE=ON"
             # gcc-9 Release unity runs out of memory, so build smaller
             # unity files.
@@ -183,7 +183,7 @@ jobs:
               CMAKE_ADD: "-DCMAKE_UNITY_BUILD_BATCH_SIZE=7"
               unity: "unity=ON"
               canfail: false
-              image: "rippleci/rippled-ci-builder:2020-01-08"
+              image: "rippled-ci-builder:2020-01-08"
               name: ""
             # Reporting mode
             - name: "Reporting clang-8 debug"
@@ -191,7 +191,7 @@ jobs:
               CC: "clang-8"
               BUILD_TYPE: "Debug"
               unity: "unity=ON"
-              image: "rippleci/rippled-ci-builder:2020-01-08"
+              image: "rippled-ci-builder:2020-01-08"
               canfail: false
             # Coverage builds
             - name: "Coverage gcc-8"
@@ -210,7 +210,7 @@ jobs:
               TARGET: coverage_report
               SKIP_TESTS: true
               unity: "unity=ON"
-              image: "rippleci/rippled-ci-builder:2020-01-08"
+              image: "rippled-ci-builder:2020-01-08"
               canfail: false
             # Manual tests
             - name: "Manual tests gcc-8 debug"
@@ -218,7 +218,7 @@ jobs:
               CC: "gcc-8"
               BUILD_TYPE: Debug
               unity: "unity=ON"
-              image: "rippleci/rippled-ci-builder:2020-01-08"
+              image: "rippled-ci-builder:2020-01-08"
               canfail: false
             - name: "Manual tests gcc-8 release"
               MANUAL_TESTS: true
@@ -226,7 +226,7 @@ jobs:
               BUILD_TEST: "Release"
               CMAKE_ADD: "-Dassert=ON -Dunity=OFF"
               unity: "unity=ON"
-              image: "rippleci/rippled-ci-builder:2020-01-08"
+              image: "rippled-ci-builder:2020-01-08"
               canfail: false
             # asan
             - name: "asan clang-8"
@@ -236,7 +236,7 @@ jobs:
               BUILD_TYPE: Release
               PARALLEL_TESTS: false
               unity: "unity=ON"
-              image: "rippleci/rippled-ci-builder:2020-01-08"
+              image: "rippled-ci-builder:2020-01-08"
               canfail: false
             # ubsan
             - name: "ubsan clang-8"
@@ -246,7 +246,7 @@ jobs:
               BUILD_TYPE: Release
               PARALLEL_TESTS: false
               unity: "unity=ON"
-              image: "rippleci/rippled-ci-builder:2020-01-08"
+              image: "rippled-ci-builder:2020-01-08"
               canfail: false
             # tsan
             # current tsan failure *might* be related to:
@@ -260,21 +260,21 @@ jobs:
               PARALLEL_TESTS: false
               unity: "unity=ON"
               canfail: true
-              image: "rippleci/rippled-ci-builder:2020-01-08"
+              image: "rippled-ci-builder:2020-01-08"
             # dynamic lib builds
             - name: "non-static gcc-8"
               CMAKE_ADD: "-Dstatic=OFF"
               CC: "gcc-8"
               BUILD_TYPE: Debug
               unity: "unity=ON"
-              image: "rippleci/rippled-ci-builder:2020-01-08"
+              image: "rippled-ci-builder:2020-01-08"
               canfail: true
             - name: "non-static BUILD_SHARED_LIBS gcc-8"
               CMAKE_ADD: "-Dstatic=OFF -DBUILD_SHARED_LIBS=ON"
               CC: "gcc-8"
               BUILD_TYPE: Debug
               unity: "unity=ON"
-              image: "rippleci/rippled-ci-builder:2020-01-08"
+              image: "rippled-ci-builder:2020-01-08"
               canfail: true
             # makefile
             - name: "makefile generator gcc-8"
@@ -282,7 +282,7 @@ jobs:
               CC: "gcc-8"
               BUILD_TYPE: Debug
               unity: "unity=ON"
-              image: "rippleci/rippled-ci-builder:2020-01-08"
+              image: "rippled-ci-builder:2020-01-08"
               canfail: true
             # verify build with min version of cmake
             - name: "min cmake version"
@@ -291,7 +291,7 @@ jobs:
               BUILD_TYPE: Debug
               SKIP_TESTS: true
               unity: "unity=ON"
-              image: "rippleci/rippled-ci-builder:2020-01-08"
+              image: "rippled-ci-builder:2020-01-08"
               canfail: true
             # validator keys project as subproj of rippled
             - name: "validator-keys"
@@ -300,12 +300,12 @@ jobs:
               BUILD_TYPE: Debug
               CMAKE_ADD: "-Dvalidator_keys=ON"
               unity: "unity=ON"
-              image: "rippleci/rippled-ci-builder:2020-01-08"
+              image: "rippled-ci-builder:2020-01-08"
               canfail: true
     # https://docs.github.com/en/free-pro-team@latest/actions/reference/workflow-syntax-for-github-actions#jobsjob_idcontinue-on-error
     continue-on-error: ${{ matrix.canfail }}
     container:
-      image: ${{ matrix.image }}
+      image: rippleci/${{ matrix.image }}
     env:
       CC: ${{ matrix.CC }}
       BUILD_TYPE: ${{ matrix.BUILD_TYPE }}
@@ -317,40 +317,39 @@ jobs:
       - name: cache
         continue-on-error: true
         uses: actions/cache@v2
+        # The cache key is built on the following in order
+        # 1) OS.
+        # 2) The hash of all the CMake config files.
+        # 3) Docker image
+        # 4) The build CMake setup variables: compiler, build type,
+        #    unity.
+        # 5) The build custom name.
+        # 6) The hash of all the header files under the source dir.
+        # 7) The hash of all the code files under the source dir.
+        # When restoring, if the matching cache is not found, search for caches in
+        # the following order
+        # 1) A previous cache with the same OS, CMake config,
+        #    Docker image, setup variables, name, and hash of
+        #    the header files
+        # 2) A previous cache with the same OS, CMake config,
+        #    Docker image, setup variables, and name
+        # 3) A previous cache with the same OS, CMake config,
+        #    Docker image, and setup variables
+        #    In case a build using the same compiler, etc. succeeded and
+        #    wrote a cache, that cache will be mostly reusable for the
+        #    special case, named builds
+        # 4) The NIH cache built by the linux-cache job
+        # 5) A previous cache with the same OS, CMake config,
+        #    and Docker image. This should never match, because
+        #    there should always be an NIH cache available.
         with:
           path: ${{ env.CACHE_DIR }}
-          # The cache key is built on the following in order
-          # 1) OS.
-          # 2) The hash of all the CMake config files.
-          # 3) Docker image
-          # 4) The build CMake setup variables: compiler, build type,
-          #    unity.
-          # 5) The build custom name.
-          # 6) The hash of all the header files under the source dir.
-          # 7) The hash of all the code files under the source dir.
           key: ${{ runner.os }}-build-${{ hashfiles('CMakeFiles.txt', 'Builds/CMake/**') }}-${{ matrix.image }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.UNITY }}-${{ matrix.name }}-${{ hashfiles('src/**/*.h', 'src/**/*.hpp', 'src/**/*.ipp') }}-${{ hashfiles('src/**', '!src/**/*.md', '!src/**/*.uml', '!src/**/*.png', '!src/**/*.php') }}
           restore-keys: |
-            # If the "perfect" cache is not found, search for caches in
-            # the following order
-            # 1) A previous cache with the same OS, CMake config,
-            #    Docker image, setup variables, name, and hash of
-            #    the header files
             ${{ runner.os }}-build-${{ hashfiles('CMakeFiles.txt', 'Builds/CMake/**') }}-${{ matrix.image }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.UNITY }}-${{ matrix.name }}-${{ hashfiles('src/**/*.h', 'src/**/*.hpp', 'src/**/*.ipp') }}
-            # 2) A previous cache with the same OS, CMake config,
-            #    Docker image, setup variables, and name
             ${{ runner.os }}-build-${{ hashfiles('CMakeFiles.txt', 'Builds/CMake/**') }}-${{ matrix.image }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.UNITY }}-${{ matrix.name }}
-            # 3) A previous cache with the same OS, CMake config,
-            #    Docker image, and setup variables
-            #    In case a build using the same compiler, etc. succeeded and
-            #    wrote a cache, that cache will be mostly reusable for the
-            #    special case, named builds
             ${{ runner.os }}-build-${{ hashfiles('CMakeFiles.txt', 'Builds/CMake/**') }}-${{ matrix.image }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.UNITY }}
-            # 4) The NIH cache built by the linux-cache job
             ${{ runner.os }}-build-${{ hashfiles('CMakeFiles.txt', 'Builds/CMake/**') }}-${{ matrix.image }}-nih
-            # 5) A previous cache with the same OS, CMake config,
-            #    and Docker image
-            # This should never happen, because there should always be
-            # an NIH cache available.
             ${{ runner.os }}-build-${{ hashfiles('CMakeFiles.txt', 'Builds/CMake/**') }}-${{ matrix.image }}
       - name: Dump-environment
         run: |
