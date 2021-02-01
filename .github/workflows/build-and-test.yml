@@ -72,10 +72,11 @@ jobs:
                     export CXX=${CXX/clang/clang++}
                     ${CC} --version
                     ${CXX} --version
-                    dir="build/make/$( basename ${CXX} ).${BUILD_TYPE}"
+                    dir="build/$( basename ${CXX} ).${BUILD_TYPE}.makefile"
                     mkdir -pv "${dir}"
-                    cd "${dir}"
+                    pushd "${dir}"
                     cmake -DCMAKE_BUILD_TYPE=${BUILD_TYPE} ${CMAKE_EXTRA_ARGS} ../..
+                    popd
                 done
             done
 
@@ -88,18 +89,17 @@ jobs:
                     export CC BUILD_TYPE
                     export CXX=${CC/gcc/g++}
                     export CXX=${CXX/clang/clang++}
-                    echo Ninja: ${NINJA_BUILD}, CC: ${CC}, $CXX: ${CXX}, Type: ${BUILD_TYPE}
                     ${CC} --version
                     ${CXX} --version
                     dir="build/$( basename ${CXX} ).${BUILD_TYPE}"
                     mkdir -pv "${dir}"
-                    cd "${dir}"
+                    pushd "${dir}"
                     if [ "${{ matrix.CMAKE_ADD }}" != "" ]
                     then
                         export CMAKE_EXTRA_ARGS="${CMAKE_EXTRA_ARGS} ${{ matrix.CMAKE_ADD }}"
                     fi
-                    echo CMAKE_EXTRA_ARGS: ${CMAKE_EXTRA_ARGS}
                     cmake -DCMAKE_BUILD_TYPE=${BUILD_TYPE} ${CMAKE_EXTRA_ARGS} ../..
+                    popd
                 done
             done
 
@@ -131,6 +131,7 @@ jobs:
         with:
           name: debug-output
           retention-days: 7
+          if-no-files-found: ignore
           path: |
             build/**/CMakeOutput.log
             build/**/CMakeError.log
