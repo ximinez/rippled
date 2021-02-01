@@ -312,7 +312,7 @@ jobs:
           #    Changing any header will invalidate the cache.
           # 6) The hash of all the code files under the source dir.
           #    Changing any code file will invalidate the cache.
-          key: ${{ runner.os }}-build-${{ hashfiles('CMakeFiles.txt', 'Builds/CMake/**') }}-${{ matrix.image }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.UNITY }}-${{ matrix.name }}-${{ hashfiles('src/**/*.h', 'src/**/*.hpp', 'src/**/*.ipp') }}-${{ hashfiles('src/**', '!src/**/*.md'), '!src/**/*.uml', '!src/**/*.png', '!src/**/*.php') }}
+          key: ${{ runner.os }}-build-${{ hashfiles('CMakeFiles.txt', 'Builds/CMake/**') }}-${{ matrix.image }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.UNITY }}-${{ matrix.name }}-${{ hashfiles('src/**/*.h', 'src/**/*.hpp', 'src/**/*.ipp') }}-${{ hashfiles('src/**', '!src/**/*.md', '!src/**/*.uml', '!src/**/*.png', '!src/**/*.php') }}
           restore-keys: |
             # To restore the cache, search for the following caches in
             # order
