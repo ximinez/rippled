@@ -32,13 +32,19 @@ jobs:
     timeout-minutes: 720
     strategy:
       matrix:
-        CCs: [ "gcc-8 gcc-9 clang-8 clang-9" ]
+        # All of these matrix arrays have one string item, but this is an easy way
+        # to add another build for the other image
+        ninja_ccs: [ "gcc-8 gcc-9 clang-8 clang-9" ]
+        ninja_types: [ "Debug Release" ]
         image: [ "rippleci/rippled-ci-builder:2020-01-08" ]
-        makefiles: [ "true" ]
+        make_ccs: [ "gcc-8" ]
+        make_types: [ "Debug" ]
         include:
-          - CCs: "clang-10"
-            image: "rippleci/rippled-ci-builder:2944b78d22db" 
-            makefiles: "false"
+          - ninja_ccs: "clang-10"
+            ninja_types: "Debug Release"
+            image: "rippleci/rippled-ci-builder:2944b78d22db"
+            make_ccs: ""
+            make_types: ""
             CMAKE_ADD: "-DBoost_NO_BOOST_CMAKE=ON"
     container:
       image: ${{ matrix.image }}
@@ -54,44 +60,53 @@ jobs:
       - name: CMake
         shell: bash
         run: |
-          cmake --version
-          # Most of the builds use Ninja, which is defined in the
-          # top-level env
-          for CC in ${{ matrix.CCs }}
-          do
-            for BUILD_TYPE in Debug Release
-            do
-              export CC BUILD_TYPE
-              export CXX=${CC/gcc/g++}
-              export CXX=${CXX/clang/clang++}
-              ${CC} --version
-              ${CXX} --version
-              dir="build/$( basename ${CXX} ).${BUILD_TYPE}"
-              mkdir -pv "${dir}"
-              cd "${dir}"
-              if [ "${{ matrix.CMAKE_ADD }}" != "" ] ; then export CMAKE_EXTRA_ARGS="${CMAKE_EXTRA_ARGS} ${{ matrix.CMAKE_ADD }}"; fi
-              cmake -DCMAKE_BUILD_TYPE=${BUILD_TYPE} ${CMAKE_EXTRA_ARGS} ../..
-            done
-          done
-          if [[ ${{ matrix.makefiles }} == "true" ]]
-          then
-            # One build uses unix-makefiles
-            export NINJA_BUILD=false
-            export CC="gcc-8"
-            export BUILD_TYPE=Debug
-            export CXX=${CC/gcc/g++}
-            export CXX=${CXX/clang/clang++}
-            ${CC} --version
-            ${CXX} --version
-            dir="build/$( basename ${CXX} ).${BUILD_TYPE}"
-            mkdir -p "${dir}"
-            cd "${dir}"
-            cmake -DCMAKE_BUILD_TYPE=${BUILD_TYPE} ${CMAKE_EXTRA_ARGS} ../..
-          fi
+            cmake --version
 
-          find ${NIH_CACHE_ROOT} -type d -maxdepth 4
-          du -cs ${NIH_CACHE_ROOT}
-          du -cs ${NIH_CACHE_ROOT}/{unix_makefiles,ninja}/*/*
+            # Builds that use unix-makefiles
+            for CC in ${{ matrix.make_ccs }}
+            do
+                for BUILD_TYPE in ${{ matrix.make_types }}
+                do
+                    export CC BUILD_TYPE
+                    export CXX=${CC/gcc/g++}
+                    export CXX=${CXX/clang/clang++}
+                    ${CC} --version
+                    ${CXX} --version
+                    dir="build/make/$( basename ${CXX} ).${BUILD_TYPE}"
+                    mkdir -pv "${dir}"
+                    cd "${dir}"
+                    cmake -DCMAKE_BUILD_TYPE=${BUILD_TYPE} ${CMAKE_EXTRA_ARGS} ../..
+                done
+            done
+
+            # Builds that use Ninja
+            export CMAKE_EXTRA_ARGS+=" -G Ninja"
+            for CC in ${{ matrix.ninja_ccs }}
+            do
+                for BUILD_TYPE in ${{ matrix.ninja_types }}
+                do
+                    export CC BUILD_TYPE
+                    export CXX=${CC/gcc/g++}
+                    export CXX=${CXX/clang/clang++}
+                    echo Ninja: ${NINJA_BUILD}, CC: ${CC}, $CXX: ${CXX}, Type: ${BUILD_TYPE}
+                    ${CC} --version
+                    ${CXX} --version
+                    dir="build/$( basename ${CXX} ).${BUILD_TYPE}"
+                    mkdir -pv "${dir}"
+                    cd "${dir}"
+                    if [ "${{ matrix.CMAKE_ADD }}" != "" ]
+                    then
+                        export CMAKE_EXTRA_ARGS="${CMAKE_EXTRA_ARGS} ${{ matrix.CMAKE_ADD }}"
+                    fi
+                    echo CMAKE_EXTRA_ARGS: ${CMAKE_EXTRA_ARGS}
+                    cmake -DCMAKE_BUILD_TYPE=${BUILD_TYPE} ${CMAKE_EXTRA_ARGS} ../..
+                done
+            done
+
+            find ${NIH_CACHE_ROOT} -type d -maxdepth 4
+            du -cs ${NIH_CACHE_ROOT}
+            du -cs ${NIH_CACHE_ROOT}/* || true
+            du -cs ${NIH_CACHE_ROOT}/{unix_makefiles,ninja}/*/* || true
       - name: Debug output
         if: always()
         shell: bash
@@ -305,34 +320,36 @@ jobs:
           path: ${{ env.CACHE_DIR }}
           # The cache key is built on the following in order
           # 1) OS.
-          # 2) The hash of all the CMake config files. Changing the
-          #    config will invalidate the cache.
-          # 3) The build config variables: image, compiler, build type,
+          # 2) The hash of all the CMake config files.
+          # 3) Docker image
+          # 4) The build CMake setup variables: compiler, build type,
           #    unity.
-          # 4) The build custom name.
-          # 5) The hash of all the header files under the source dir.
-          #    Changing any header will invalidate the cache.
-          # 6) The hash of all the code files under the source dir.
-          #    Changing any code file will invalidate the cache.
+          # 5) The build custom name.
+          # 6) The hash of all the header files under the source dir.
+          # 7) The hash of all the code files under the source dir.
           key: ${{ runner.os }}-build-${{ hashfiles('CMakeFiles.txt', 'Builds/CMake/**') }}-${{ matrix.image }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.UNITY }}-${{ matrix.name }}-${{ hashfiles('src/**/*.h', 'src/**/*.hpp', 'src/**/*.ipp') }}-${{ hashfiles('src/**', '!src/**/*.md', '!src/**/*.uml', '!src/**/*.png', '!src/**/*.php') }}
           restore-keys: |
-            # To restore the cache, search for the following caches in
-            # order
-            # 1) A previous cache using all the same params except the
-            #    hash of the source code
+            # If the "perfect" cache is not found, search for caches in
+            # the following order
+            # 1) A previous cache with the same OS, CMake config,
+            #    Docker image, setup variables, name, and hash of
+            #    the header files
             ${{ runner.os }}-build-${{ hashfiles('CMakeFiles.txt', 'Builds/CMake/**') }}-${{ matrix.image }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.UNITY }}-${{ matrix.name }}-${{ hashfiles('src/**/*.h', 'src/**/*.hpp', 'src/**/*.ipp') }}
-            # 2) A previous cache using all the same params as above
-            #    except the hash of the header code
+            # 2) A previous cache with the same OS, CMake config,
+            #    Docker image, setup variables, and name
             ${{ runner.os }}-build-${{ hashfiles('CMakeFiles.txt', 'Builds/CMake/**') }}-${{ matrix.image }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.UNITY }}-${{ matrix.name }}
-            # 3) A previous cache using all the same params as above
-            #    except the build name (e.g. "coverage"). In case
-            #    a build using the same compiler, etc. succeeded and
-            #    wrote a cache, that cache will be reusable
-            ${{ runner.os }}-build-${{ hashfiles('CMakeFiles.txt', 'Builds/CMake/**') }}-${{ matrix.image }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.UNITY }}-${{ matrix.name }}
+            # 3) A previous cache with the same OS, CMake config,
+            #    Docker image, and setup variables
+            #    In case a build using the same compiler, etc. succeeded and
+            #    wrote a cache, that cache will be mostly reusable for the
+            #    special case, named builds
+            ${{ runner.os }}-build-${{ hashfiles('CMakeFiles.txt', 'Builds/CMake/**') }}-${{ matrix.image }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.UNITY }}
             # 4) The NIH cache built by the linux-cache job
             ${{ runner.os }}-build-${{ hashfiles('CMakeFiles.txt', 'Builds/CMake/**') }}-${{ matrix.image }}-nih
-            # 5) Any build using this image. This should never happen,
-            #    because there should always be an NIH cache available.
+            # 5) A previous cache with the same OS, CMake config,
+            #    and Docker image
+            # This should never happen, because there should always be
+            # an NIH cache available.
             ${{ runner.os }}-build-${{ hashfiles('CMakeFiles.txt', 'Builds/CMake/**') }}-${{ matrix.image }}
       - name: Dump-environment
         run: |
