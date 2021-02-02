@@ -60,12 +60,13 @@ jobs:
       - name: CMake
         shell: bash
         run: |
-            cmake --version
-
             if [[ -e "${NIH_CACHE_ROOT}" ]]
             then
+                echo Cache is already set up.
                 exit
             fi
+
+            cmake --version
 
             # Builds that use unix-makefiles
             for CC in ${{ matrix.make_ccs }}
@@ -326,27 +327,15 @@ jobs:
         # 1) OS.
         # 2) The hash of all the CMake config files.
         # 3) Docker image
-        # 4) The build CMake setup variables: compiler, build type,
-        #    unity.
-        # 5) The hash of all the header files under the source dir.
-        # 6) The hash of all the code files under the source dir.
-        # 7) The build custom name.
-        # When restoring, if the matching cache is not found, search for caches in
-        # the following order:
-        # (tl;dr: Strip pieces off the end of the cache key until a match is found,
-        #  with a special case for NIH.)
-        # 1) A previous cache with the same OS, CMake config,
-        #    Docker image, setup variables, hash of the header
-        #    files, and hash of the code files
-        # 2) A previous cache with the same OS, CMake config,
-        #    Docker image, setup variables, hash of the header
-        #    files
-        # 3) A previous cache with the same OS, CMake config,
-        #    Docker image, and setup variables
-        # 4) The NIH cache built by the linux-cache job
-        # 5) A previous cache with the same OS, CMake config,
-        #    and Docker image. This should never match, because
-        #    there should always be an NIH cache available.
+        # 4) The build compiler
+        # 5) The build type
+        # 6) The build unity setting
+        # 7) The hash of all the header files under the source dir.
+        # 8) The hash of all the code files under the source dir.
+        # 9) The build custom name.
+        # When restoring, if the matching cache is not found, search for a usable
+        # cache by chopping pieces off the end of the cache key until a match is
+        # found, with a special case for NIH built in the previous job at the end
         with:
           path: ${{ env.CACHE_DIR }}
           key: ${{ runner.os }}-${{ hashfiles('CMakeFiles.txt', 'Builds/CMake/**') }}-${{ matrix.image }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.UNITY }}-${{ hashfiles('src/**/*.h', 'src/**/*.hpp', 'src/**/*.ipp') }}-${{ hashfiles('src/**', '!src/**/*.md', '!src/**/*.uml', '!src/**/*.png', '!src/**/*.php') }}-${{ matrix.name }}
@@ -354,48 +343,14 @@ jobs:
             ${{ runner.os }}-${{ hashfiles('CMakeFiles.txt', 'Builds/CMake/**') }}-${{ matrix.image }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.UNITY }}-${{ hashfiles('src/**/*.h', 'src/**/*.hpp', 'src/**/*.ipp') }}-${{ hashfiles('src/**', '!src/**/*.md', '!src/**/*.uml', '!src/**/*.png', '!src/**/*.php') }}
             ${{ runner.os }}-${{ hashfiles('CMakeFiles.txt', 'Builds/CMake/**') }}-${{ matrix.image }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.UNITY }}-${{ hashfiles('src/**/*.h', 'src/**/*.hpp', 'src/**/*.ipp') }}
             ${{ runner.os }}-${{ hashfiles('CMakeFiles.txt', 'Builds/CMake/**') }}-${{ matrix.image }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.UNITY }}
+            ${{ runner.os }}-${{ hashfiles('CMakeFiles.txt', 'Builds/CMake/**') }}-${{ matrix.image }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}
+            ${{ runner.os }}-${{ hashfiles('CMakeFiles.txt', 'Builds/CMake/**') }}-${{ matrix.image }}-${{ matrix.CC }}
             ${{ runner.os }}-${{ hashfiles('CMakeFiles.txt', 'Builds/CMake/**') }}-${{ matrix.image }}-nih
             ${{ runner.os }}-${{ hashfiles('CMakeFiles.txt', 'Builds/CMake/**') }}-${{ matrix.image }}
       - name: Dump-environment
         run: |
           env
           set | grep =
-      - name: Clean up space
-        shell: bash
-        run: |
-          time df -h
-          for dir in ${{ env.CACHE_DIR }} build
-          do
-            if [[ -e "${dir}" ]]
-            then
-                time du -sh "${dir}"
-            else
-                find -name $( basename "${dir}" ) -type d -print -exec du -sh {} \; || \
-                echo "Not found: ${dir}"
-            fi
-          done
-          # swapoff -a
-          # rm -f /swapfile
-          if type -a apt
-          then
-            apt clean
-          fi
-          if type -a docker
-          then
-            docker rm $(docker ps -q -f 'status=exited')
-            docker rmi $(docker images -q -f "dangling=true")
-          fi
-          time df -h
-          for dir in ${{ env.CACHE_DIR }} build
-          do
-            if [[ -e "${dir}" ]]
-            then
-                time du -sh "${dir}"
-            else
-                find -name $( basename "${dir}" ) -type d -print -exec du -sh {} \; || \
-                echo "Not found: ${dir}"
-            fi
-          done
       - name: ccache install
         if: matrix.image == 'rippled-ci-builder:2944b78d22db'
         shell: bash
@@ -404,8 +359,11 @@ jobs:
           then
             apt install ccache
           fi
-      - name: ccache stats before
-        run: ccache -s
+      - name: reset ccache stats
+        run: |
+            ccache -s
+            # Reset the stats so only this build counts
+            ccache -z
       - name: Build and test
         shell: bash
         run: |
