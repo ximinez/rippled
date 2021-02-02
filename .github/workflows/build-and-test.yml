@@ -134,7 +134,7 @@ jobs:
         uses: actions/upload-artifact@v2
         continue-on-error: true
         with:
-          name: debug-output
+          name: debug-output NIH
           retention-days: 7
           if-no-files-found: ignore
           path: |
@@ -400,7 +400,6 @@ jobs:
         if: matrix.image == 'rippled-ci-builder:2944b78d22db'
         shell: bash
         run: |
-          echo "${{ matrix.image }}"
           if ! type -a ccache
           then
             apt install ccache
