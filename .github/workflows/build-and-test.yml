@@ -62,6 +62,11 @@ jobs:
         run: |
             cmake --version
 
+            if [[ -e "${NIH_CACHE_ROOT}" ]]
+            then
+                exit
+            fi
+
             # Builds that use unix-makefiles
             for CC in ${{ matrix.make_ccs }}
             do
