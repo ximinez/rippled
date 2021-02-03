@@ -390,13 +390,18 @@ jobs:
             fi
           done
 
-          if [[ "${{ steps.cache.cache-hit }}" != "true" ]]
-          then
+      - name: Scrub cache
+        shell: bash
+        if: ${{ ! steps.cache.outputs.cache-hit }}
+        continue-on-error: true
+        run: |
             # The cache that was retrieved could be from another build
             # with different params. Do some cleanup.
+            set -x
             echo Cache was loaded from an indirect hit
-            rm -rfv "${CACHE_DIR}/*/*/*/src/*-build/*"
-          fi
+            find ${NIH_CACHE_ROOT} -type d -iname '*-build'
+            ls -ld ${NIH_CACHE_ROOT}/*/*/*/src/*-build/
+            rm -rf ${NIH_CACHE_ROOT}/*/*/*/src/*-build/*
       - name: ccache install
         if: matrix.image == 'rippled-ci-builder:2944b78d22db'
         shell: bash
