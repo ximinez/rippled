@@ -45,7 +45,6 @@ jobs:
             image: "rippled-ci-builder:2944b78d22db"
             make_ccs: "gcc-8"
             make_types: "Debug"
-            CMAKE_ADD: "-DBoost_NO_BOOST_CMAKE=ON"
     container:
       image: rippleci/${{ matrix.image }}
     steps:
@@ -68,9 +67,9 @@ jobs:
 
             cmake --version
 
-            if [ "${{ matrix.CMAKE_ADD }}" != "" ]
+            if [ "${{ matrix.image }}" != "rippled-ci-builder:2944b78d22db" ]
             then
-                export CMAKE_EXTRA_ARGS="${CMAKE_EXTRA_ARGS} ${{ matrix.CMAKE_ADD }}"
+                export CMAKE_EXTRA_ARGS+="-DBoost_NO_BOOST_CMAKE=ON"
             fi
 
             # Builds that use unix-makefiles
@@ -185,9 +184,6 @@ jobs:
             # Note that "name" is used in the cache key, which cannot
             # contain commas (',').
             #
-            # The builds with the 2944b78d22db image need a boost extra
-            - image: "rippled-ci-builder:2944b78d22db"
-              CMAKE_ADD: "-DBoost_NO_BOOST_CMAKE=ON"
             # gcc-9 Release unity runs out of memory, so build smaller
             # unity files.
             - CC: "gcc-9"
@@ -413,6 +409,11 @@ jobs:
           export CXX=${CXX/clang/clang++}
           export NUM_PROCESSORS=${NUM_PROCESSORS:-$( nproc )}
           echo NUM_PROCESSORS is ${NUM_PROCESSORS}
+        if [ "${{ matrix.image }}" != "rippled-ci-builder:2944b78d22db" ]
+        then
+            export CMAKE_EXTRA_ARGS+="-DBoost_NO_BOOST_CMAKE=ON"
+        fi
+
           # Override environment variables that don't work smoothly
           # using env:
           if [[ "${{ matrix.PARALLEL_TESTS }}" != "" ]]; then export PARALLEL_TESTS="${{ matrix.PARALLEL_TESTS }}" ; fi
@@ -424,7 +425,7 @@ jobs:
           if [[ "${{ matrix.TSAN_OPTIONS }}" != "" ]]; then export TSAN_OPTIONS="${{ matrix.TSAN_OPTIONS }}" ; fi
           if [[ "${{ matrix.NINJA_BUILD }}" != "" ]]; then export NINJA_BUILD="${{ matrix.NINJA_BUILD }}" ; fi
           if [[ "${{ matrix.CMAKE_EXE }}" != "" ]]; then export CMAKE_EXE="${{ matrix.CMAKE_EXE }}" ; fi
-          if [ "${CMAKE_ADD}" != "" ] ; then export CMAKE_EXTRA_ARGS="${CMAKE_EXTRA_ARGS} ${CMAKE_ADD}"; fi
+          if [ "${CMAKE_ADD}" != "" ] ; then export CMAKE_EXTRA_ARGS+="${CMAKE_ADD}"; fi
           # Do the build
           bin/ci/ubuntu/build-and-test.sh
       - name: ccache stats after
