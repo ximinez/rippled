@@ -135,7 +135,7 @@ jobs:
         uses: actions/upload-artifact@v2
         continue-on-error: true
         with:
-          name: debug-output NIH
+          name: debug-output NIH ${{ matrix.ninja_ccs }}
           retention-days: 7
           if-no-files-found: ignore
           path: |
@@ -229,7 +229,7 @@ jobs:
             - name: "Manual tests gcc-8 release"
               MANUAL_TESTS: true
               CC: "gcc-8"
-              BUILD_TEST: "Release"
+              BUILD_TYPE: "Release"
               CMAKE_ADD: "-Dassert=ON -Dunity=OFF"
               unity: "unity=ON"
               image: "rippled-ci-builder:2020-01-08"
@@ -446,7 +446,7 @@ jobs:
         uses: actions/upload-artifact@v2
         continue-on-error: true
         with:
-          name: debug-output ${{ matrix.name }}
+          name: debug-output ${{ matrix.name }} ${{ matrix.CC }} ${{ matrix.BUILD_TYPE }} ${{ matrix.UNITY }}
           retention-days: 7
           if-no-files-found: ignore
           path: |
@@ -457,7 +457,7 @@ jobs:
         uses: actions/upload-artifact@v2
         continue-on-error: true
         with:
-          name: rippled ${{ matrix.name }}
+          name: rippled ${{ matrix.name }} ${{ matrix.CC }} ${{ matrix.BUILD_TYPE }} ${{ matrix.UNITY }}
           retention-days: 7
           if-no-files-found: ignore
           path: |
