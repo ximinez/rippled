@@ -34,17 +34,17 @@ jobs:
       matrix:
         # All of these matrix arrays have one string item, but this is an easy way
         # to add another build for the other image
-        ninja_ccs: [ "gcc-8 gcc-9 clang-8 clang-9" ]
+        ninja_ccs: [ "gcc-9 clang-8 clang-9" ]
         ninja_types: [ "Debug Release" ]
         image: [ "rippled-ci-builder:2020-01-08" ]
-        make_ccs: [ "gcc-8" ]
-        make_types: [ "Debug" ]
+        make_ccs: [ "" ]
+        make_types: [ "" ]
         include:
-          - ninja_ccs: "clang-10"
+          - ninja_ccs: "gcc-8 clang-10"
             ninja_types: "Debug Release"
             image: "rippled-ci-builder:2944b78d22db"
-            make_ccs: ""
-            make_types: ""
+            make_ccs: "gcc-8"
+            make_types: "Debug"
             CMAKE_ADD: "-DBoost_NO_BOOST_CMAKE=ON"
     container:
       image: rippleci/${{ matrix.image }}
@@ -56,7 +56,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ${{ env.CACHE_DIR }}
-          key: ${{ runner.os }}-${{ hashfiles('CMakeFiles.txt', 'Builds/CMake/**') }}-${{ matrix.image }}-nih
+          key: ${{ runner.os }}-${{ hashfiles('CMakeFiles.txt', 'Builds/CMake/**') }}-${{ matrix.image }}-nih-${{ matrix.ninja_ccs }}-${{ matrix.make_ccs }}
       - name: CMake
         shell: bash
         run: |
@@ -162,10 +162,15 @@ jobs:
             # The 2020-01-08 image doesn't have clang-10
             - image: "rippled-ci-builder:2020-01-08"
               CC: "clang-10"
+            # The 2020-01-08 image does have gcc-8, but it's
+            # having problems, so see if it builds any better
+            # with the other one
+            - image: "rippled-ci-builder:2020-01-08"
+              CC: "clang-10"
+            - image: "rippled-ci-builder:2020-01-08"
+              CC: "gcc-8"
             # The 2020-01-08 image has the other compilers, so
             # don't build on the other one
-            - image: "rippled-ci-builder:2944b78d22db"
-              CC: "gcc-8"
             - image: "rippled-ci-builder:2944b78d22db"
               CC: "gcc-9"
             - image: "rippled-ci-builder:2944b78d22db"
@@ -207,7 +212,7 @@ jobs:
               TARGET: coverage_report
               SKIP_TESTS: true
               unity: "unity=ON"
-              image: "rippled-ci-builder:2020-01-08"
+              image: "rippled-ci-builder:2944b78d22db"
               canfail: false
             - name: "Coverage clang-8"
               CMAKE_ADD: "-Dcoverage=ON"
@@ -224,7 +229,7 @@ jobs:
               CC: "gcc-8"
               BUILD_TYPE: Debug
               unity: "unity=ON"
-              image: "rippled-ci-builder:2020-01-08"
+              image: "rippled-ci-builder:2944b78d22db"
               canfail: false
             - name: "Manual tests gcc-8 release"
               MANUAL_TESTS: true
@@ -232,7 +237,7 @@ jobs:
               BUILD_TYPE: "Release"
               CMAKE_ADD: "-Dassert=ON -Dunity=OFF"
               unity: "unity=ON"
-              image: "rippled-ci-builder:2020-01-08"
+              image: "rippled-ci-builder:2944b78d22db"
               canfail: false
             # asan
             - name: "asan clang-8"
@@ -273,14 +278,14 @@ jobs:
               CC: "gcc-8"
               BUILD_TYPE: Debug
               unity: "unity=ON"
-              image: "rippled-ci-builder:2020-01-08"
+              image: "rippled-ci-builder:2944b78d22db"
               canfail: true
             - name: "non-static BUILD_SHARED_LIBS gcc-8"
               CMAKE_ADD: "-Dstatic=OFF -DBUILD_SHARED_LIBS=ON"
               CC: "gcc-8"
               BUILD_TYPE: Debug
               unity: "unity=ON"
-              image: "rippled-ci-builder:2020-01-08"
+              image: "rippled-ci-builder:2944b78d22db"
               canfail: true
             # makefile
             - name: "makefile generator gcc-8"
@@ -288,7 +293,7 @@ jobs:
               CC: "gcc-8"
               BUILD_TYPE: Debug
               unity: "unity=ON"
-              image: "rippled-ci-builder:2020-01-08"
+              image: "rippled-ci-builder:2944b78d22db"
               canfail: true
             # verify build with min version of cmake
             - name: "min cmake version"
@@ -297,7 +302,7 @@ jobs:
               BUILD_TYPE: Debug
               SKIP_TESTS: true
               unity: "unity=ON"
-              image: "rippled-ci-builder:2020-01-08"
+              image: "rippled-ci-builder:2944b78d22db"
               canfail: true
             # validator keys project as subproj of rippled
             - name: "validator-keys"
@@ -306,7 +311,7 @@ jobs:
               BUILD_TYPE: Debug
               CMAKE_ADD: "-Dvalidator_keys=ON"
               unity: "unity=ON"
-              image: "rippled-ci-builder:2020-01-08"
+              image: "rippled-ci-builder:2944b78d22db"
               canfail: true
     # https://docs.github.com/en/free-pro-team@latest/actions/reference/workflow-syntax-for-github-actions#jobsjob_idcontinue-on-error
     continue-on-error: ${{ matrix.canfail }}
