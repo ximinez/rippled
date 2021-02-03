@@ -409,9 +409,9 @@ jobs:
             export CXX=${CXX/clang/clang++}
             export NUM_PROCESSORS=${NUM_PROCESSORS:-$( nproc )}
             echo NUM_PROCESSORS is ${NUM_PROCESSORS}
-            if [ "${{ matrix.image }}" != "rippled-ci-builder:2944b78d22db" ]
+            if [ "${{ matrix.image }}" == "rippled-ci-builder:2944b78d22db" ]
             then
-                export CMAKE_EXTRA_ARGS+="-DBoost_NO_BOOST_CMAKE=ON"
+                export CMAKE_EXTRA_ARGS+=" -DBoost_NO_BOOST_CMAKE=ON"
             fi
 
             # Override environment variables that don't work smoothly
@@ -425,7 +425,7 @@ jobs:
             if [[ "${{ matrix.TSAN_OPTIONS }}" != "" ]]; then export TSAN_OPTIONS="${{ matrix.TSAN_OPTIONS }}" ; fi
             if [[ "${{ matrix.NINJA_BUILD }}" != "" ]]; then export NINJA_BUILD="${{ matrix.NINJA_BUILD }}" ; fi
             if [[ "${{ matrix.CMAKE_EXE }}" != "" ]]; then export CMAKE_EXE="${{ matrix.CMAKE_EXE }}" ; fi
-            if [ "${CMAKE_ADD}" != "" ] ; then export CMAKE_EXTRA_ARGS+="${CMAKE_ADD}"; fi
+            if [ "${CMAKE_ADD}" != "" ] ; then export CMAKE_EXTRA_ARGS+=" ${CMAKE_ADD}"; fi
             # Do the build
             bin/ci/ubuntu/build-and-test.sh
       - name: ccache stats after
