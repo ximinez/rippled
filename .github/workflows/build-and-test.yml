@@ -68,6 +68,11 @@ jobs:
 
             cmake --version
 
+            if [ "${{ matrix.CMAKE_ADD }}" != "" ]
+            then
+                export CMAKE_EXTRA_ARGS="${CMAKE_EXTRA_ARGS} ${{ matrix.CMAKE_ADD }}"
+            fi
+
             # Builds that use unix-makefiles
             for CC in ${{ matrix.make_ccs }}
             do
@@ -100,10 +105,6 @@ jobs:
                     dir="build/$( basename ${CXX} ).${BUILD_TYPE}"
                     mkdir -pv "${dir}"
                     pushd "${dir}"
-                    if [ "${{ matrix.CMAKE_ADD }}" != "" ]
-                    then
-                        export CMAKE_EXTRA_ARGS="${CMAKE_EXTRA_ARGS} ${{ matrix.CMAKE_ADD }}"
-                    fi
                     cmake -DCMAKE_BUILD_TYPE=${BUILD_TYPE} ${CMAKE_EXTRA_ARGS} ../..
                     popd
                 done
