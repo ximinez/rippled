@@ -389,6 +389,14 @@ jobs:
                 echo "Not found: ${dir}"
             fi
           done
+
+          if [[ "${{ steps.cache.cache-hit }}" != "true" ]]
+          then
+            # The cache that was retrieved could be from another build
+            # with different params. Do some cleanup.
+            echo Cache was loaded from an indirect hit
+            rm -rfv "${CACHE_DIR}/*/*/*/src/*-build/*"
+          fi
       - name: ccache install
         if: matrix.image == 'rippled-ci-builder:2944b78d22db'
         shell: bash
