@@ -62,12 +62,14 @@ jobs:
           echo "::set-output name=headers::${{ hashfiles('src/**/*.h', 'src/**/*.hpp', 'src/**/*.ipp') }}"
           echo "::set-output name=source::${{ hashfiles('src/**', '!src/**/*.md', '!src/**/*.uml', '!src/**/*.png', '!src/**/*.php') }}"
       - name: Cache
+        id: cache
         continue-on-error: true
         uses: actions/cache@v2
         with:
           path: ${{ env.CACHE_DIR }}
           key: ${{ runner.os }}-${{ steps.cachekeys.outputs.cmakeconfig }}-${{ matrix.image }}-nih-${{ matrix.ninja_ccs }}-${{ matrix.make_ccs }}
       - name: Initialize CMake cache
+        if: ${{ ! steps.cache.outputs.cache-hit }}
         shell: bash
         run: |
             if [[ -e "${NIH_CACHE_ROOT}" ]]
@@ -129,14 +131,14 @@ jobs:
             du -cs ${NIH_CACHE_ROOT}/* || true
             du -cs ${NIH_CACHE_ROOT}/{unix_makefiles,ninja}/*/* || true
       - name: Debug output
-        if: always()
+        if: ${{ ! steps.cache.outputs.cache-hit || failure() }}
         shell: bash
         continue-on-error: true
         run: |
           time df -h
           if [ -e build ] ; then find build \( -name CMakeOutput.log -o -name CMakeError.log \) -ls -exec cat {} \; ; fi
       - name: Debug output artifacts
-        if: always()
+        if: ${{ ! steps.cache.outputs.cache-hit || failure() }}
         uses: actions/upload-artifact@v2
         continue-on-error: true
         with:
