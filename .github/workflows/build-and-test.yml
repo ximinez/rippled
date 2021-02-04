@@ -34,7 +34,7 @@ jobs:
       matrix:
         # All of these matrix arrays have one string item, but this is an easy way
         # to add another build for the other image
-        ninja_ccs: [ "gcc-9 clang-8 clang-9" ]
+        ninja_ccs: [ "gcc-8 gcc-9 clang-8 clang-9" ]
         ninja_types: [ "Debug Release" ]
         image: [ "rippled-ci-builder:2020-01-08" ]
         make_ccs: [ "" ]
@@ -47,15 +47,26 @@ jobs:
             make_types: "Debug"
     container:
       image: rippleci/${{ matrix.image }}
+    outputs:
+      cmakeconfig: ${{ steps.cachekeys.outputs.cmakeconfig }}
+      headers: ${{ steps.cachekeys.outputs.headers }}
+      source: ${{ steps.cachekeys.outputs.source }}
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+      - name: Build cache keys
+        id: cachekeys
+        shell: bash
+        run: |
+          echo "::set-output name=cmakeconfig::${{ hashfiles('CMakeFiles.txt', 'Builds/CMake/**') }}"
+          echo "::set-output name=headers::${{ hashfiles('src/**/*.h', 'src/**/*.hpp', 'src/**/*.ipp') }}"
+          echo "::set-output name=source::${{ hashfiles('src/**', '!src/**/*.md', '!src/**/*.uml', '!src/**/*.png', '!src/**/*.php') }}"
       - name: cache
         continue-on-error: true
         uses: actions/cache@v2
         with:
           path: ${{ env.CACHE_DIR }}
-          key: ${{ runner.os }}-${{ hashfiles('CMakeFiles.txt', 'Builds/CMake/**') }}-${{ matrix.image }}-nih-${{ matrix.ninja_ccs }}-${{ matrix.make_ccs }}
+          key: ${{ runner.os }}-${{ steps.cachekeys.outputs.cmakeconfig }}-${{ matrix.image }}-nih-${{ matrix.ninja_ccs }}-${{ matrix.make_ccs }}
       - name: CMake
         shell: bash
         run: |
@@ -67,9 +78,9 @@ jobs:
 
             cmake --version
 
-            if [ "${{ matrix.image }}" != "rippled-ci-builder:2944b78d22db" ]
+            if [ "${{ matrix.image }}" == "rippled-ci-builder:2944b78d22db" ]
             then
-                export CMAKE_EXTRA_ARGS+="-DBoost_NO_BOOST_CMAKE=ON"
+                export CMAKE_EXTRA_ARGS+=" -DBoost_NO_BOOST_CMAKE=ON"
             fi
 
             # Builds that use unix-makefiles
@@ -85,7 +96,9 @@ jobs:
                     dir="build/$( basename ${CXX} ).${BUILD_TYPE}.makefile"
                     mkdir -pv "${dir}"
                     pushd "${dir}"
+                    set -x
                     cmake -DCMAKE_BUILD_TYPE=${BUILD_TYPE} ${CMAKE_EXTRA_ARGS} ../..
+                    set +x
                     popd
                 done
             done
@@ -104,7 +117,9 @@ jobs:
                     dir="build/$( basename ${CXX} ).${BUILD_TYPE}"
                     mkdir -pv "${dir}"
                     pushd "${dir}"
+                    set -x
                     cmake -DCMAKE_BUILD_TYPE=${BUILD_TYPE} ${CMAKE_EXTRA_ARGS} ../..
+                    set +x
                     popd
                 done
             done
@@ -157,7 +172,7 @@ jobs:
         unity: [ "unity=OFF", "unity=ON" ]
         canfail: [ false ]
         image: [ "rippled-ci-builder:2020-01-08", "rippled-ci-builder:2944b78d22db" ]
-        name: [ "" ]
+        name: [ "base" ]
         exclude:
             # The 2020-01-08 image doesn't have clang-10
             - image: "rippled-ci-builder:2020-01-08"
@@ -192,7 +207,6 @@ jobs:
               unity: "unity=ON"
               canfail: false
               image: "rippled-ci-builder:2020-01-08"
-              name: ""
             # Reporting mode
             - name: "Reporting clang-8 debug"
               CMAKE_ADD: "-Dreporting=ON"
@@ -209,7 +223,8 @@ jobs:
               TARGET: coverage_report
               SKIP_TESTS: true
               unity: "unity=ON"
-              image: "rippled-ci-builder:2944b78d22db"
+              # Need this image because it has the coverage tools
+              image: "rippled-ci-builder:2020-01-08"
               canfail: false
             - name: "Coverage clang-8"
               CMAKE_ADD: "-Dcoverage=ON"
@@ -218,6 +233,7 @@ jobs:
               TARGET: coverage_report
               SKIP_TESTS: true
               unity: "unity=ON"
+              # Need this image because it has the coverage tools
               image: "rippled-ci-builder:2020-01-08"
               canfail: false
             # Manual tests
@@ -322,7 +338,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-      - name: cache
+      - name: Check cache keys
+        run: |
+          echo "cmakeconfig: ${{ needs.linux-cache.outputs.cmakeconfig }}"
+          echo "headers: ${{ needs.linux-cache.outputs.headers }}"
+          echo "source: ${{ needs.linux-cache.outputs.source }}"
+      - name: Cache
         continue-on-error: true
         uses: actions/cache@v2
         # The cache key is built on the following in order
@@ -332,23 +353,23 @@ jobs:
         # 4) The build compiler
         # 5) The build type
         # 6) The build unity setting
-        # 7) The hash of all the header files under the source dir.
-        # 8) The hash of all the code files under the source dir.
-        # 9) The build custom name.
+        # 7) The build custom name.
+        # 8) The hash of all the header files under the source dir.
+        # 9) The hash of all the code files under the source dir.
         # When restoring, if the matching cache is not found, search for a usable
         # cache by chopping pieces off the end of the cache key until a match is
-        # found, with a special case for NIH built in the previous job at the end
+        # found, with special cases for a "base" build, and the NIH built in the
+        # previous job
         with:
           path: ${{ env.CACHE_DIR }}
-          key: ${{ runner.os }}-${{ hashfiles('CMakeFiles.txt', 'Builds/CMake/**') }}-${{ matrix.image }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.UNITY }}-${{ hashfiles('src/**/*.h', 'src/**/*.hpp', 'src/**/*.ipp') }}-${{ hashfiles('src/**', '!src/**/*.md', '!src/**/*.uml', '!src/**/*.png', '!src/**/*.php') }}-${{ matrix.name }}
+          key: ${{ runner.os }}-${{ needs.linux-cache.outputs.cmakeconfig }}-${{ matrix.image }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.UNITY }}-${{ matrix.name }}-${{ needs.linux-cache.outputs.headers }}-${{ needs.linux-cache.outputs.source }}
           restore-keys: |
-            ${{ runner.os }}-${{ hashfiles('CMakeFiles.txt', 'Builds/CMake/**') }}-${{ matrix.image }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.UNITY }}-${{ hashfiles('src/**/*.h', 'src/**/*.hpp', 'src/**/*.ipp') }}-${{ hashfiles('src/**', '!src/**/*.md', '!src/**/*.uml', '!src/**/*.png', '!src/**/*.php') }}
-            ${{ runner.os }}-${{ hashfiles('CMakeFiles.txt', 'Builds/CMake/**') }}-${{ matrix.image }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.UNITY }}-${{ hashfiles('src/**/*.h', 'src/**/*.hpp', 'src/**/*.ipp') }}
-            ${{ runner.os }}-${{ hashfiles('CMakeFiles.txt', 'Builds/CMake/**') }}-${{ matrix.image }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.UNITY }}
-            ${{ runner.os }}-${{ hashfiles('CMakeFiles.txt', 'Builds/CMake/**') }}-${{ matrix.image }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}
-            ${{ runner.os }}-${{ hashfiles('CMakeFiles.txt', 'Builds/CMake/**') }}-${{ matrix.image }}-${{ matrix.CC }}
-            ${{ runner.os }}-${{ hashfiles('CMakeFiles.txt', 'Builds/CMake/**') }}-${{ matrix.image }}-nih
-            ${{ runner.os }}-${{ hashfiles('CMakeFiles.txt', 'Builds/CMake/**') }}-${{ matrix.image }}
+            ${{ runner.os }}-${{ needs.linux-cache.outputs.cmakeconfig }}-${{ matrix.image }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.UNITY }}-base-${{ needs.linux-cache.outputs.headers }}-${{ needs.linux-cache.outputs.source }}
+            ${{ runner.os }}-${{ needs.linux-cache.outputs.cmakeconfig }}-${{ matrix.image }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.UNITY }}-${{ matrix.name }}-${{ needs.linux-cache.outputs.headers }}
+            ${{ runner.os }}-${{ needs.linux-cache.outputs.cmakeconfig }}-${{ matrix.image }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.UNITY }}-base-${{ needs.linux-cache.outputs.headers }}
+            ${{ runner.os }}-${{ needs.linux-cache.outputs.cmakeconfig }}-${{ matrix.image }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.UNITY }}-${{ matrix.name }}
+            ${{ runner.os }}-${{ needs.linux-cache.outputs.cmakeconfig }}-${{ matrix.image }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.UNITY }}-base
+            ${{ runner.os }}-${{ needs.linux-cache.outputs.cmakeconfig }}-${{ matrix.image }}-nih
       - name: Dump-environment
         run: |
           env
@@ -392,16 +413,20 @@ jobs:
 
       - name: Scrub cache
         shell: bash
-        if: ${{ ! steps.cache.outputs.cache-hit }}
+        if: ${{ ! steps.Cache.outputs.cache-hit }}
         continue-on-error: true
         run: |
             # The cache that was retrieved could be from another build
             # with different params. Do some cleanup.
-            set -x
-            echo Cache was loaded from an indirect hit
-            find ${NIH_CACHE_ROOT} -type d -iname '*-build'
-            ls -ld ${NIH_CACHE_ROOT}/*/*/*/src/*-build/
-            rm -rf ${NIH_CACHE_ROOT}/*/*/*/src/*-build/*
+            if [ -e ${NIH_CACHE_ROOT} ]
+            then
+                echo Cache was loaded from an indirect hit
+                find ${NIH_CACHE_ROOT} -type d -iname '*-build'
+                ls -ld ${NIH_CACHE_ROOT}/*/*/*/src/*-build/
+                # rm -rf ${NIH_CACHE_ROOT}/*/*/*/src/*-build/*
+            else
+                echo No cache found
+            fi
       - name: ccache install
         if: matrix.image == 'rippled-ci-builder:2944b78d22db'
         shell: bash

@@ -112,15 +112,21 @@ done
 
 # generate
 ${time} cmake ../.. -DCMAKE_BUILD_TYPE=${BUILD_TYPE} ${CMAKE_EXTRA_ARGS}
-# Display the cmake output, to help with debugging if something fails
-for file in CMakeOutput.log CMakeError.log
-do
-  if [ -f CMakeFiles/${file} ]
-  then
-    ls -l CMakeFiles/${file}
-    cat CMakeFiles/${file}
-  fi
-done
+
+# Display the cmake output, to help with debugging if something fails,
+# unless this is running under a Github action. They have another
+# mechanism to dump the logs.
+if [[ ! -v GITHUB_ACTIONS || "${GITHUB_ACTIONS}" != "true" ]]
+then
+    for file in CMakeOutput.log CMakeError.log
+    do
+      if [ -f CMakeFiles/${file} ]
+      then
+        ls -l CMakeFiles/${file}
+        cat CMakeFiles/${file}
+      fi
+    done
+fi
 # build
 export DESTDIR=$(pwd)/_INSTALLED_
 
