@@ -161,7 +161,7 @@ jobs:
         # docker image has clang 7,8,9 & gcc 6,7,8,9
         CC: [ "gcc-8", "gcc-9", "clang-8", "clang-9", "clang-10" ]
         BUILD_TYPE: [ Debug, Release ]
-        unity: [ "unity=OFF", "unity=ON" ]
+        unity: [ "OFF", "ON" ]
         canfail: [ false ]
         image: [ "rippled-ci-builder:2020-01-08", "rippled-ci-builder:2944b78d22db" ]
         name: [ "base" ]
@@ -196,7 +196,7 @@ jobs:
             # - CC: "gcc-9"
             #  BUILD_TYPE: "Release"
             #  CMAKE_ADD: "-DCMAKE_UNITY_BUILD_BATCH_SIZE=7"
-            #  unity: "unity=ON"
+            #  unity: "ON"
             #  canfail: false
             #  image: "rippled-ci-builder:2020-01-08"
             # Reporting mode
@@ -204,7 +204,7 @@ jobs:
               CMAKE_ADD: "-Dreporting=ON"
               CC: "clang-8"
               BUILD_TYPE: "Debug"
-              unity: "unity=ON"
+              unity: "ON"
               image: "rippled-ci-builder:2020-01-08"
               canfail: false
             # Coverage builds
@@ -214,7 +214,7 @@ jobs:
               BUILD_TYPE: "Debug"
               TARGET: coverage_report
               SKIP_TESTS: true
-              unity: "unity=ON"
+              unity: "ON"
               # Need this image because it has the coverage tools
               image: "rippled-ci-builder:2020-01-08"
               canfail: false
@@ -224,7 +224,7 @@ jobs:
               BUILD_TYPE: "Debug"
               TARGET: coverage_report
               SKIP_TESTS: true
-              unity: "unity=ON"
+              unity: "ON"
               # Need this image because it has the coverage tools
               image: "rippled-ci-builder:2020-01-08"
               canfail: false
@@ -233,7 +233,7 @@ jobs:
               MANUAL_TESTS: true
               CC: "gcc-8"
               BUILD_TYPE: Debug
-              unity: "unity=ON"
+              unity: "ON"
               image: "rippled-ci-builder:2944b78d22db"
               # Temporary, because I just want to see a job succeed
               canfail: true
@@ -241,7 +241,7 @@ jobs:
               MANUAL_TESTS: true
               CC: "gcc-8"
               BUILD_TYPE: "Release"
-              unity: "unity=ON"
+              unity: "ON"
               image: "rippled-ci-builder:2944b78d22db"
               # Temporary, because I just want to see a job succeed
               canfail: true
@@ -252,7 +252,7 @@ jobs:
               CC: "clang-8"
               BUILD_TYPE: Release
               PARALLEL_TESTS: false
-              unity: "unity=ON"
+              unity: "ON"
               image: "rippled-ci-builder:2020-01-08"
               canfail: false
             # ubsan
@@ -262,7 +262,7 @@ jobs:
               CC: "clang-8"
               BUILD_TYPE: Release
               PARALLEL_TESTS: false
-              unity: "unity=ON"
+              unity: "ON"
               image: "rippled-ci-builder:2020-01-08"
               canfail: false
             # tsan
@@ -275,7 +275,7 @@ jobs:
               CC: "clang-8"
               BUILD_TYPE: "Release"
               PARALLEL_TESTS: false
-              unity: "unity=ON"
+              unity: "ON"
               canfail: true
               image: "rippled-ci-builder:2020-01-08"
             # dynamic lib builds
@@ -283,14 +283,14 @@ jobs:
               CMAKE_ADD: "-Dstatic=OFF"
               CC: "gcc-8"
               BUILD_TYPE: Debug
-              unity: "unity=ON"
+              unity: "ON"
               image: "rippled-ci-builder:2944b78d22db"
               canfail: true
             - name: "non-static BUILD_SHARED_LIBS gcc-8"
               CMAKE_ADD: "-Dstatic=OFF -DBUILD_SHARED_LIBS=ON"
               CC: "gcc-8"
               BUILD_TYPE: Debug
-              unity: "unity=ON"
+              unity: "ON"
               image: "rippled-ci-builder:2944b78d22db"
               canfail: true
             # makefile
@@ -298,7 +298,7 @@ jobs:
               NINJA_BUILD: false
               CC: "gcc-8"
               BUILD_TYPE: Debug
-              unity: "unity=ON"
+              unity: "ON"
               image: "rippled-ci-builder:2944b78d22db"
               canfail: true
             # verify build with min version of cmake
@@ -307,7 +307,7 @@ jobs:
               CC: "gcc-8"
               BUILD_TYPE: Debug
               SKIP_TESTS: true
-              unity: "unity=ON"
+              unity: "ON"
               image: "rippled-ci-builder:2944b78d22db"
               canfail: true
             # validator keys project as subproj of rippled
@@ -316,7 +316,7 @@ jobs:
               CC: "gcc-8"
               BUILD_TYPE: Debug
               CMAKE_ADD: "-Dvalidator_keys=ON"
-              unity: "unity=ON"
+              unity: "ON"
               image: "rippled-ci-builder:2944b78d22db"
               canfail: true
     # https://docs.github.com/en/free-pro-team@latest/actions/reference/workflow-syntax-for-github-actions#jobsjob_idcontinue-on-error
@@ -326,7 +326,7 @@ jobs:
     env:
       CC: ${{ matrix.CC }}
       BUILD_TYPE: ${{ matrix.BUILD_TYPE }}
-      CMAKE_ADD: "-D${{ matrix.unity }} ${{ matrix.CMAKE_ADD }}"
+      CMAKE_ADD: "-Dunity=${{ matrix.unity }} ${{ matrix.CMAKE_ADD }}"
       NUM_PROCESSORS: ${{ matrix.NUM_PROCESSORS }}
     steps:
       - name: Checkout
@@ -350,78 +350,36 @@ jobs:
         # previous job
         with:
           path: ${{ env.CACHE_DIR }}
-          key: ${{ runner.os }}-${{ needs.linux-cache.outputs.cmakeconfig }}-${{ matrix.image }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.UNITY }}-${{ matrix.name }}-${{ needs.linux-cache.outputs.headers }}-${{ needs.linux-cache.outputs.source }}
+          key: ${{ runner.os }}-${{ needs.linux-cache.outputs.cmakeconfig }}-${{ matrix.image }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.unity }}-${{ matrix.name }}-${{ needs.linux-cache.outputs.headers }}-${{ needs.linux-cache.outputs.source }}
           restore-keys: |
-            ${{ runner.os }}-${{ needs.linux-cache.outputs.cmakeconfig }}-${{ matrix.image }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.UNITY }}-base-${{ needs.linux-cache.outputs.headers }}-${{ needs.linux-cache.outputs.source }}
-            ${{ runner.os }}-${{ needs.linux-cache.outputs.cmakeconfig }}-${{ matrix.image }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.UNITY }}-${{ matrix.name }}-${{ needs.linux-cache.outputs.headers }}
-            ${{ runner.os }}-${{ needs.linux-cache.outputs.cmakeconfig }}-${{ matrix.image }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.UNITY }}-base-${{ needs.linux-cache.outputs.headers }}
-            ${{ runner.os }}-${{ needs.linux-cache.outputs.cmakeconfig }}-${{ matrix.image }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.UNITY }}-${{ matrix.name }}
-            ${{ runner.os }}-${{ needs.linux-cache.outputs.cmakeconfig }}-${{ matrix.image }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.UNITY }}-base
+            ${{ runner.os }}-${{ needs.linux-cache.outputs.cmakeconfig }}-${{ matrix.image }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.unity }}-base-${{ needs.linux-cache.outputs.headers }}-${{ needs.linux-cache.outputs.source }}
+            ${{ runner.os }}-${{ needs.linux-cache.outputs.cmakeconfig }}-${{ matrix.image }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.unity }}-${{ matrix.name }}-${{ needs.linux-cache.outputs.headers }}
+            ${{ runner.os }}-${{ needs.linux-cache.outputs.cmakeconfig }}-${{ matrix.image }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.unity }}-base-${{ needs.linux-cache.outputs.headers }}
+            ${{ runner.os }}-${{ needs.linux-cache.outputs.cmakeconfig }}-${{ matrix.image }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.unity }}-${{ matrix.name }}
+            ${{ runner.os }}-${{ needs.linux-cache.outputs.cmakeconfig }}-${{ matrix.image }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.unity }}-base
             ${{ runner.os }}-${{ needs.linux-cache.outputs.cmakeconfig }}-${{ matrix.image }}-nih
-      - name: Dump-environment
-        run: |
-          env
-          set | grep =
-      - name: Install ccache
-        if: matrix.image == 'rippled-ci-builder:2944b78d22db'
-        shell: bash
-        run: |
-          if ! type -a ccache
-          then
-            apt install ccache
-          fi
-      - name: Reset ccache stats
-        run: |
-            ccache -s
-            # Reset the stats so only this build counts
-            ccache -z
+      - name: Check
+        run: ls -lR ./.github/actions/build-action*
       - name: Build and test
-        shell: bash
-        run: |
-            export CXX=${CC/gcc/g++}
-            export CXX=${CXX/clang/clang++}
-            export NUM_PROCESSORS=${NUM_PROCESSORS:-$( nproc )}
-            echo NUM_PROCESSORS is ${NUM_PROCESSORS}
-            if [ "${{ matrix.image }}" == "rippled-ci-builder:2944b78d22db" ]
-            then
-                export CMAKE_EXTRA_ARGS+=" -DBoost_NO_BOOST_CMAKE=ON"
-            fi
-            if [ "${BUILD_TYPE}" == "Release" ]
-            then
-                export CMAKE_EXTRA_ARGS+=" -Dassert=ON"
-            fi
-
-            # Override environment variables that don't work smoothly
-            # using env:
-            if [[ "${{ matrix.PARALLEL_TESTS }}" != "" ]]; then export PARALLEL_TESTS="${{ matrix.PARALLEL_TESTS }}" ; fi
-            if [[ "${{ matrix.TARGET }}" != "" ]]; then export TARGET="${{ matrix.TARGET }}" ; fi
-            if [[ "${{ matrix.SKIP_TESTS }}" != "" ]]; then export SKIP_TESTS="${{ matrix.SKIP_TESTS }}" ; fi
-            if [[ "${{ matrix.MANUAL_TESTS }}" != "" ]]; then export MANUAL_TESTS="${{ matrix.MANUAL_TESTS }}" ; fi
-            if [[ "${{ matrix.ASAN_OPTIONS }}" != "" ]]; then export ASAN_OPTIONS="${{ matrix.ASAN_OPTIONS }}" ; fi
-            if [[ "${{ matrix.UBSAN_OPTIONS }}" != "" ]]; then export UBSAN_OPTIONS="${{ matrix.UBSAN_OPTIONS }}" ; fi
-            if [[ "${{ matrix.TSAN_OPTIONS }}" != "" ]]; then export TSAN_OPTIONS="${{ matrix.TSAN_OPTIONS }}" ; fi
-            if [[ "${{ matrix.NINJA_BUILD }}" != "" ]]; then export NINJA_BUILD="${{ matrix.NINJA_BUILD }}" ; fi
-            if [[ "${{ matrix.CMAKE_EXE }}" != "" ]]; then export CMAKE_EXE="${{ matrix.CMAKE_EXE }}" ; fi
-            if [ "${CMAKE_ADD}" != "" ] ; then export CMAKE_EXTRA_ARGS+=" ${CMAKE_ADD}"; fi
-            # Do the build
-            bin/ci/ubuntu/build-and-test.sh
-      - name: Post-run ccache stats
-        if: always()
-        run: ccache -s
-      - name: Debug output
-        if: always()
-        shell: bash
-        continue-on-error: true
-        run: |
-          time df -h
-          du -s ${NIH_CACHE_ROOT}/*
-          if [ -e build ] ; then find build \( -name CMakeOutput.log -o -name CMakeError.log \) -ls -exec cat {} \; ; fi
+        uses: ./.github/actions/build-action
+        with:
+          name: ${{ matrix.name }}
+          CC: ${{ matrix.CC }}
+          BUILD_TYPE: ${{ matrix.BUILD_TYPE }}
+          unity: ${{ matrix.unity }}
+          CMAKE_ADD: ${{ env.CMAKE_ADD }}
+          NUM_PROCESSORS: ${{ matrix.NUM_PROCESSORS }}
+          CACHE_DIR: ${{ env.CACHE_DIR }}
+          image: ${{ matrix.image }}
+          cmakeconfig: ${{ needs.linux-cache.outputs.cmakeconfig }}
+          headers: ${{ needs.linux-cache.outputs.headers }}
+          source: ${{ needs.linux-cache.outputs.source }}
       - name: Debug output artifacts
         if: always()
         uses: actions/upload-artifact@v2
         continue-on-error: true
         with:
-          name: debug-output ${{ matrix.name }} ${{ matrix.CC }} ${{ matrix.BUILD_TYPE }} ${{ matrix.UNITY }}
+          name: debug-output ${{ matrix.name }} ${{ matrix.CC }} ${{ matrix.BUILD_TYPE }} unity=${{ matrix.unity }}
           retention-days: 7
           if-no-files-found: ignore
           path: |
@@ -432,7 +390,7 @@ jobs:
         uses: actions/upload-artifact@v2
         continue-on-error: true
         with:
-          name: rippled ${{ matrix.name }} ${{ matrix.CC }} ${{ matrix.BUILD_TYPE }} ${{ matrix.UNITY }}
+          name: rippled ${{ matrix.name }} ${{ matrix.CC }} ${{ matrix.BUILD_TYPE }} unity=${{ matrix.unity }}
           retention-days: 7
           if-no-files-found: ignore
           path: |

@@ -137,8 +137,7 @@ Env::close(
         if (resp["result"]["status"] != std::string("success"))
         {
             JLOG(journal.error())
-                << "Env::close() failed: " << resp["result"]["status"]
-                << std::endl;
+                << "Env::close() failed: " << resp << std::endl;
             res = false;
         }
     }
@@ -271,7 +270,9 @@ Env::parseResult(Json::Value const& jr)
         jr[jss::result].isMember(jss::engine_result_code))
         ter = TER::fromInt(jr[jss::result][jss::engine_result_code].asInt());
     else
-        ter = temINVALID;
+        // Use an error code that is not used anywhere in the transaction engine
+        // to distinguish this case.
+        ter = telLOCAL_ERROR;
     return std::make_pair(ter, isTesSuccess(ter) || isTecClaim(ter));
 }
 
