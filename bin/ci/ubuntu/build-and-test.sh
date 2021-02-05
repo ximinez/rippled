@@ -21,7 +21,8 @@ echo "BUILD TYPE: ${BUILD_TYPE}"
 echo "BUILD TARGET: ${TARGET}"
 
 JOBS=${NUM_PROCESSORS:-2}
-if [[ ${TRAVIS:-false} != "true" ]]; then
+if [[ ${TRAVIS:-false} != "true" && ${GITHUB_ACTIONS:-false} != "true" ]]
+then
     JOBS=$((JOBS+1))
 fi
 
@@ -180,7 +181,8 @@ else
         'beast.chrono.abstract_clock'
         'beast.unit_test.print'
     )
-    if [[ ${TRAVIS:-false} != "true" ]]; then
+    if [[ ${TRAVIS:-false} != "true" && ${GITHUB_ACTIONS:-false} != "true" ]]
+    then
         # these two tests cause travis CI to run out of memory.
         # TODO: investigate possible workarounds.
         manual_tests=(

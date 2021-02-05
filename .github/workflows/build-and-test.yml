@@ -193,12 +193,12 @@ jobs:
             #
             # gcc-9 Release unity runs out of memory, so build smaller
             # unity files.
-            - CC: "gcc-9"
-              BUILD_TYPE: "Release"
-              CMAKE_ADD: "-DCMAKE_UNITY_BUILD_BATCH_SIZE=7"
-              unity: "unity=ON"
-              canfail: false
-              image: "rippled-ci-builder:2020-01-08"
+            # - CC: "gcc-9"
+            #  BUILD_TYPE: "Release"
+            #  CMAKE_ADD: "-DCMAKE_UNITY_BUILD_BATCH_SIZE=7"
+            #  unity: "unity=ON"
+            #  canfail: false
+            #  image: "rippled-ci-builder:2020-01-08"
             # Reporting mode
             - name: "Reporting clang-8 debug"
               CMAKE_ADD: "-Dreporting=ON"
@@ -241,7 +241,6 @@ jobs:
               MANUAL_TESTS: true
               CC: "gcc-8"
               BUILD_TYPE: "Release"
-              CMAKE_ADD: "-Dassert=ON -Dunity=OFF"
               unity: "unity=ON"
               image: "rippled-ci-builder:2944b78d22db"
               # Temporary, because I just want to see a job succeed
@@ -386,6 +385,10 @@ jobs:
             if [ "${{ matrix.image }}" == "rippled-ci-builder:2944b78d22db" ]
             then
                 export CMAKE_EXTRA_ARGS+=" -DBoost_NO_BOOST_CMAKE=ON"
+            fi
+            if [ "${BUILD_TYPE}" == "Release" ]
+            then
+                export CMAKE_EXTRA_ARGS+=" -Dassert=ON"
             fi
 
             # Override environment variables that don't work smoothly
