@@ -168,11 +168,8 @@ jobs:
             # The 2020-01-08 image doesn't have clang-10
             - image: "rippled-ci-builder:2020-01-08"
               CC: "clang-10"
-            # The 2020-01-08 image does have gcc-8, but it's
-            # having problems, so see if it builds any better
-            # with the other one
-            - image: "rippled-ci-builder:2020-01-08"
-              CC: "clang-10"
+            # Both images have gcc-8, but the 2020-01-08
+            # images loads slower, so build with the other one
             - image: "rippled-ci-builder:2020-01-08"
               CC: "gcc-8"
             # The 2020-01-08 image has the other compilers, so
@@ -214,23 +211,22 @@ jobs:
         # The cache key is built on the following in order
         # 1) OS.
         # 2) The hash of all the CMake config files.
-        # 3) Docker image
-        # 4) The build compiler
-        # 5) The build type
-        # 6) The build unity setting
-        # 7) The build custom name.
-        # 8) The hash of all the header files under the source dir.
-        # 9) The hash of all the code files under the source dir.
+        # 3) The build compiler
+        # 4) The build type
+        # 5) The build unity setting
+        # 6) The build custom name.
+        # 7) The hash of all the header files under the source dir.
+        # 8) The hash of all the code files under the source dir.
         # When restoring, if the matching cache is not found, search for a usable
         # cache by chopping pieces off the end of the cache key until a match is
         # found, with special cases for a "base" build, and the NIH built in the
         # previous job
         with:
           path: ${{ env.CACHE_DIR }}
-          key: ${{ runner.os }}-${{ needs.linux-cache.outputs.cmakeconfig }}-${{ matrix.image }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.UNITY }}-${{ matrix.name }}-${{ needs.linux-cache.outputs.headers }}-${{ needs.linux-cache.outputs.source }}
+          key: ${{ runner.os }}-${{ needs.linux-cache.outputs.cmakeconfig }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.UNITY }}-${{ matrix.name }}-${{ needs.linux-cache.outputs.headers }}-${{ needs.linux-cache.outputs.source }}
           restore-keys: |
-            ${{ runner.os }}-${{ needs.linux-cache.outputs.cmakeconfig }}-${{ matrix.image }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.UNITY }}-${{ matrix.name }}-${{ needs.linux-cache.outputs.headers }}
-            ${{ runner.os }}-${{ needs.linux-cache.outputs.cmakeconfig }}-${{ matrix.image }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.UNITY }}-${{ matrix.name }}
+            ${{ runner.os }}-${{ needs.linux-cache.outputs.cmakeconfig }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.UNITY }}-${{ matrix.name }}-${{ needs.linux-cache.outputs.headers }}
+            ${{ runner.os }}-${{ needs.linux-cache.outputs.cmakeconfig }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.UNITY }}-${{ matrix.name }}
             ${{ runner.os }}-${{ needs.linux-cache.outputs.cmakeconfig }}-${{ matrix.image }}-nih
       - name: Dump-environment
         run: |
@@ -253,12 +249,15 @@ jobs:
         uses: ./.github/actions/build-action
         with:
           image: ${{ matrix.image }}
+      - name: Post-run ccache stats
+        shell: bash
+        run: ccache -s
       - name: Debug output artifacts
         if: always()
         uses: actions/upload-artifact@v2
         continue-on-error: true
         with:
-          name: debug-output ${{ matrix.name }} ${{ matrix.CC }} ${{ matrix.BUILD_TYPE }} ${{ matrix.UNITY }}
+          name: debug-output ${{ matrix.name }} ${{ matrix.CC }} ${{ matrix.BUILD_TYPE }} unity=${{ matrix.UNITY }}
           retention-days: 7
           if-no-files-found: ignore
           path: |
@@ -268,7 +267,7 @@ jobs:
         uses: actions/upload-artifact@v2
         continue-on-error: true
         with:
-          name: rippled ${{ matrix.name }} ${{ matrix.CC }} ${{ matrix.BUILD_TYPE }} ${{ matrix.UNITY }}
+          name: rippled ${{ matrix.name }} ${{ matrix.CC }} ${{ matrix.BUILD_TYPE }} unity=${{ matrix.UNITY }}
           retention-days: 7
           if-no-files-found: ignore
           path: |
@@ -419,21 +418,20 @@ jobs:
         # The cache key is built on the following in order
         # 1) OS.
         # 2) The hash of all the CMake config files.
-        # 3) Docker image
-        # 4) The build compiler
-        # 5) The build type
-        # 6) The build unity setting
-        # 7) The build custom name.
-        # 8) The hash of all the header files under the source dir.
-        # 9) The hash of all the code files under the source dir.
+        # 3) The build compiler
+        # 4) The build type
+        # 5) The build unity setting
+        # 6) The build custom name.
+        # 7) The hash of all the header files under the source dir.
+        # 8) The hash of all the code files under the source dir.
         # When restoring, if the matching cache is not found, search for the
         # cache from the "base" build, which should have just completed, and
         # the NIH built as a fallback, but that should never happen.
         with:
           path: ${{ env.CACHE_DIR }}
-          key: ${{ runner.os }}-${{ needs.linux-cache.outputs.cmakeconfig }}-${{ matrix.image }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.unity }}-${{ matrix.name }}-${{ needs.linux-cache.outputs.headers }}-${{ needs.linux-cache.outputs.source }}
+          key: ${{ runner.os }}-${{ needs.linux-cache.outputs.cmakeconfig }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.unity }}-${{ matrix.name }}-${{ needs.linux-cache.outputs.headers }}-${{ needs.linux-cache.outputs.source }}
           restore-keys: |
-            ${{ runner.os }}-${{ needs.linux-cache.outputs.cmakeconfig }}-${{ matrix.image }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.UNITY }}-base-${{ needs.linux-cache.outputs.headers }}-${{ needs.linux-cache.outputs.source }}
+            ${{ runner.os }}-${{ needs.linux-cache.outputs.cmakeconfig }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.UNITY }}-base-${{ needs.linux-cache.outputs.headers }}-${{ needs.linux-cache.outputs.source }}
             ${{ runner.os }}-${{ needs.linux-cache.outputs.cmakeconfig }}-${{ matrix.image }}-nih
       - name: Build and test
         uses: ./.github/actions/build-action
@@ -447,6 +445,9 @@ jobs:
           TSAN_OPTIONS: ${{ matrix.TSAN_OPTIONS }}
           NINJA_BUILD: ${{ matrix.NINJA_BUILD }}
           CMAKE_EXE: ${{ matrix.CMAKE_EXE }}
+      - name: Post-run ccache stats
+        shell: bash
+        run: ccache -s
       - name: Debug output artifacts
         if: always()
         uses: actions/upload-artifact@v2
@@ -515,7 +516,7 @@ jobs:
       - name: Download rippled artifact
         uses: actions/download-artifact@v2
         with:
-          name: rippled ${{ matrix.name }} ${{ matrix.CC }} ${{ matrix.BUILD_TYPE }} unity=${{ matrix.unity }}
+          name: rippled ${{ matrix.name }} ${{ matrix.CC }} ${{ matrix.BUILD_TYPE }} unity=${{ matrix.UNITY }}
       - name: Check
         run: find -iname rippled -ls
       # - name: Run manual tests
