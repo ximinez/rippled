@@ -180,7 +180,7 @@ jobs:
               CC: "clang-8"
             - image: "rippled-ci-builder:2944b78d22db"
               CC: "clang-9"
-        #include:
+        include:
             # Special cases which add to or override the cases in the
             # matrix.
             #
@@ -190,13 +190,13 @@ jobs:
             # gcc Release unity builds run out of memory, so build smaller
             # unity files.
             - CC: "gcc-8"
-              BUILD_TYPE: "Release"
-              CMAKE_ADD: "-DCMAKE_UNITY_BUILD_BATCH_SIZE=7"
+              BUILD_TYPE: Release
               unity: "ON"
+              CMAKE_ADD: "-DCMAKE_UNITY_BUILD_BATCH_SIZE=7"
             - CC: "gcc-9"
-              BUILD_TYPE: "Release"
-              CMAKE_ADD: "-DCMAKE_UNITY_BUILD_BATCH_SIZE=7"
+              BUILD_TYPE: Release
               unity: "ON"
+              CMAKE_ADD: "-DCMAKE_UNITY_BUILD_BATCH_SIZE=7"
     container:
       image: rippleci/${{ matrix.image }}
     env:
