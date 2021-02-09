@@ -149,7 +149,7 @@ jobs:
             build/**/CMakeOutput.log
             build/**/CMakeError.log
   linux-debug:
-    name: Linux debug builds
+    name: Linux debug
     needs: linux-cache
     runs-on: ubuntu-18.04
     timeout-minutes: 720
@@ -259,7 +259,7 @@ jobs:
             build/**/rippled
             !build/**/_INSTALLED_/**
   linux-release:
-    name: Linux release builds
+    name: Linux release
     needs: linux-cache
     runs-on: ubuntu-18.04
     timeout-minutes: 720
@@ -386,7 +386,7 @@ jobs:
             build/**/rippled
             !build/**/_INSTALLED_/**
   linux-custom-debug:
-    name: Linux custom debug builds
+    name: Debug, custom
     needs: linux-debug
     runs-on: ubuntu-18.04
     timeout-minutes: 720
@@ -415,8 +415,8 @@ jobs:
             - name: "Coverage gcc-8"
               CMAKE_ADD: "-Dcoverage=ON"
               CC: "gcc-8"
-              BUILD_TYPE: "Debug"
               TARGET: coverage_report
+              BUILD_TYPE: "Debug"
               SKIP_TESTS: true
               unity: "ON"
               # Need this image because it has the coverage tools
@@ -425,8 +425,8 @@ jobs:
             - name: "Coverage clang-8"
               CMAKE_ADD: "-Dcoverage=ON"
               CC: "clang-8"
-              BUILD_TYPE: "Debug"
               TARGET: coverage_report
+              BUILD_TYPE: "Debug"
               SKIP_TESTS: true
               unity: "ON"
               # Need this image because it has the coverage tools
@@ -557,7 +557,7 @@ jobs:
             !build/**/CMake*
             !build/**/cmake*
   linux-custom-release:
-    name: Linux custom release builds
+    name: Release, custom
     needs: linux-release
     runs-on: ubuntu-18.04
     timeout-minutes: 720
@@ -677,7 +677,7 @@ jobs:
             build/**/rippled
             !build/**/_INSTALLED_/**
   linux-runner-debug:
-    name: Linux manual debug tests
+    name: Debug, manual
     needs: linux-debug
     runs-on: ubuntu-18.04
     timeout-minutes: 720
@@ -696,9 +696,6 @@ jobs:
     container:
       image: rippleci/${{ matrix.image }}
     env:
-      CC: ${{ matrix.CC }}
-      BUILD_TYPE: ${{ matrix.BUILD_TYPE }}
-      CMAKE_ADD: "-Dunity=${{ matrix.unity }} ${{ matrix.CMAKE_ADD }}"
       NUM_PROCESSORS: ${{ matrix.NUM_PROCESSORS }}
     steps:
       - name: Checkout
@@ -706,12 +703,23 @@ jobs:
       - name: Download rippled artifact
         uses: actions/download-artifact@v2
         with:
-          name: rippled ${{ matrix.name }} ${{ matrix.CC }} ${{ matrix.BUILD_TYPE }} unity=${{ matrix.UNITY }}
+          name: rippled base ${{ matrix.CC }} ${{ matrix.BUILD_TYPE }} unity=${{ matrix.UNITY }}
       - name: Check
         run: find -iname rippled -ls
-      # - name: Run manual tests
+      - name: Run manual tests
+        run: |
+            set -x
+            function join_by { local IFS="$1"; shift; echo "$*"; }
+
+            : ${APP_ARGS:=}
+            declare -a manual_tests=( $( $(basename "$0")/manual-tests.sh ) )
+            APP_ARGS+=" --unittest=$(join_by , "${manual_tests[@]}")"
+
+            APP_ARGS+=" --unittest-jobs ${NUM_PROCESSORS:-2}"
+
+            : rippled ${APP_ARGS}
   linux-runner-release:
-    name: Linux manual release tests
+    name: Release, manual
     needs: linux-release
     runs-on: ubuntu-18.04
     timeout-minutes: 720
@@ -730,9 +738,6 @@ jobs:
     container:
       image: rippleci/${{ matrix.image }}
     env:
-      CC: ${{ matrix.CC }}
-      BUILD_TYPE: ${{ matrix.BUILD_TYPE }}
-      CMAKE_ADD: "-Dunity=${{ matrix.unity }} ${{ matrix.CMAKE_ADD }}"
       NUM_PROCESSORS: ${{ matrix.NUM_PROCESSORS }}
     steps:
       - name: Checkout
@@ -740,7 +745,18 @@ jobs:
       - name: Download rippled artifact
         uses: actions/download-artifact@v2
         with:
-          name: rippled ${{ matrix.name }} ${{ matrix.CC }} ${{ matrix.BUILD_TYPE }} unity=${{ matrix.UNITY }}
+          name: rippled base ${{ matrix.CC }} ${{ matrix.BUILD_TYPE }} unity=${{ matrix.UNITY }}
       - name: Check
         run: find -iname rippled -ls
-      # - name: Run manual tests
+      - name: Run manual tests
+        run: |
+            set -x
+            function join_by { local IFS="$1"; shift; echo "$*"; }
+
+            : ${APP_ARGS:=}
+            declare -a manual_tests=( $( $(basename "$0")/manual-tests.sh ) )
+            APP_ARGS+=" --unittest=$(join_by , "${manual_tests[@]}")"
+
+            APP_ARGS+=" --unittest-jobs ${NUM_PROCESSORS:-2}"
+
+            : rippled ${APP_ARGS}
