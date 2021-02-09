@@ -14,7 +14,7 @@ env:
 
 jobs:
   linux-cache:
-    name: Initialize linux cache
+    name: Initialize linux NIH cache
     # The NIH setup puts all the dependency source code in a single,
     # shared directory. Run cmake across all of the compiler combos,
     # then put all the NIH code in the cache. This accomplishes:
@@ -187,14 +187,16 @@ jobs:
             # Note that "name" is used in the cache key, which cannot
             # contain commas (',').
             #
-            # gcc-9 Release unity runs out of memory, so build smaller
+            # gcc Release unity builds run out of memory, so build smaller
             # unity files.
-            # - CC: "gcc-9"
-            #  BUILD_TYPE: "Release"
-            #  CMAKE_ADD: "-DCMAKE_UNITY_BUILD_BATCH_SIZE=7"
-            #  unity: "ON"
-            #  canfail: false
-            #  image: "rippled-ci-builder:2020-01-08"
+            - CC: "gcc-8"
+              BUILD_TYPE: "Release"
+              CMAKE_ADD: "-DCMAKE_UNITY_BUILD_BATCH_SIZE=7"
+              unity: "ON"
+            - CC: "gcc-9"
+              BUILD_TYPE: "Release"
+              CMAKE_ADD: "-DCMAKE_UNITY_BUILD_BATCH_SIZE=7"
+              unity: "ON"
     container:
       image: rippleci/${{ matrix.image }}
     env:
