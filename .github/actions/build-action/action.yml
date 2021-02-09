@@ -1,76 +1,33 @@
 name: 'Build and Test'
 description: 'Build and Test rippled or an alternate target'
 inputs:
-  name:
-    description: 'Name of the running job'
-    required: true
-    default: 'base'
-  CC:
-    description: 'Compiler'
-    required: true
-  BUILD_TYPE:
-    description: 'Build type: Debug or Release'
-    required: true
-    default: 'Debug'
-  unity:
-    description: 'Unity build flag: ON or OFF'
-    required: true
-    default: 'ON'
-  CMAKE_ADD:
-    description: 'Extra parameters to pass to CMake'
-    required: false
-    default: ''
-  NUM_PROCESSORS:
-    description: 'Number of simultaneous processes to use'
-    required: false
-  CACHE_DIR:
-    description: 'Path to cache'
-    required: true
   image:
     description: 'Name of docker image the job is running under'
-    required: true
-    default: ''
-  cmakeconfig:
-    description: 'Expects hash of all CMake config files'
-    required: true
-  headers:
-    description: 'Expects hash of all header files'
-    required: true
-  source:
-    description: 'Expects hash of all source files'
     required: true
   PARALLEL_TESTS:
     description: 'Boolean: Run tests in parallel'
     required: false
-    default: true
   TARGET:
     description: 'CMake target to build and run'
     required: false
-    default: 'rippled'
   SKIP_TESTS:
     description: 'Boolean: Skip tests after building'
     required: false
-    default: false
   MANUAL_TESTS:
     description: 'Boolean: Run selected manual tests only'
     required: false
-    default: false
   ASAN_OPTIONS:
     description: 'Options to use in asan builds'
     required: false
-    default: ''
   UBSAN_OPTIONS:
     description: 'Options to use in ubsan builds'
     required: false
-    default: ''
   TSAN_OPTIONS:
     description: 'Options to use in tsan builds'
     required: false
-    default: ''
   NINJA_BUILD:
     description: 'Boolean: Build with Ninja'
     required: false
-    default: true
   CMAKE_EXE:
     description: 'Use a specific instance of CMake'
     required: false

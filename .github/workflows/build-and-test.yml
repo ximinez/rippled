@@ -203,7 +203,7 @@ jobs:
     env:
       CC: ${{ matrix.CC }}
       BUILD_TYPE: ${{ matrix.BUILD_TYPE }}
-      CMAKE_ADD: "-D${{ matrix.unity }} ${{ matrix.CMAKE_ADD }}"
+      CMAKE_ADD: "-Dunity=${{ matrix.unity }} ${{ matrix.CMAKE_ADD }}"
       NUM_PROCESSORS: ${{ matrix.NUM_PROCESSORS }}
     steps:
       - name: Checkout
@@ -252,17 +252,7 @@ jobs:
       - name: Build and test
         uses: ./.github/actions/build-action
         with:
-          name: ${{ matrix.name }}
-          CC: ${{ matrix.CC }}
-          BUILD_TYPE: ${{ matrix.BUILD_TYPE }}
-          unity: ${{ matrix.unity }}
-          CMAKE_ADD: ${{ env.CMAKE_ADD }}
-          NUM_PROCESSORS: ${{ matrix.NUM_PROCESSORS }}
-          CACHE_DIR: ${{ env.CACHE_DIR }}
           image: ${{ matrix.image }}
-          cmakeconfig: ${{ needs.linux-cache.outputs.cmakeconfig }}
-          headers: ${{ needs.linux-cache.outputs.headers }}
-          source: ${{ needs.linux-cache.outputs.source }}
       - name: Debug output artifacts
         if: always()
         uses: actions/upload-artifact@v2
@@ -275,7 +265,6 @@ jobs:
             build/**/CMakeOutput.log
             build/**/CMakeError.log
       - name: rippled executable artifact
-        if: matrix.TARGET != 'validator-keys'
         uses: actions/upload-artifact@v2
         continue-on-error: true
         with:
@@ -446,22 +435,18 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-${{ needs.linux-cache.outputs.cmakeconfig }}-${{ matrix.image }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.UNITY }}-base-${{ needs.linux-cache.outputs.headers }}-${{ needs.linux-cache.outputs.source }}
             ${{ runner.os }}-${{ needs.linux-cache.outputs.cmakeconfig }}-${{ matrix.image }}-nih
-      - name: Check
-        run: ls -lR ./.github/actions/build-action*
       - name: Build and test
         uses: ./.github/actions/build-action
         with:
-          name: ${{ matrix.name }}
-          CC: ${{ matrix.CC }}
-          BUILD_TYPE: ${{ matrix.BUILD_TYPE }}
-          unity: ${{ matrix.unity }}
-          CMAKE_ADD: ${{ env.CMAKE_ADD }}
-          NUM_PROCESSORS: ${{ matrix.NUM_PROCESSORS }}
-          CACHE_DIR: ${{ env.CACHE_DIR }}
           image: ${{ matrix.image }}
-          cmakeconfig: ${{ needs.linux-cache.outputs.cmakeconfig }}
-          headers: ${{ needs.linux-cache.outputs.headers }}
-          source: ${{ needs.linux-cache.outputs.source }}
+          PARALLEL_TESTS: ${{ matrix.PARALLEL_TESTS }}
+          TARGET: ${{ matrix.TARGET }}
+          SKIP_TESTS: ${{ matrix.SKIP_TESTS }}
+          ASAN_OPTIONS: ${{ matrix.ASAN_OPTIONS }}
+          UBSAN_OPTIONS: ${{ matrix.UBSAN_OPTIONS }}
+          TSAN_OPTIONS: ${{ matrix.TSAN_OPTIONS }}
+          NINJA_BUILD: ${{ matrix.NINJA_BUILD }}
+          CMAKE_EXE: ${{ matrix.CMAKE_EXE }}
       - name: Debug output artifacts
         if: always()
         uses: actions/upload-artifact@v2
