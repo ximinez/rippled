@@ -148,8 +148,8 @@ jobs:
           path: |
             build/**/CMakeOutput.log
             build/**/CMakeError.log
-  linux-base:
-    name: Linux base builds
+  linux-debug:
+    name: Linux debug builds
     needs: linux-cache
     runs-on: ubuntu-18.04
     timeout-minutes: 720
@@ -160,7 +160,117 @@ jobs:
         # Current travis: gcc-8 clang-8 gcc-9 clang-9
         # docker image has clang 7,8,9 & gcc 6,7,8,9
         CC: [ "gcc-8", "gcc-9", "clang-8", "clang-9", "clang-10" ]
-        BUILD_TYPE: [ Debug, Release ]
+        BUILD_TYPE: [ Debug ]
+        unity: [ "OFF", "ON" ]
+        image: [ "rippled-ci-builder:2020-01-08", "rippled-ci-builder:2944b78d22db" ]
+        name: [ "base" ]
+        exclude:
+            # The 2020-01-08 image doesn't have clang-10
+            - image: "rippled-ci-builder:2020-01-08"
+              CC: "clang-10"
+            # Both images have gcc-8, but the 2020-01-08
+            # images loads slower, so build with the other one
+            - image: "rippled-ci-builder:2020-01-08"
+              CC: "gcc-8"
+            # The 2020-01-08 image has the other compilers, so
+            # don't build on the other one
+            - image: "rippled-ci-builder:2944b78d22db"
+              CC: "gcc-9"
+            - image: "rippled-ci-builder:2944b78d22db"
+              CC: "clang-8"
+            - image: "rippled-ci-builder:2944b78d22db"
+              CC: "clang-9"
+    container:
+      image: rippleci/${{ matrix.image }}
+    env:
+      CC: ${{ matrix.CC }}
+      BUILD_TYPE: ${{ matrix.BUILD_TYPE }}
+      CMAKE_ADD: "-Dunity=${{ matrix.unity }} ${{ matrix.CMAKE_ADD }}"
+      NUM_PROCESSORS: ${{ matrix.NUM_PROCESSORS }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Cache
+        continue-on-error: true
+        uses: actions/cache@v2
+        # The cache key is built on the following in order
+        # 1) OS.
+        # 2) The hash of all the CMake config files.
+        # 3) The build compiler
+        # 4) The build type
+        # 5) The build unity setting
+        # 6) The build custom name.
+        # 7) The hash of all the header files under the source dir.
+        # 8) The hash of all the code files under the source dir.
+        # When restoring, if the matching cache is not found, search for a usable
+        # cache by chopping pieces off the end of the cache key until a match is
+        # found, with special cases for a "base" build, and the NIH built in the
+        # previous job
+        with:
+          path: ${{ env.CACHE_DIR }}
+          key: ${{ runner.os }}-${{ needs.linux-cache.outputs.cmakeconfig }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.UNITY }}-${{ matrix.name }}-${{ needs.linux-cache.outputs.headers }}-${{ needs.linux-cache.outputs.source }}
+          restore-keys: |
+            ${{ runner.os }}-${{ needs.linux-cache.outputs.cmakeconfig }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.UNITY }}-${{ matrix.name }}-${{ needs.linux-cache.outputs.headers }}
+            ${{ runner.os }}-${{ needs.linux-cache.outputs.cmakeconfig }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.UNITY }}-${{ matrix.name }}
+            ${{ runner.os }}-${{ needs.linux-cache.outputs.cmakeconfig }}-${{ matrix.image }}-nih
+      - name: Dump-environment
+        run: |
+          env
+          set | grep =
+      - name: Install ccache
+        if: matrix.image == 'rippled-ci-builder:2944b78d22db'
+        shell: bash
+        run: |
+          if ! type -a ccache
+          then
+            apt install ccache
+          fi
+      - name: Reset ccache stats
+        run: |
+            ccache -s
+            # Reset the stats so only this build counts
+            ccache -z
+      - name: Build and test
+        uses: ./.github/actions/build-action
+        with:
+          image: ${{ matrix.image }}
+      - name: Post-run ccache stats
+        shell: bash
+        run: ccache -s
+      - name: Debug output artifacts
+        if: always()
+        uses: actions/upload-artifact@v2
+        continue-on-error: true
+        with:
+          name: debug-output ${{ matrix.name }} ${{ matrix.CC }} ${{ matrix.BUILD_TYPE }} unity=${{ matrix.UNITY }}
+          retention-days: 7
+          if-no-files-found: ignore
+          path: |
+            build/**/CMakeOutput.log
+            build/**/CMakeError.log
+      - name: rippled executable artifact
+        uses: actions/upload-artifact@v2
+        continue-on-error: true
+        with:
+          name: rippled ${{ matrix.name }} ${{ matrix.CC }} ${{ matrix.BUILD_TYPE }} unity=${{ matrix.UNITY }}
+          retention-days: 7
+          if-no-files-found: ignore
+          path: |
+            build/**/rippled
+            !build/**/_INSTALLED_/**
+  linux-release:
+    name: Linux release builds
+    needs: linux-cache
+    runs-on: ubuntu-18.04
+    timeout-minutes: 720
+    # if: commit_message !~ /travis_run_/ OR commit_message =~ /travis_run_linux/
+    strategy:
+      fail-fast: false
+      matrix:
+        # Current travis: gcc-8 clang-8 gcc-9 clang-9
+        # docker image has clang 7,8,9 & gcc 6,7,8,9
+        CC: [ "gcc-8", "gcc-9", "clang-8", "clang-9", "clang-10" ]
+        BUILD_TYPE: [ Release ]
         unity: [ "OFF", "ON" ]
         image: [ "rippled-ci-builder:2020-01-08", "rippled-ci-builder:2944b78d22db" ]
         name: [ "base" ]
@@ -275,9 +385,9 @@ jobs:
           path: |
             build/**/rippled
             !build/**/_INSTALLED_/**
-  linux-special:
-    name: Linux special case builds
-    needs: linux-base
+  linux-custom-debug:
+    name: Linux custom debug builds
+    needs: linux-debug
     runs-on: ubuntu-18.04
     timeout-minutes: 720
     # if: commit_message !~ /travis_run_/ OR commit_message =~ /travis_run_linux/
@@ -286,12 +396,6 @@ jobs:
       matrix:
         # Current travis: gcc-8 clang-8 gcc-9 clang-9
         # docker image has clang 7,8,9 & gcc 6,7,8,9
-        #CC: [ "gcc-8", "gcc-9", "clang-8", "clang-9", "clang-10" ]
-        #BUILD_TYPE: [ Debug, Release ]
-        #unity: [ "unity=OFF", "unity=ON" ]
-        #canfail: [ false ]
-        #image: [ "rippled-ci-builder:2020-01-08", "rippled-ci-builder:2944b78d22db" ]
-        #name: [ "base" ]
         include:
             # Special cases which add to or override the cases in the
             # matrix.
@@ -328,39 +432,6 @@ jobs:
               # Need this image because it has the coverage tools
               image: "rippled-ci-builder:2020-01-08"
               canfail: false
-            # asan
-            - name: "asan clang-8"
-              ASAN_OPTIONS: "print_stats=true:atexit=true"
-              CMAKE_ADD: "-Dsan=address"
-              CC: "clang-8"
-              BUILD_TYPE: Release
-              PARALLEL_TESTS: false
-              unity: "ON"
-              image: "rippled-ci-builder:2020-01-08"
-              canfail: false
-            # ubsan
-            - name: "ubsan clang-8"
-              UBSAN_OPTIONS: "print_stacktrace=1:report_error_type=1"
-              CMAKE_ADD: "-Dsan=undefined"
-              CC: "clang-8"
-              BUILD_TYPE: Release
-              PARALLEL_TESTS: false
-              unity: "ON"
-              image: "rippled-ci-builder:2020-01-08"
-              canfail: false
-            # tsan
-            # current tsan failure *might* be related to:
-            # https://github.com/google/sanitizers/issues/1104
-            #  but we can't get it to run, so leave it disabled for now
-            - name: "tsan clang-8"
-              TSAN_OPTIONS: "history_size=3 external_symbolizer_path=/usr/bin/llvm-symbolizer verbosity=1"
-              CMAKE_ADD: "-Dsan=thread"
-              CC: "clang-8"
-              BUILD_TYPE: "Release"
-              PARALLEL_TESTS: false
-              unity: "ON"
-              canfail: true
-              image: "rippled-ci-builder:2020-01-08"
             # dynamic lib builds
             - name: "non-static gcc-8"
               CMAKE_ADD: "-Dstatic=OFF"
@@ -485,9 +556,129 @@ jobs:
             !build/**/_INSTALLED_/**
             !build/**/CMake*
             !build/**/cmake*
-  linux-runners:
-    name: Linux manual tests
-    needs: linux-base
+  linux-custom-release:
+    name: Linux custom release builds
+    needs: linux-release
+    runs-on: ubuntu-18.04
+    timeout-minutes: 720
+    # if: commit_message !~ /travis_run_/ OR commit_message =~ /travis_run_linux/
+    strategy:
+      fail-fast: false
+      matrix:
+        # Current travis: gcc-8 clang-8 gcc-9 clang-9
+        # docker image has clang 7,8,9 & gcc 6,7,8,9
+        include:
+            # Special cases which add to or override the cases in the
+            # matrix.
+            #
+            # Note that "name" is used in the cache key, which cannot
+            # contain commas (',').
+            #
+            # asan
+            - name: "asan clang-8"
+              ASAN_OPTIONS: "print_stats=true:atexit=true"
+              CMAKE_ADD: "-Dsan=address"
+              CC: "clang-8"
+              BUILD_TYPE: Release
+              PARALLEL_TESTS: false
+              unity: "ON"
+              image: "rippled-ci-builder:2020-01-08"
+              canfail: false
+            # ubsan
+            - name: "ubsan clang-8"
+              UBSAN_OPTIONS: "print_stacktrace=1:report_error_type=1"
+              CMAKE_ADD: "-Dsan=undefined"
+              CC: "clang-8"
+              BUILD_TYPE: Release
+              PARALLEL_TESTS: false
+              unity: "ON"
+              image: "rippled-ci-builder:2020-01-08"
+              canfail: false
+            # tsan
+            # current tsan failure *might* be related to:
+            # https://github.com/google/sanitizers/issues/1104
+            #  but we can't get it to run, so leave it disabled for now
+            - name: "tsan clang-8"
+              TSAN_OPTIONS: "history_size=3 external_symbolizer_path=/usr/bin/llvm-symbolizer verbosity=1"
+              CMAKE_ADD: "-Dsan=thread"
+              CC: "clang-8"
+              BUILD_TYPE: "Release"
+              PARALLEL_TESTS: false
+              unity: "ON"
+              canfail: true
+              image: "rippled-ci-builder:2020-01-08"
+    # https://docs.github.com/en/free-pro-team@latest/actions/reference/workflow-syntax-for-github-actions#jobsjob_idcontinue-on-error
+    continue-on-error: ${{ matrix.canfail }}
+    container:
+      image: rippleci/${{ matrix.image }}
+    env:
+      CC: ${{ matrix.CC }}
+      BUILD_TYPE: ${{ matrix.BUILD_TYPE }}
+      CMAKE_ADD: "-Dunity=${{ matrix.unity }} ${{ matrix.CMAKE_ADD }}"
+      NUM_PROCESSORS: ${{ matrix.NUM_PROCESSORS }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Cache
+        continue-on-error: true
+        uses: actions/cache@v2
+        # The cache key is built on the following in order
+        # 1) OS.
+        # 2) The hash of all the CMake config files.
+        # 3) The build compiler
+        # 4) The build type
+        # 5) The build unity setting
+        # 6) The build custom name.
+        # 7) The hash of all the header files under the source dir.
+        # 8) The hash of all the code files under the source dir.
+        # When restoring, if the matching cache is not found, search for the
+        # cache from the "base" build, which should have just completed, and
+        # the NIH built as a fallback, but that should never happen.
+        with:
+          path: ${{ env.CACHE_DIR }}
+          key: ${{ runner.os }}-${{ needs.linux-cache.outputs.cmakeconfig }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.unity }}-${{ matrix.name }}-${{ needs.linux-cache.outputs.headers }}-${{ needs.linux-cache.outputs.source }}
+          restore-keys: |
+            ${{ runner.os }}-${{ needs.linux-cache.outputs.cmakeconfig }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.UNITY }}-base-${{ needs.linux-cache.outputs.headers }}-${{ needs.linux-cache.outputs.source }}
+            ${{ runner.os }}-${{ needs.linux-cache.outputs.cmakeconfig }}-${{ matrix.image }}-nih
+      - name: Build and test
+        uses: ./.github/actions/build-action
+        with:
+          image: ${{ matrix.image }}
+          PARALLEL_TESTS: ${{ matrix.PARALLEL_TESTS }}
+          TARGET: ${{ matrix.TARGET }}
+          SKIP_TESTS: ${{ matrix.SKIP_TESTS }}
+          ASAN_OPTIONS: ${{ matrix.ASAN_OPTIONS }}
+          UBSAN_OPTIONS: ${{ matrix.UBSAN_OPTIONS }}
+          TSAN_OPTIONS: ${{ matrix.TSAN_OPTIONS }}
+          NINJA_BUILD: ${{ matrix.NINJA_BUILD }}
+          CMAKE_EXE: ${{ matrix.CMAKE_EXE }}
+      - name: Post-run ccache stats
+        shell: bash
+        run: ccache -s
+      - name: Debug output artifacts
+        if: always()
+        uses: actions/upload-artifact@v2
+        continue-on-error: true
+        with:
+          name: debug-output ${{ matrix.name }} ${{ matrix.CC }} ${{ matrix.BUILD_TYPE }} unity=${{ matrix.unity }}
+          retention-days: 7
+          if-no-files-found: ignore
+          path: |
+            build/**/CMakeOutput.log
+            build/**/CMakeError.log
+      - name: rippled executable artifact
+        uses: actions/upload-artifact@v2
+        continue-on-error: true
+        with:
+          name: rippled ${{ matrix.name }} ${{ matrix.CC }} ${{ matrix.BUILD_TYPE }} unity=${{ matrix.unity }}
+          retention-days: 7
+          if-no-files-found: ignore
+          path: |
+            build/**/rippled
+            !build/**/_INSTALLED_/**
+  linux-runner-debug:
+    name: Linux manual debug tests
+    needs: linux-debug
     runs-on: ubuntu-18.04
     timeout-minutes: 720
     # if: commit_message !~ /travis_run_/ OR commit_message =~ /travis_run_linux/
@@ -499,12 +690,43 @@ jobs:
         name: [ "Manual tests" ]
         MANUAL_TESTS: [ "true" ]
         CC: [ "gcc-8" ]
-        BUILD_TYPE: [ Debug, Release ]
+        BUILD_TYPE: [ Debug ]
         unity: [ "ON" ]
         image: [ "rippled-ci-builder:2944b78d22db" ]
-    # https://docs.github.com/en/free-pro-team@latest/actions/reference/workflow-syntax-for-github-actions#jobsjob_idcontinue-on-error
-    # Temporary, because I just want to see a job succeed
-    continue-on-error: true
+    container:
+      image: rippleci/${{ matrix.image }}
+    env:
+      CC: ${{ matrix.CC }}
+      BUILD_TYPE: ${{ matrix.BUILD_TYPE }}
+      CMAKE_ADD: "-Dunity=${{ matrix.unity }} ${{ matrix.CMAKE_ADD }}"
+      NUM_PROCESSORS: ${{ matrix.NUM_PROCESSORS }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Download rippled artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: rippled ${{ matrix.name }} ${{ matrix.CC }} ${{ matrix.BUILD_TYPE }} unity=${{ matrix.UNITY }}
+      - name: Check
+        run: find -iname rippled -ls
+      # - name: Run manual tests
+  linux-runner-release:
+    name: Linux manual release tests
+    needs: linux-release
+    runs-on: ubuntu-18.04
+    timeout-minutes: 720
+    # if: commit_message !~ /travis_run_/ OR commit_message =~ /travis_run_linux/
+    strategy:
+      fail-fast: false
+      matrix:
+        # Current travis: gcc-8 clang-8 gcc-9 clang-9
+        # docker image has clang 7,8,9 & gcc 6,7,8,9
+        name: [ "Manual tests" ]
+        MANUAL_TESTS: [ "true" ]
+        CC: [ "gcc-8" ]
+        BUILD_TYPE: [ Release ]
+        unity: [ "ON" ]
+        image: [ "rippled-ci-builder:2944b78d22db" ]
     container:
       image: rippleci/${{ matrix.image }}
     env:
