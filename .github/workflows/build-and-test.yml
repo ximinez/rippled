@@ -711,8 +711,9 @@ jobs:
 
             APP_ARGS+=" --unittest-jobs ${NUM_PROCESSORS:-2}"
 
+            find -iname rippled -ls
             # There can be only one
-            APP_PATH=$( find -iname rippled -ls | head -1 )
+            APP_PATH=$( find -iname rippled | head -1 )
             chmod a+rx ${APP_PATH}
             ${APP_PATH} ${APP_ARGS}
   linux-runner-release:
@@ -750,7 +751,8 @@ jobs:
 
             APP_ARGS+=" --unittest-jobs ${NUM_PROCESSORS:-2}"
 
+            find -iname rippled -ls
             # There can be only one
-            APP_PATH=$( find -iname rippled -ls | head -1 )
+            APP_PATH=$( find -iname rippled | head -1 )
             chmod a+rx ${APP_PATH}
             ${APP_PATH} ${APP_ARGS}
