@@ -387,7 +387,7 @@ jobs:
             !build/**/_INSTALLED_/**
   linux-custom-debug:
     name: Debug, custom
-    needs: linux-debug
+    needs: [ linux-cache, linux-debug ]
     runs-on: ubuntu-18.04
     timeout-minutes: 720
     # if: commit_message !~ /travis_run_/ OR commit_message =~ /travis_run_linux/
@@ -558,7 +558,7 @@ jobs:
             !build/**/cmake*
   linux-custom-release:
     name: Release, custom
-    needs: linux-release
+    needs: [ linux-cache, linux-release ]
     runs-on: ubuntu-18.04
     timeout-minutes: 720
     # if: commit_message !~ /travis_run_/ OR commit_message =~ /travis_run_linux/
@@ -712,10 +712,11 @@ jobs:
             APP_ARGS+=" --unittest-jobs ${NUM_PROCESSORS:-2}"
 
             find -iname rippled -ls
+            [[ $( find -name rippled | wc -l ) -eq 1 ]]
             # There can be only one
-            APP_PATH=$( find -iname rippled | head -1 )
-            chmod a+rx ${APP_PATH}
-            ${APP_PATH} ${APP_ARGS}
+            APP_PATH="$( find -iname rippled )"
+            chmod a+rx "${APP_PATH}"
+            "${APP_PATH}" ${APP_ARGS}
   linux-runner-release:
     name: Release, manual
     needs: linux-release
@@ -752,7 +753,8 @@ jobs:
             APP_ARGS+=" --unittest-jobs ${NUM_PROCESSORS:-2}"
 
             find -iname rippled -ls
+            [[ $( find -name rippled | wc -l ) -eq 1 ]]
             # There can be only one
-            APP_PATH=$( find -iname rippled | head -1 )
-            chmod a+rx ${APP_PATH}
-            ${APP_PATH} ${APP_ARGS}
+            APP_PATH="$( find -iname rippled )"
+            chmod a+rx "${APP_PATH}"
+            "${APP_PATH}" ${APP_ARGS}
