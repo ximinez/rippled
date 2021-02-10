@@ -685,16 +685,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Current travis: gcc-8 clang-8 gcc-9 clang-9
-        # docker image has clang 7,8,9 & gcc 6,7,8,9
         name: [ "Manual tests" ]
         MANUAL_TESTS: [ "true" ]
         CC: [ "gcc-8" ]
         BUILD_TYPE: [ Debug ]
         unity: [ "ON" ]
-        image: [ "rippled-ci-builder:2944b78d22db" ]
-    container:
-      image: rippleci/${{ matrix.image }}
     env:
       NUM_PROCESSORS: ${{ matrix.NUM_PROCESSORS }}
     steps:
@@ -704,8 +699,6 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: rippled base ${{ matrix.CC }} ${{ matrix.BUILD_TYPE }} unity=${{ matrix.UNITY }}
-      - name: Check
-        run: find -iname rippled -ls
       - name: Run manual tests
         shell: bash
         run: |
@@ -718,7 +711,8 @@ jobs:
 
             APP_ARGS+=" --unittest-jobs ${NUM_PROCESSORS:-2}"
 
-            APP_PATH=${{ matrix.CC }}.${{ matrix.BUILD_TYPE }}/rippled
+            # There can be only one
+            APP_PATH=$( find -iname rippled -ls | head -1 )
             ${APP_PATH} ${APP_ARGS}
   linux-runner-release:
     name: Release, manual
@@ -729,16 +723,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Current travis: gcc-8 clang-8 gcc-9 clang-9
-        # docker image has clang 7,8,9 & gcc 6,7,8,9
         name: [ "Manual tests" ]
         MANUAL_TESTS: [ "true" ]
         CC: [ "gcc-8" ]
         BUILD_TYPE: [ Release ]
         unity: [ "ON" ]
-        image: [ "rippled-ci-builder:2944b78d22db" ]
-    container:
-      image: rippleci/${{ matrix.image }}
     env:
       NUM_PROCESSORS: ${{ matrix.NUM_PROCESSORS }}
     steps:
@@ -748,8 +737,6 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: rippled base ${{ matrix.CC }} ${{ matrix.BUILD_TYPE }} unity=${{ matrix.UNITY }}
-      - name: Check
-        run: find -iname rippled -ls
       - name: Run manual tests
         shell: bash
         run: |
@@ -762,5 +749,6 @@ jobs:
 
             APP_ARGS+=" --unittest-jobs ${NUM_PROCESSORS:-2}"
 
-            APP_PATH=${{ matrix.CC }}.${{ matrix.BUILD_TYPE }}/rippled
+            # There can be only one
+            APP_PATH=$( find -iname rippled -ls | head -1 )
             ${APP_PATH} ${APP_ARGS}
