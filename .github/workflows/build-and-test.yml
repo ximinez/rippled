@@ -706,13 +706,14 @@ jobs:
             function join_by { local IFS="$1"; shift; echo "$*"; }
 
             : ${APP_ARGS:=}
-            declare -a manual_tests=( $( $(basename "$0")/manual-tests.sh ) )
+            declare -a manual_tests=( $( bin/ci/ubuntu/manual-tests.sh ) )
             APP_ARGS+=" --unittest=$(join_by , "${manual_tests[@]}")"
 
             APP_ARGS+=" --unittest-jobs ${NUM_PROCESSORS:-2}"
 
             # There can be only one
             APP_PATH=$( find -iname rippled -ls | head -1 )
+            chmod a+rx ${APP_PATH}
             ${APP_PATH} ${APP_ARGS}
   linux-runner-release:
     name: Release, manual
@@ -744,11 +745,12 @@ jobs:
             function join_by { local IFS="$1"; shift; echo "$*"; }
 
             : ${APP_ARGS:=}
-            declare -a manual_tests=( $( $(basename "$0")/manual-tests.sh ) )
+            declare -a manual_tests=( $( bin/ci/ubuntu/manual-tests.sh ) )
             APP_ARGS+=" --unittest=$(join_by , "${manual_tests[@]}")"
 
             APP_ARGS+=" --unittest-jobs ${NUM_PROCESSORS:-2}"
 
             # There can be only one
             APP_PATH=$( find -iname rippled -ls | head -1 )
+            chmod a+rx ${APP_PATH}
             ${APP_PATH} ${APP_ARGS}
