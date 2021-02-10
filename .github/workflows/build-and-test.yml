@@ -230,10 +230,21 @@ jobs:
             ccache -s
             # Reset the stats so only this build counts
             ccache -z
+      - name: Disk space before
+        shell: bash
+        run: |
+          time df -h
+          du -s ${CACHE_DIR}/* ${NIH_CACHE_ROOT}/*
       - name: Build and test
         uses: ./.github/actions/build-action
         with:
           image: ${{ matrix.image }}
+      - name: Disk space after
+        shell: bash
+        if: always()
+        run: |
+          time df -h
+          du -s ${CACHE_DIR}/* ${NIH_CACHE_ROOT}/*
       - name: Post-run ccache stats
         shell: bash
         run: ccache -s
@@ -357,10 +368,21 @@ jobs:
             ccache -s
             # Reset the stats so only this build counts
             ccache -z
+      - name: Disk space before
+        shell: bash
+        run: |
+          time df -h
+          du -s ${CACHE_DIR}/* ${NIH_CACHE_ROOT}/*
       - name: Build and test
         uses: ./.github/actions/build-action
         with:
           image: ${{ matrix.image }}
+      - name: Disk space after
+        shell: bash
+        if: always()
+        run: |
+          time df -h
+          du -s ${CACHE_DIR}/* ${NIH_CACHE_ROOT}/*
       - name: Post-run ccache stats
         shell: bash
         run: ccache -s
@@ -413,22 +435,22 @@ jobs:
               canfail: false
             # Coverage builds
             - name: "Coverage gcc-8"
-              CMAKE_ADD: "-Dcoverage=ON"
               CC: "gcc-8"
               TARGET: coverage_report
               BUILD_TYPE: "Debug"
               SKIP_TESTS: true
               unity: "ON"
+              CMAKE_ADD: "-Dcoverage=ON -DCMAKE_UNITY_BUILD_BATCH_SIZE=7"
               # Need this image because it has the coverage tools
               image: "rippled-ci-builder:2020-01-08"
               canfail: false
             - name: "Coverage clang-8"
-              CMAKE_ADD: "-Dcoverage=ON"
               CC: "clang-8"
               TARGET: coverage_report
               BUILD_TYPE: "Debug"
               SKIP_TESTS: true
               unity: "ON"
+              CMAKE_ADD: "-Dcoverage=ON"
               # Need this image because it has the coverage tools
               image: "rippled-ci-builder:2020-01-08"
               canfail: false
@@ -506,6 +528,11 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-${{ needs.linux-cache.outputs.cmakeconfig }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.UNITY }}-base-${{ needs.linux-cache.outputs.headers }}-${{ needs.linux-cache.outputs.source }}
             ${{ runner.os }}-${{ needs.linux-cache.outputs.cmakeconfig }}-${{ matrix.image }}-nih
+      - name: Disk space before
+        shell: bash
+        run: |
+          time df -h
+          du -s ${CACHE_DIR}/* ${NIH_CACHE_ROOT}/*
       - name: Build and test
         uses: ./.github/actions/build-action
         with:
@@ -518,6 +545,12 @@ jobs:
           TSAN_OPTIONS: ${{ matrix.TSAN_OPTIONS }}
           NINJA_BUILD: ${{ matrix.NINJA_BUILD }}
           CMAKE_EXE: ${{ matrix.CMAKE_EXE }}
+      - name: Disk space after
+        shell: bash
+        if: always()
+        run: |
+          time df -h
+          du -s ${CACHE_DIR}/* ${NIH_CACHE_ROOT}/*
       - name: Post-run ccache stats
         shell: bash
         run: ccache -s
@@ -640,6 +673,11 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-${{ needs.linux-cache.outputs.cmakeconfig }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.UNITY }}-base-${{ needs.linux-cache.outputs.headers }}-${{ needs.linux-cache.outputs.source }}
             ${{ runner.os }}-${{ needs.linux-cache.outputs.cmakeconfig }}-${{ matrix.image }}-nih
+      - name: Disk space before
+        shell: bash
+        run: |
+          time df -h
+          du -s ${CACHE_DIR}/* ${NIH_CACHE_ROOT}/*
       - name: Build and test
         uses: ./.github/actions/build-action
         with:
@@ -652,6 +690,12 @@ jobs:
           TSAN_OPTIONS: ${{ matrix.TSAN_OPTIONS }}
           NINJA_BUILD: ${{ matrix.NINJA_BUILD }}
           CMAKE_EXE: ${{ matrix.CMAKE_EXE }}
+      - name: Disk space after
+        shell: bash
+        if: always()
+        run: |
+          time df -h
+          du -s ${CACHE_DIR}/* ${NIH_CACHE_ROOT}/*
       - name: Post-run ccache stats
         shell: bash
         run: ccache -s

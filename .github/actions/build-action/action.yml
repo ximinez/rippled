@@ -56,6 +56,11 @@ runs:
           ccache -s
           # Reset the stats so only this build counts
           ccache -z
+    - name: Disk space
+      shell: bash
+      run: |
+        time df -h
+        du -s ${CACHE_DIR}/* ${NIH_CACHE_ROOT}/*
     - name: Build and test
       shell: bash
       run: |
@@ -86,12 +91,12 @@ runs:
           if [ "${CMAKE_ADD}" != "" ] ; then export CMAKE_EXTRA_ARGS+=" ${CMAKE_ADD}"; fi
           # Do the build
           bin/ci/ubuntu/build-and-test.sh
-    - name: Post-run ccache stats
-      shell: bash
-      run: ccache -s
     - name: Debug output
       shell: bash
       run: |
-        time df -h
-        du -s ${NIH_CACHE_ROOT}/*
         if [ -e build ] ; then find build \( -name CMakeOutput.log -o -name CMakeError.log \) -ls -exec cat {} \; ; fi
+        time df -h
+        du -s ${CACHE_DIR}/* ${NIH_CACHE_ROOT}/*
+    - name: Post-run ccache stats
+      shell: bash
+      run: ccache -s
