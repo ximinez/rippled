@@ -707,6 +707,7 @@ jobs:
       - name: Check
         run: find -iname rippled -ls
       - name: Run manual tests
+        shell: bash
         run: |
             set -x
             function join_by { local IFS="$1"; shift; echo "$*"; }
@@ -717,7 +718,8 @@ jobs:
 
             APP_ARGS+=" --unittest-jobs ${NUM_PROCESSORS:-2}"
 
-            : rippled ${APP_ARGS}
+            APP_PATH=${{ matrix.CC }}.${{ matrix.BUILD_TYPE }}/rippled
+            ${APP_PATH} ${APP_ARGS}
   linux-runner-release:
     name: Release, manual
     needs: linux-release
@@ -749,6 +751,7 @@ jobs:
       - name: Check
         run: find -iname rippled -ls
       - name: Run manual tests
+        shell: bash
         run: |
             set -x
             function join_by { local IFS="$1"; shift; echo "$*"; }
@@ -759,4 +762,5 @@ jobs:
 
             APP_ARGS+=" --unittest-jobs ${NUM_PROCESSORS:-2}"
 
-            : rippled ${APP_ARGS}
+            APP_PATH=${{ matrix.CC }}.${{ matrix.BUILD_TYPE }}/rippled
+            ${APP_PATH} ${APP_ARGS}
