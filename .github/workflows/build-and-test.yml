@@ -531,8 +531,10 @@ jobs:
       - name: Disk space before
         shell: bash
         run: |
-          time df -h
-          du -s ${CACHE_DIR}/* ${NIH_CACHE_ROOT}/*
+          df -h
+          du -sh ${CACHE_DIR}/*
+          du -sh ${NIH_CACHE_ROOT}/*
+          du -h ${NIH_CACHE_ROOT}/{ninja,unix_makefiles}/ > du1.txt
       - name: Build and test
         uses: ./.github/actions/build-action
         with:
@@ -549,8 +551,11 @@ jobs:
         shell: bash
         if: always()
         run: |
-          time df -h
-          du -s ${CACHE_DIR}/* ${NIH_CACHE_ROOT}/*
+          df -h
+          du -sh ${CACHE_DIR}/*
+          du -sh ${NIH_CACHE_ROOT}/*
+          du -h ${NIH_CACHE_ROOT}/{ninja,unix_makefiles}/ | diff du1.txt -
+          du -h ${NIH_CACHE_ROOT}/{ninja,unix_makefiles}/ > du2.txt || true
       - name: Post-run ccache stats
         shell: bash
         run: ccache -s
@@ -565,6 +570,7 @@ jobs:
           path: |
             build/**/CMakeOutput.log
             build/**/CMakeError.log
+            du*.txt
       - name: rippled executable artifact
         if: matrix.TARGET != 'validator-keys'
         uses: actions/upload-artifact@v2
