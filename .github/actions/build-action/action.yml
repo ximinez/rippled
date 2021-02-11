@@ -1,5 +1,9 @@
 name: 'Build and Test'
 description: 'Build and Test rippled or an alternate target'
+# Pre-condition: The environment has all the necessary base
+# build variables set
+# Post-condition: The cache will not be reused to build with
+# a different compiler
 inputs:
   image:
     description: 'Name of docker image the job is running under'
@@ -59,8 +63,31 @@ runs:
     - name: Disk space
       shell: bash
       run: |
-        time df -h
-        du -s ${CACHE_DIR}/* ${NIH_CACHE_ROOT}/*
+        df -h
+        du -sh ${CACHE_DIR}
+        du -sh ${CCACHE_DIR}
+        find ${NIH_CACHE_ROOT} -maxdepth 3 \( -iname src -prune -o -type d -exec du -sh {} \; \)
+        # Post-condition: The cache will not be reused to build with a different compiler
+        if [[ "${CC}" =~ "gcc" ]]
+        then
+          echo Erasing NIH cache for clang
+          rm -rf "${NIH_CACHE_ROOT}"/*/Clang_*/ || true
+        elif [[ "${CC}" =~ "clang" ]]
+        then
+          echo Erasing NIH cache for gcc
+          rm -rf "${NIH_CACHE_ROOT}"/*/GNU_*/ || true
+        fi
+        if [[ "${NINJA_BUILD}" == "true" && -d "${NIH_CACHE_ROOT}"/unix_makefiles && \
+          $( du -sm "${NIH_CACHE_ROOT}"/unix_makefiles | cut -f1 ) -gt 1000  ]]
+        then
+          echo Erasing NIH cache for makefiles
+          rm -rf "${NIH_CACHE_ROOT}"/unix_makefiles || true
+        elif [[ "${NINJA_BUILD}" == "false" && -d "${NIH_CACHE_ROOT}"/ninja && \
+          $( du -sm "${NIH_CACHE_ROOT}"/ninja | cut -f1 ) -gt 1000  ]]
+        then
+          echo Erasing NIH cache for ninja
+          rm -rf "${NIH_CACHE_ROOT}"/ninja || true
+        fi
     - name: Build and test
       shell: bash
       run: |
@@ -95,8 +122,10 @@ runs:
       shell: bash
       run: |
         if [ -e build ] ; then find build \( -name CMakeOutput.log -o -name CMakeError.log \) -ls -exec cat {} \; ; fi
-        time df -h
-        du -s ${CACHE_DIR}/* ${NIH_CACHE_ROOT}/*
+        df -h
+        du -sh ${CACHE_DIR}
+        du -sh ${CCACHE_DIR}
+        find ${NIH_CACHE_ROOT} -maxdepth 3 \( -iname src -prune -o -type d -exec du -sh {} \; \)
     - name: Post-run ccache stats
       shell: bash
       run: ccache -s
