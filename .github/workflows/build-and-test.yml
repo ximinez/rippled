@@ -545,7 +545,6 @@ jobs:
           du -sh ${CACHE_DIR}
           du -sh ${CCACHE_DIR} || true
           find ${NIH_CACHE_ROOT} -maxdepth 2 \( -iname src -prune -o -type d -exec du -sh {} \; \)
-          du -h ${NIH_CACHE_ROOT}/{ninja,unix_makefiles}/ > du1.txt
       - name: Build and test
         uses: ./.github/actions/build-action
         with:
@@ -564,8 +563,6 @@ jobs:
           du -sh ${CACHE_DIR}
           du -sh ${CCACHE_DIR} || true
           find ${NIH_CACHE_ROOT} -maxdepth 2 \( -iname src -prune -o -type d -exec du -sh {} \; \)
-          du -h ${NIH_CACHE_ROOT}/{ninja,unix_makefiles}/ | diff du1.txt - || true
-          du -h ${NIH_CACHE_ROOT}/{ninja,unix_makefiles}/ > du2.txt || true
       - name: Post-run ccache stats
         shell: bash
         run: ccache -s
@@ -580,7 +577,6 @@ jobs:
           path: |
             build/**/CMakeOutput.log
             build/**/CMakeError.log
-            du*.txt
       - name: rippled executable artifact
         if: matrix.TARGET != 'validator-keys'
         uses: actions/upload-artifact@v2
@@ -645,16 +641,15 @@ jobs:
             # current tsan failure *might* be related to:
             # https://github.com/google/sanitizers/issues/1104
             #  but we can't get it to run, so leave it disabled for now
-            - name: "tsan clang-8"
-              TSAN_OPTIONS: "history_size=3 external_symbolizer_path=/usr/bin/llvm-symbolizer verbosity=1"
-              CMAKE_ADD: "-Dsan=thread"
-              CC: "clang-8"
-              BUILD_TYPE: "Release"
-              PARALLEL_TESTS: false
-              unity: "ON"
-              canfail: true
-              image: "rippled-ci-builder:2020-01-08"
-              build-timeout: 30
+            #- name: "tsan clang-8"
+            #  TSAN_OPTIONS: "history_size=3 external_symbolizer_path=/usr/bin/llvm-symbolizer verbosity=1"
+            #  CMAKE_ADD: "-Dsan=thread"
+            #  CC: "clang-8"
+            #  BUILD_TYPE: "Release"
+            #  PARALLEL_TESTS: false
+            #  unity: "ON"
+            #  canfail: true
+            #  image: "rippled-ci-builder:2020-01-08"
     # https://docs.github.com/en/free-pro-team@latest/actions/reference/workflow-syntax-for-github-actions#jobsjob_idcontinue-on-error
     continue-on-error: ${{ matrix.canfail }}
     container:
@@ -697,7 +692,6 @@ jobs:
           find ${NIH_CACHE_ROOT} -maxdepth 2 \( -iname src -prune -o -type d -exec du -sh {} \; \)
       - name: Build and test
         uses: ./.github/actions/build-action
-        timeout-minutes: ${{ matrix.build-timeout }}
         with:
           image: ${{ matrix.image }}
           PARALLEL_TESTS: ${{ matrix.PARALLEL_TESTS }}
