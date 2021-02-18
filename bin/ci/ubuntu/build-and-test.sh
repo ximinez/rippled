@@ -203,6 +203,10 @@ if [[ ${look_core} == true ]]; then
 fi
 
 df -h
+du -sh ${CACHE_DIR}
+du -sh ${CCACHE_DIR} || true
+find ${NIH_CACHE_ROOT} -maxdepth 2 \( -iname src -prune -o -type d -exec du -sh {} \; \)
+find build -maxdepth 3 \( -iname src -prune -o -type d -exec du -sh {} \; \)
 set +e
 echo "Running tests for ${APP_PATH}"
 if [[ ${MANUAL_TESTS:-} == true && ${PARALLEL_TESTS:-} != true ]]; then
