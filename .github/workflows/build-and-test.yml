@@ -148,7 +148,7 @@ jobs:
             build/**/CMakeOutput.log
             build/**/CMakeError.log
   linux-clang-8-debug-unity:
-    name: Linux clang-8 debug unity
+    name: Linux
     needs: linux-cache
     runs-on: ubuntu-18.04
     timeout-minutes: 720
@@ -254,7 +254,7 @@ jobs:
             build/**/rippled
             !build/**/_INSTALLED_/**
   linux-clang-8-release-unity:
-    name: Linux clang-8 release unity
+    name: Linux
     needs: linux-cache
     runs-on: ubuntu-18.04
     timeout-minutes: 720
@@ -360,7 +360,7 @@ jobs:
             build/**/rippled
             !build/**/_INSTALLED_/**
   linux-gcc-8-debug-unity:
-    name: Linux gcc-8 debug unity
+    name: Linux
     needs: linux-cache
     runs-on: ubuntu-18.04
     timeout-minutes: 720
@@ -466,7 +466,7 @@ jobs:
             build/**/rippled
             !build/**/_INSTALLED_/**
   linux-gcc-8-release-unity:
-    name: Linux gcc-8 release unity
+    name: Linux
     needs: linux-cache
     runs-on: ubuntu-18.04
     timeout-minutes: 720
@@ -575,7 +575,7 @@ jobs:
             build/**/rippled
             !build/**/_INSTALLED_/**
   linux-everything-else:
-    name: Linux everything else
+    name: Linux
     needs: linux-cache
     runs-on: ubuntu-18.04
     timeout-minutes: 720
@@ -716,7 +716,7 @@ jobs:
             build/**/rippled
             !build/**/_INSTALLED_/**
   linux-clang-8-debug-unity-derived:
-    name: Derived builds, clang-8, debug
+    name: Linux
     needs: [ linux-cache, linux-clang-8-debug-unity ]
     runs-on: ubuntu-18.04
     timeout-minutes: 720
@@ -833,7 +833,7 @@ jobs:
             build/**/rippled
             !build/**/_INSTALLED_/**
   linux-gcc-8-debug-unity-derived:
-    name: Derived builds, gcc-8, debug
+    name: Linux
     needs: [ linux-cache, linux-gcc-8-debug-unity ]
     runs-on: ubuntu-18.04
     timeout-minutes: 720
@@ -997,7 +997,7 @@ jobs:
             !build/**/CMake*
             !build/**/cmake*
   linux-clang-8-release-unity-derived:
-    name: Derived builds, clang-8, release
+    name: Linux
     needs: [ linux-cache, linux-clang-8-release-unity ]
     runs-on: ubuntu-18.04
     timeout-minutes: 720
@@ -1129,7 +1129,7 @@ jobs:
             build/**/rippled
             !build/**/_INSTALLED_/**
   linux-gcc-8-debug-unity-runner:
-    name: Manual tests, debug
+    name: Linux
     needs: linux-gcc-8-debug-unity
     runs-on: ubuntu-18.04
     timeout-minutes: 720
@@ -1169,7 +1169,7 @@ jobs:
             chmod a+rx "${APP_PATH}"
             "${APP_PATH}" ${APP_ARGS}
   linux-gcc-8-release-unity-runner:
-    name: Manual tests, release
+    name: Linux
     needs: linux-gcc-8-release-unity
     runs-on: ubuntu-18.04
     timeout-minutes: 720

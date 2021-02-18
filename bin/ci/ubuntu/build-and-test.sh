@@ -162,7 +162,7 @@ if [[ "${TARGET}" == "validator-keys" ]] ; then
 else
     function join_by { local IFS="$1"; shift; echo "$*"; }
 
-    declare -a manual_tests=( $( $(basename "$0")/manual-tests.sh ) )
+    declare -a manual_tests=( $( $(dirname "$0")/manual-tests.sh ) )
 
     if [[ ${MANUAL_TESTS:-} == true ]]; then
         APP_ARGS+=" --unittest=$(join_by , "${manual_tests[@]}")"
@@ -202,6 +202,7 @@ if [[ ${look_core} == true ]]; then
     before=$(ls -A1 ${coredir})
 fi
 
+df -h
 set +e
 echo "Running tests for ${APP_PATH}"
 if [[ ${MANUAL_TESTS:-} == true && ${PARALLEL_TESTS:-} != true ]]; then
