@@ -1,4 +1,4 @@
-name: Build and test rippled
+name: Build and test rippled gcc-8 release unity
 on:
   workflow_run:
     workflows: [ "Download rippled dependencies" ]
