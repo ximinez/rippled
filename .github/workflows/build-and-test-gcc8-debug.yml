@@ -314,7 +314,7 @@ jobs:
   linux_gcc_8_debug_unity_runner:
     name: Linux
     needs: linux_gcc_8_debug_unity
-    runs_on: ubuntu_18.04
+    runs-on: ubuntu-18.04
     timeout-minutes: 720
     strategy:
       fail-fast: false
