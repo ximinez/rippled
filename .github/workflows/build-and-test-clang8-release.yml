@@ -23,6 +23,7 @@ env:
 jobs:
   linux_clang_8_release_unity:
     name: Linux
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-18.04
     timeout-minutes: 720
     outputs:
