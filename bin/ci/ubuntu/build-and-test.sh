@@ -163,6 +163,7 @@ else
     function join_by { local IFS="$1"; shift; echo "$*"; }
 
     declare -a manual_tests=( $( $(dirname "$0")/manual-tests.sh ) )
+    echo "${manual_tests[@]}"
 
     if [[ ${MANUAL_TESTS:-} == true ]]; then
         APP_ARGS+=" --unittest=$(join_by , "${manual_tests[@]}")"
@@ -202,6 +203,12 @@ if [[ ${look_core} == true ]]; then
     before=$(ls -A1 ${coredir})
 fi
 
+if [[ -v MINTESTAVAIL && \
+  $( df  . --output=avail | tail -1 ) -lt ${MINTESTAVAIL} ]]
+then
+  echo Removing install dir for space: ${DESTDIR}
+  rm -rf ${DESTDIR}
+fi
 df -h
 du -sh ${CACHE_DIR}
 du -sh ${CCACHE_DIR} || true

@@ -629,6 +629,8 @@ jobs:
       BUILD_TYPE: ${{ matrix.BUILD_TYPE }}
       CMAKE_ADD: "-Dunity=${{ matrix.unity }} ${{ matrix.CMAKE_ADD }}"
       NUM_PROCESSORS: ${{ matrix.NUM_PROCESSORS }}
+      # Try to ensure at least 1Gb of space is free to run tests
+      MINTESTAVAIL: 1000000
     steps:
       - name: Checkout
         uses: actions/checkout@v2
