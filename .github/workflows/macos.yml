@@ -61,6 +61,7 @@ jobs:
           echo "::set-output name=cmakeconfig::${{ hashfiles('CMakeFiles.txt', 'Builds/CMake/**') }}"
           echo "::set-output name=headers::${{ hashfiles('src/**/*.h', 'src/**/*.hpp', 'src/**/*.ipp') }}"
           echo "::set-output name=source::${{ hashfiles('src/**', '!src/**/*.md', '!src/**/*.uml', '!src/**/*.png', '!src/**/*.php') }}"
+          type -a brew
       - name: Cache
         continue-on-error: true
         uses: actions/cache@v2
@@ -109,7 +110,7 @@ jobs:
         run: |
           for pkg in protobuf grpc pkg-config bash ninja cmake wget zstd libarchive openssl@1.1
           do
-            brew install ${pkg}
+            brew install ${pkg} || brew update ${pkg}
           done
       - name: status
         run: |
