@@ -1,4 +1,4 @@
-name: Build and test rippled clang-8 debug unity
+name: "Linux build, gcc-8 debug unity"
 on: [push, pull_request]
 
 # The files starting with "build-" are all interdependent.
@@ -17,7 +17,7 @@ env:
   CCACHE_DIR: ${{ github.workspace }}/_cache/ccache
 
 jobs:
-  linux_clang_8_debug_unity:
+  linux_gcc_8_debug_unity:
     name: Linux
     runs-on: ubuntu-18.04
     timeout-minutes: 720
@@ -28,7 +28,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        CC: [ "clang-8" ]
+        CC: [ "gcc-8" ]
         BUILD_TYPE: [ Debug ]
         unity: [ "ON" ]
         image: [ "rippled-ci-builder:2020-01-08" ]
@@ -131,9 +131,9 @@ jobs:
           path: |
             build/**/rippled
             !build/**/_INSTALLED_/**
-  linux_clang_8_debug_unity_derived:
+  linux_gcc_8_debug_unity_derived:
     name: Linux
-    needs: [ linux_clang_8_debug_unity ]
+    needs: [ linux_gcc_8_debug_unity ]
     runs-on: ubuntu-18.04
     timeout-minutes: 720
     strategy:
@@ -146,25 +146,58 @@ jobs:
             # Note that "name" is used in the cache key, which cannot
             # contain commas (',').
             #
-            # Reporting mode
-            - name: "Reporting clang-8 debug"
-              CMAKE_ADD: "-Dreporting=ON"
-              CC: "clang-8"
-              BUILD_TYPE: "Debug"
-              unity: "ON"
-              image: "rippled-ci-builder:2020-01-08"
-              canfail: false
             # Coverage builds
-            - name: "Coverage clang-8"
-              CC: "clang-8"
+            - name: "Coverage gcc-8"
+              CC: "gcc-8"
               TARGET: coverage_report
               BUILD_TYPE: "Debug"
               SKIP_TESTS: true
               unity: "ON"
-              CMAKE_ADD: "-Dcoverage=ON"
+              CMAKE_ADD: "-Dcoverage=ON -DCMAKE_UNITY_BUILD_BATCH_SIZE=7"
               # Need this image because it has the coverage tools
               image: "rippled-ci-builder:2020-01-08"
               canfail: false
+            # dynamic lib builds
+            - name: "non-static gcc-8"
+              CMAKE_ADD: "-Dstatic=OFF"
+              CC: "gcc-8"
+              BUILD_TYPE: Debug
+              unity: "ON"
+              image: "rippled-ci-builder:2020-01-08"
+              canfail: true
+            - name: "non-static BUILD_SHARED_LIBS gcc-8"
+              CMAKE_ADD: "-Dstatic=OFF -DBUILD_SHARED_LIBS=ON"
+              CC: "gcc-8"
+              BUILD_TYPE: Debug
+              unity: "ON"
+              image: "rippled-ci-builder:2020-01-08"
+              canfail: true
+            # makefile
+            - name: "makefile generator gcc-8"
+              NINJA_BUILD: false
+              CC: "gcc-8"
+              BUILD_TYPE: Debug
+              unity: "ON"
+              image: "rippled-ci-builder:2020-01-08"
+              canfail: true
+            # verify build with min version of cmake
+            - name: "min cmake version"
+              CMAKE_EXE: /opt/local/cmake-3.9/bin/cmake
+              CC: "gcc-8"
+              BUILD_TYPE: Debug
+              SKIP_TESTS: true
+              unity: "ON"
+              image: "rippled-ci-builder:2020-01-08"
+              canfail: true
+            # validator keys project as subproj of rippled
+            - name: "validator-keys"
+              TARGET: validator-keys
+              CC: "gcc-8"
+              BUILD_TYPE: Debug
+              CMAKE_ADD: "-Dvalidator_keys=ON"
+              unity: "ON"
+              image: "rippled-ci-builder:2020-01-08"
+              canfail: true
     # https://docs.github.com/en/free-pro-team@latest/actions/reference/workflow-syntax-for-github-actions#jobsjob_idcontinue-on-error
     continue-on-error: ${{ matrix.canfail }}
     container:
@@ -194,10 +227,10 @@ jobs:
         # the NIH built as a fallback, but that should never happen.
         with:
           path: ${{ env.CACHE_DIR }}
-          key: ${{ runner.os }}-${{ needs.linux_clang_8_debug_unity.outputs.cmakeconfig }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.unity }}-${{ matrix.name }}-${{ needs.linux_clang_8_debug_unity.outputs.headers }}-${{ needs.linux_clang_8_debug_unity.outputs.source }}
+          key: ${{ runner.os }}-${{ needs.linux_gcc_8_debug_unity.outputs.cmakeconfig }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.unity }}-${{ matrix.name }}-${{ needs.linux_gcc_8_debug_unity.outputs.headers }}-${{ needs.linux_gcc_8_debug_unity.outputs.source }}
           restore-keys: |
-            ${{ runner.os }}-${{ needs.linux_clang_8_debug_unity.outputs.cmakeconfig }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.UNITY }}-base-${{ needs.linux_clang_8_debug_unity.outputs.headers }}-${{ needs.linux_clang_8_debug_unity.outputs.source }}
-            ${{ runner.os }}-${{ needs.linux_clang_8_debug_unity.outputs.cmakeconfig }}-${{ matrix.image }}-nih
+            ${{ runner.os }}-${{ needs.linux_gcc_8_debug_unity.outputs.cmakeconfig }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.UNITY }}-base-${{ needs.linux_gcc_8_debug_unity.outputs.headers }}-${{ needs.linux_gcc_8_debug_unity.outputs.source }}
+            ${{ runner.os }}-${{ needs.linux_gcc_8_debug_unity.outputs.cmakeconfig }}-${{ matrix.image }}-nih
       - name: Reset ccache stats
         run: |
             if ! type -a ccache
@@ -250,6 +283,7 @@ jobs:
             build/**/CMakeOutput.log
             build/**/CMakeError.log
       - name: rippled executable artifact
+        if: matrix.TARGET != 'validator-keys'
         uses: actions/upload-artifact@v2
         continue-on-error: true
         with:
@@ -259,3 +293,56 @@ jobs:
           path: |
             build/**/rippled
             !build/**/_INSTALLED_/**
+      - name: validator-keys executable artifact
+        if: matrix.TARGET == 'validator-keys'
+        uses: actions/upload-artifact@v2
+        continue-on-error: true
+        with:
+          name: validator-keys
+          retention-days: 7
+          if-no-files-found: ignore
+          path: |
+            build/**/validator-keys
+            !build/**/_INSTALLED_/**
+            !build/**/CMake*
+            !build/**/cmake*
+  linux_gcc_8_debug_unity_runner:
+    name: Linux
+    needs: linux_gcc_8_debug_unity
+    runs-on: ubuntu-18.04
+    timeout-minutes: 720
+    strategy:
+      fail-fast: false
+      matrix:
+        name: [ "Manual tests" ]
+        MANUAL_TESTS: [ "true" ]
+        CC: [ "gcc-8" ]
+        BUILD_TYPE: [ Debug ]
+        unity: [ "ON" ]
+    env:
+      NUM_PROCESSORS: ${{ matrix.NUM_PROCESSORS }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Download rippled artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: rippled base ${{ matrix.CC }} ${{ matrix.BUILD_TYPE }} unity=${{ matrix.UNITY }}
+      - name: Run manual tests
+        shell: bash
+        run: |
+            set -x
+            function join_by { local IFS="$1"; shift; echo "$*"; }
+
+            : ${APP_ARGS:=}
+            declare -a manual_tests=( $( bin/ci/ubuntu/manual-tests.sh ) )
+            APP_ARGS+=" --unittest=$(join_by , "${manual_tests[@]}")"
+
+            APP_ARGS+=" --unittest-jobs ${NUM_PROCESSORS:-2}"
+
+            find -iname rippled -ls
+            [[ $( find -name rippled | wc -l ) -eq 1 ]]
+            # There can be only one
+            APP_PATH="$( find -iname rippled )"
+            chmod a+rx "${APP_PATH}"
+            "${APP_PATH}" ${APP_ARGS}

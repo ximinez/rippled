@@ -1,4 +1,4 @@
-name: Build and test rippled
+name: "Linux build, general"
 on: [push, pull_request]
 
 # The files starting with "build-" are all interdependent.
@@ -18,7 +18,7 @@ env:
 
 jobs:
   linux_cache:
-    name: Initialize linux NIH cache
+    name: Seed linux NIH cache
     # The NIH setup puts all the dependency source code in a single,
     # shared directory. Run cmake across all of the compiler combos,
     # then put all the NIH code in the cache. This accomplishes:
@@ -205,7 +205,7 @@ jobs:
       CMAKE_ADD: "-Dunity=${{ matrix.unity }} ${{ matrix.CMAKE_ADD }}"
       NUM_PROCESSORS: ${{ matrix.NUM_PROCESSORS }}
       # Try to ensure at least 1Gb of space is free to run tests
-      MINTESTAVAIL: 1000000
+      MINTESTAVAIL: 2000000
     steps:
       - name: Checkout
         uses: actions/checkout@v2

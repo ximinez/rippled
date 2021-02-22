@@ -1,4 +1,4 @@
-name: Build and test rippled gcc-8 release unity
+name: "Linux build, gcc-8 release unity"
 on: [push, pull_request]
 
 # The files starting with "build-" are all interdependent.
