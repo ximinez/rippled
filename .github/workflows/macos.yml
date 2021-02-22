@@ -23,7 +23,13 @@ env:
   CCACHE_BASEDIR: ${{ github.workspace }}
   CCACHE_NOHASHDIR: true
   CCACHE_DIR: ${{ github.workspace }}/_cache/ccache
-  # TEST_EXTRA_ARGS: ""
+  BOOST_URL: 'https://dl.bintray.com/boostorg/release/1.70.0/source/boost_1_70_0.tar.bz2'
+  # Alternate dowload location
+  BOOST_URL2: 'https://downloads.sourceforge.net/project/boost/boost/1.70.0/boost_1_70_0.tar.bz2?r=&amp;ts=1594393912&amp;use_mirror=newcontinuum'
+  # Travis downloader doesn't seem to have updated certs. Using this option
+  # introduces obvious security risks, but they're Travis's risks.
+  # Note that this option is only used if the "normal" build fails.
+  #BOOST_WGET_OPTIONS: '--no-check-certificate'
   BOOST_ROOT: ${{ github.workspace }}/_cache/boost_1_70_0
 
 jobs:
@@ -53,10 +59,6 @@ jobs:
       BLD_CONFIG: ${{ matrix.BLD_CONFIG }}
       TEST_EXTRA_ARGS: ${{ matrix.TEST_EXTRA_ARGS }}
     steps:
-      - name: Dump GitHub context
-        env:
-          GITHUB_CONTEXT: ${{ toJSON(github) }}
-        run: echo "$GITHUB_CONTEXT"
       - name: Checkout
         uses: actions/checkout@v2
       - name: Build cache keys
@@ -98,7 +100,7 @@ jobs:
           brew upgrade
           for pkg in protobuf grpc pkg-config bash ninja cmake wget zstd libarchive openssl@1.1
           do
-            brew install ${pkg} || true
+            brew install ${pkg}
           done
       - name: status
         run: |
@@ -119,9 +121,10 @@ jobs:
       - name: Pre-install
         shell: bash
         run: |
-          export NUM_PROCESSORS=${NUM_PROCESSORS:-$(nproc)}
+          export NUM_PROCESSORS=${NUM_PROCESSORS:-$(nproc || sysctl -n hw.logicalcpu || echo 3)}
           echo "NUM PROC is ${NUM_PROCESSORS}"
           if [ "${CMAKE_ADD}" != "" ] ; then export CMAKE_EXTRA_ARGS+=" ${CMAKE_ADD}"; fi
+          mkdir -pv "${CACHE_DIR}"
       - name: Install boost
         shell: bash
         run: |
