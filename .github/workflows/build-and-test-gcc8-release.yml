@@ -91,7 +91,8 @@ jobs:
           df -h
           du -sh ${CACHE_DIR}
           du -sh ${CCACHE_DIR} || true
-          find ${NIH_CACHE_ROOT} -maxdepth 2 \( -iname src -prune -o -type d -exec du -sh {} \; \)
+          find ${NIH_CACHE_ROOT} -maxdepth 2 \( -iname src -prune -o \
+            -type d -exec du -sh {} \; \) || true
       - name: Build and test
         uses: ./.github/actions/build-action
         with:
@@ -103,7 +104,8 @@ jobs:
           df -h
           du -sh ${CACHE_DIR}
           du -sh ${CCACHE_DIR} || true
-          find ${NIH_CACHE_ROOT} -maxdepth 2 \( -iname src -prune -o -type d -exec du -sh {} \; \)
+          find ${NIH_CACHE_ROOT} -maxdepth 2 \( -iname src -prune -o \
+            -type d -exec du -sh {} \; \) || true
       - name: Post-run ccache stats
         shell: bash
         run: ccache -s

@@ -226,11 +226,11 @@ jobs:
         # found, with a special case for the NIH built in the previous job
         with:
           path: ${{ env.CACHE_DIR }}
-          key: ${{ runner.os }}-${{ steps.cachekeys.outputs.cmakeconfig }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.UNITY }}-${{ matrix.name }}-${{ steps.cachekeys.outputs.headers }}-${{ steps.cachekeys.outputs.source }}
+          key: ${{ runner.os }}-${{ needs.linux_cache.outputs.cmakeconfig }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.UNITY }}-${{ matrix.name }}-${{ needs.linux_cache.outputs.headers }}-${{ needs.linux_cache.outputs.source }}
           restore-keys: |
-            ${{ runner.os }}-${{ steps.cachekeys.outputs.cmakeconfig }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.UNITY }}-${{ matrix.name }}-${{ steps.cachekeys.outputs.headers }}
-            ${{ runner.os }}-${{ steps.cachekeys.outputs.cmakeconfig }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.UNITY }}-${{ matrix.name }}
-            ${{ runner.os }}-${{ steps.cachekeys.outputs.cmakeconfig }}-${{ matrix.image }}-nih
+            ${{ runner.os }}-${{ needs.linux_cache.outputs.cmakeconfig }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.UNITY }}-${{ matrix.name }}-${{ needs.linux_cache.outputs.headers }}
+            ${{ runner.os }}-${{ needs.linux_cache.outputs.cmakeconfig }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.UNITY }}-${{ matrix.name }}
+            ${{ runner.os }}-${{ needs.linux_cache.outputs.cmakeconfig }}-${{ matrix.image }}-nih
       - name: Dump environment
         run: |
           env
@@ -250,7 +250,8 @@ jobs:
           df -h
           du -sh ${CACHE_DIR}
           du -sh ${CCACHE_DIR} || true
-          find ${NIH_CACHE_ROOT} -maxdepth 2 \( -iname src -prune -o -type d -exec du -sh {} \; \)
+          find ${NIH_CACHE_ROOT} -maxdepth 2 \( -iname src -prune -o \
+            -type d -exec du -sh {} \; \) || true
       - name: Build and test
         uses: ./.github/actions/build-action
         with:
@@ -262,7 +263,8 @@ jobs:
           df -h
           du -sh ${CACHE_DIR}
           du -sh ${CCACHE_DIR} || true
-          find ${NIH_CACHE_ROOT} -maxdepth 2 \( -iname src -prune -o -type d -exec du -sh {} \; \)
+          find ${NIH_CACHE_ROOT} -maxdepth 2 \( -iname src -prune -o \
+            -type d -exec du -sh {} \; \) || true
       - name: Post-run ccache stats
         shell: bash
         run: ccache -s
