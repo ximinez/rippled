@@ -21,6 +21,7 @@ jobs:
     name: Linux
     runs-on: ubuntu-18.04
     timeout-minutes: 720
+    if: ${{ !contains(github.event.push.commits[][message], "ci_run_") || contains(github.event.push.commits[][message], "ci_run_linux") }}
     strategy:
       fail-fast: false
       matrix:

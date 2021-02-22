@@ -31,6 +31,7 @@ jobs:
     name: MacOS
     runs-on: "macos-latest"
     timeout-minutes: 720
+    if: ${{ !contains(github.event.push.commits[][message], "ci_run_") || contains(github.event.push.commits[][message], "ci_run_mac") }}
     outputs:
       cmakeconfig: ${{ steps.cachekeys.outputs.cmakeconfig }}
       headers: ${{ steps.cachekeys.outputs.headers }}
@@ -52,6 +53,10 @@ jobs:
       BLD_CONFIG: ${{ matrix.BLD_CONFIG }}
       TEST_EXTRA_ARGS: ${{ matrix.TEST_EXTRA_ARGS }}
     steps:
+      - name: Dump GitHub context
+        env:
+          GITHUB_CONTEXT: ${{ toJSON(github) }}
+        run: echo "$GITHUB_CONTEXT"
       - name: Checkout
         uses: actions/checkout@v2
       - name: Build cache keys
@@ -61,7 +66,6 @@ jobs:
           echo "::set-output name=cmakeconfig::${{ hashfiles('CMakeFiles.txt', 'Builds/CMake/**') }}"
           echo "::set-output name=headers::${{ hashfiles('src/**/*.h', 'src/**/*.hpp', 'src/**/*.ipp') }}"
           echo "::set-output name=source::${{ hashfiles('src/**', '!src/**/*.md', '!src/**/*.uml', '!src/**/*.png', '!src/**/*.php') }}"
-          type -a brew
       - name: Cache
         continue-on-error: true
         uses: actions/cache@v2
@@ -84,23 +88,6 @@ jobs:
             ${{ runner.os }}-${{ steps.cachekeys.outputs.cmakeconfig }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.UNITY }}-${{ matrix.name }}-${{ steps.cachekeys.outputs.headers }}
             ${{ runner.os }}-${{ steps.cachekeys.outputs.cmakeconfig }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.UNITY }}-${{ matrix.name }}
             ${{ runner.os }}-${{ steps.cachekeys.outputs.cmakeconfig }}-${{ matrix.image }}-nih
-      - name: Set up Homebrew
-        id: set-up-homebrew
-        uses: Homebrew/actions/setup-homebrew@master
-      - name: Cache Homebrew Bundler RubyGems
-        id: cacherubygems
-        uses: actions/cache@v2
-        with:
-          path: ${{ steps.set-up-homebrew.outputs.gems-path }}
-          key: ${{ runner.os }}-rubygems-${{ steps.set-up-homebrew.outputs.gems-hash }}
-          restore-keys: ${{ runner.os }}-rubygems-
-      - name: status
-        run: |
-          df -h .
-          du -hs ${{ steps.set-up-homebrew.outputs.gems-path }}
-      - name: Install Homebrew Bundler RubyGems
-        if: steps.cacherubygems.outputs.cache-hit != 'true'
-        run: brew install-bundler-gems
       - name: status
         run: |
           df -h .
@@ -108,9 +95,10 @@ jobs:
       - name: Install Homebrew packages
         if: steps.cacherubygems.outputs.cache-hit != 'true'
         run: |
+          brew upgrade
           for pkg in protobuf grpc pkg-config bash ninja cmake wget zstd libarchive openssl@1.1
           do
-            brew install ${pkg} || brew update ${pkg}
+            brew install ${pkg} || true
           done
       - name: status
         run: |
