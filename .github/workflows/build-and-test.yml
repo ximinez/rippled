@@ -1,9 +1,5 @@
 name: Build and test rippled
-on:
-  workflow_run:
-    workflows: [ "Download rippled dependencies" ]
-    types:
-      - completed
+on: [push, pull_request]
 
 # The files starting with "build-" are all interdependent.
 # If any significant changes are made, be sure to update them
@@ -21,15 +17,143 @@ env:
   CCACHE_DIR: ${{ github.workspace }}/_cache/ccache
 
 jobs:
-  linux_everything_else:
-    name: Linux
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+  linux_cache:
+    name: Initialize linux NIH cache
+    # The NIH setup puts all the dependency source code in a single,
+    # shared directory. Run cmake across all of the compiler combos,
+    # then put all the NIH code in the cache. This accomplishes:
+    # 1) This cache will be as small as possible, since the source is
+    #    not duplicated.
+    # 2) This cache will be available to all builds, so they don't all
+    #    have to separately download, for example, NuDB.
+    # 3) Unity does not affect the NIH cache, so those two builds can
+    #    share this cache.
+    # 4) The time to download is not wasted if a build fails, even
+    #    though a failed build will not push a cache.
+    # The one downside is that not all compilers are available on all
+    # docker images, so there will be one cache per image.
     runs-on: ubuntu-18.04
     timeout-minutes: 720
+    strategy:
+      matrix:
+        include:
+          - ninja_ccs: "gcc-8 gcc-9 clang-8 clang-9"
+            ninja_types: "Debug Release"
+            image: "rippled-ci-builder:2020-01-08"
+            make_ccs: "gcc-8"
+            make_types: "Debug"
+          - ninja_ccs: "clang-10"
+            ninja_types: "Debug Release"
+            image: "rippled-ci-builder:2944b78d22db"
+            make_ccs: ""
+            make_types: ""
+    container:
+      image: rippleci/${{ matrix.image }}
     outputs:
       cmakeconfig: ${{ steps.cachekeys.outputs.cmakeconfig }}
       headers: ${{ steps.cachekeys.outputs.headers }}
       source: ${{ steps.cachekeys.outputs.source }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Build cache keys
+        id: cachekeys
+        shell: bash
+        run: |
+          echo "::set-output name=cmakeconfig::${{ hashfiles('CMakeFiles.txt', 'Builds/CMake/**') }}"
+          echo "::set-output name=headers::${{ hashfiles('src/**/*.h', 'src/**/*.hpp', 'src/**/*.ipp') }}"
+          echo "::set-output name=source::${{ hashfiles('src/**', '!src/**/*.md', '!src/**/*.uml', '!src/**/*.png', '!src/**/*.php') }}"
+      - name: Cache
+        id: cache
+        continue-on-error: true
+        uses: actions/cache@v2
+        with:
+          path: ${{ env.CACHE_DIR }}
+          key: ${{ runner.os }}-${{ steps.cachekeys.outputs.cmakeconfig }}-${{ matrix.image }}-nih-${{ matrix.ninja_ccs }}-${{ matrix.make_ccs }}
+      - name: Initialize CMake cache
+        if: ${{ ! steps.cache.outputs.cache-hit }}
+        shell: bash
+        run: |
+            if [[ -e "${NIH_CACHE_ROOT}" ]]
+            then
+                echo Cache is already set up.
+                exit
+            fi
+
+            cmake --version
+
+            if [ "${{ matrix.image }}" == "rippled-ci-builder:2944b78d22db" ]
+            then
+                export CMAKE_EXTRA_ARGS+=" -DBoost_NO_BOOST_CMAKE=ON"
+            fi
+
+            # Builds that use unix-makefiles
+            for CC in ${{ matrix.make_ccs }}
+            do
+                for BUILD_TYPE in ${{ matrix.make_types }}
+                do
+                    export CC BUILD_TYPE
+                    export CXX=${CC/gcc/g++}
+                    export CXX=${CXX/clang/clang++}
+                    ${CC} --version
+                    ${CXX} --version
+                    dir="build/$( basename ${CXX} ).${BUILD_TYPE}.makefile"
+                    mkdir -pv "${dir}"
+                    pushd "${dir}"
+                    set -x
+                    cmake -DCMAKE_BUILD_TYPE=${BUILD_TYPE} ${CMAKE_EXTRA_ARGS} ../..
+                    set +x
+                    popd
+                done
+            done
+
+            # Builds that use Ninja
+            export CMAKE_EXTRA_ARGS+=" -G Ninja"
+            for CC in ${{ matrix.ninja_ccs }}
+            do
+                for BUILD_TYPE in ${{ matrix.ninja_types }}
+                do
+                    export CC BUILD_TYPE
+                    export CXX=${CC/gcc/g++}
+                    export CXX=${CXX/clang/clang++}
+                    ${CC} --version
+                    ${CXX} --version
+                    dir="build/$( basename ${CXX} ).${BUILD_TYPE}"
+                    mkdir -pv "${dir}"
+                    pushd "${dir}"
+                    set -x
+                    cmake -DCMAKE_BUILD_TYPE=${BUILD_TYPE} ${CMAKE_EXTRA_ARGS} ../..
+                    set +x
+                    popd
+                done
+            done
+
+            du -sh ${CACHE_DIR}
+            du -sh ${CCACHE_DIR} || true
+            find ${NIH_CACHE_ROOT} -maxdepth 2 \( -iname src -prune -o -type d -exec du -sh {} \; \)
+      - name: Debug output
+        if: ${{ ! steps.cache.outputs.cache-hit || failure() }}
+        shell: bash
+        continue-on-error: true
+        run: |
+          time df -h
+          if [ -e build ] ; then find build \( -name CMakeOutput.log -o -name CMakeError.log \) -ls -exec cat {} \; ; fi
+      - name: Debug output artifacts
+        if: ${{ ! steps.cache.outputs.cache-hit || failure() }}
+        uses: actions/upload-artifact@v2
+        continue-on-error: true
+        with:
+          name: debug-output NIH ${{ matrix.ninja_ccs }}
+          retention-days: 7
+          if-no-files-found: ignore
+          path: |
+            build/**/CMakeOutput.log
+            build/**/CMakeError.log
+  linux_everything_else:
+    name: Linux
+    needs: linux_cache
+    runs-on: ubuntu-18.04
+    timeout-minutes: 720
     strategy:
       fail-fast: false
       matrix:
@@ -85,15 +209,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-        with:
-          ref: ${{ github.event.workflow_run.head_branch }}
-      - name: Build cache keys
-        id: cachekeys
-        shell: bash
-        run: |
-          echo "::set-output name=cmakeconfig::${{ hashfiles('CMakeFiles.txt', 'Builds/CMake/**') }}"
-          echo "::set-output name=headers::${{ hashfiles('src/**/*.h', 'src/**/*.hpp', 'src/**/*.ipp') }}"
-          echo "::set-output name=source::${{ hashfiles('src/**', '!src/**/*.md', '!src/**/*.uml', '!src/**/*.png', '!src/**/*.php') }}"
       - name: Cache
         continue-on-error: true
         uses: actions/cache@v2
@@ -108,8 +223,7 @@ jobs:
         # 8) The hash of all the code files under the source dir.
         # When restoring, if the matching cache is not found, search for a usable
         # cache by chopping pieces off the end of the cache key until a match is
-        # found, with special cases for a "base" build, and the NIH built in the
-        # previous job
+        # found, with a special case for the NIH built in the previous job
         with:
           path: ${{ env.CACHE_DIR }}
           key: ${{ runner.os }}-${{ steps.cachekeys.outputs.cmakeconfig }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.UNITY }}-${{ matrix.name }}-${{ steps.cachekeys.outputs.headers }}-${{ steps.cachekeys.outputs.source }}

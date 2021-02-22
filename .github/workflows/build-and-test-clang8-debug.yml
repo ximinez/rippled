@@ -1,9 +1,5 @@
 name: Build and test rippled clang-8 debug unity
-on:
-  workflow_run:
-    workflows: [ "Download rippled dependencies" ]
-    types:
-      - completed
+on: [push, pull_request]
 
 # The files starting with "build-" are all interdependent.
 # If any significant changes are made, be sure to update them
@@ -23,7 +19,6 @@ env:
 jobs:
   linux_clang_8_debug_unity:
     name: Linux
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-18.04
     timeout-minutes: 720
     outputs:
@@ -48,8 +43,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-        with:
-          ref: ${{ github.event.workflow_run.head_branch }}
       - name: Build cache keys
         id: cachekeys
         shell: bash
@@ -71,8 +64,8 @@ jobs:
         # 8) The hash of all the code files under the source dir.
         # When restoring, if the matching cache is not found, search for a usable
         # cache by chopping pieces off the end of the cache key until a match is
-        # found, with special cases for a "base" build, and the NIH built in the
-        # previous job
+        # found, with a special case for the NIH which may have been built by
+        # the "build-and-test" workflow
         with:
           path: ${{ env.CACHE_DIR }}
           key: ${{ runner.os }}-${{ steps.cachekeys.outputs.cmakeconfig }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.UNITY }}-${{ matrix.name }}-${{ steps.cachekeys.outputs.headers }}-${{ steps.cachekeys.outputs.source }}
@@ -182,8 +175,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-        with:
-          ref: ${{ github.event.workflow_run.head_branch }}
       - name: Cache
         continue-on-error: true
         uses: actions/cache@v2
