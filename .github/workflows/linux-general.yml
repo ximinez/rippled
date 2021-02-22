@@ -34,7 +34,8 @@ jobs:
     # docker images, so there will be one cache per image.
     runs-on: ubuntu-18.04
     timeout-minutes: 720
-    if: ${{ !contains(github.event.push.commits[][message], "ci_run_") || contains(github.event.push.commits[][message], "ci_run_linux") }}
+    # if: ${{ !contains(github.event.push.commits[][message], "ci_run_") || contains(github.event.push.commits[][message], "ci_run_linux") }}
+    if: false
     strategy:
       matrix:
         include:
