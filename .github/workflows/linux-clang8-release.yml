@@ -15,13 +15,15 @@ env:
   CCACHE_BASEDIR: ${{ github.workspace }}
   CCACHE_NOHASHDIR: true
   CCACHE_DIR: ${{ github.workspace }}/_cache/ccache
+  commit_message: ${{ github.event.head_commit.message }}
+  GITHUB_CONTEXT: ${{ toJSON(github) }}
 
 jobs:
   linux_clang_8_release_unity:
     name: Linux
     runs-on: ubuntu-18.04
     timeout-minutes: 720
-    if: ${{ !contains(github.event.push.head_commit.message, 'ci_run_') || contains(github.event.push.head_commit.message, 'ci_run_linux') }}
+    if: ${{ !contains(github.event.head_commit.message, 'ci_run_') || contains(github.event.head_commit.message, 'ci_run_linux') }}
     outputs:
       cmakeconfig: ${{ steps.cachekeys.outputs.cmakeconfig }}
       headers: ${{ steps.cachekeys.outputs.headers }}
@@ -79,6 +81,7 @@ jobs:
           env
           set | grep =
       - name: Reset ccache stats
+        shell: bash
         run: |
             if ! type -a ccache
             then

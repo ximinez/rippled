@@ -31,13 +31,15 @@ env:
   # Note that this option is only used if the "normal" build fails.
   #BOOST_WGET_OPTIONS: '--no-check-certificate'
   BOOST_ROOT: ${{ github.workspace }}/_cache/boost_1_70_0
+  commit_message: ${{ github.event.head_commit.message }}
+  GITHUB_CONTEXT: ${{ toJSON(github) }}
 
 jobs:
   macos_everything_else:
     name: MacOS
     runs-on: "macos-latest"
     timeout-minutes: 720
-    if: ${{ !contains(github.event.push.head_commit.message, 'ci_run_') || contains(github.event.push.head_commit.message, 'ci_run_mac') }}
+    if: ${{ !contains(github.event.head_commit.message, 'ci_run_') || contains(github.event.head_commit.message, 'ci_run_mac') }}
     outputs:
       cmakeconfig: ${{ steps.cachekeys.outputs.cmakeconfig }}
       headers: ${{ steps.cachekeys.outputs.headers }}
