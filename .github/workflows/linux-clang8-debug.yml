@@ -16,7 +16,6 @@ env:
   CCACHE_NOHASHDIR: true
   CCACHE_DIR: ${{ github.workspace }}/_cache/ccache
   commit_message: ${{ github.event.head_commit.message }}
-  GITHUB_CONTEXT: ${{ toJSON(github) }}
 
 jobs:
   linux_clang_8_debug_unity:

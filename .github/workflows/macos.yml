@@ -32,7 +32,6 @@ env:
   #BOOST_WGET_OPTIONS: '--no-check-certificate'
   BOOST_ROOT: ${{ github.workspace }}/_cache/boost_1_70_0
   commit_message: ${{ github.event.head_commit.message }}
-  GITHUB_CONTEXT: ${{ toJSON(github) }}
 
 jobs:
   macos_everything_else:
