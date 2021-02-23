@@ -23,14 +23,14 @@ env:
   CCACHE_BASEDIR: ${{ github.workspace }}
   CCACHE_NOHASHDIR: true
   CCACHE_DIR: ${{ github.workspace }}/_cache/ccache
-  BOOST_URL: 'https://dl.bintray.com/boostorg/release/1.70.0/source/boost_1_70_0.tar.bz2'
+  BOOST_URL: 'https://dl.bintray.com/boostorg/release/1.75.0/source/boost_1_75_0.tar.bz2'
   # Alternate dowload location
-  BOOST_URL2: 'https://downloads.sourceforge.net/project/boost/boost/1.70.0/boost_1_70_0.tar.bz2?r=&amp;ts=1594393912&amp;use_mirror=newcontinuum'
+  BOOST_URL2: 'https://downloads.sourceforge.net/project/boost/boost/1.75.0/boost_1_75_0.tar.bz2?r=&amp;ts=1594393912&amp;use_mirror=newcontinuum'
   # Travis downloader doesn't seem to have updated certs. Using this option
   # introduces obvious security risks, but they're Travis's risks.
   # Note that this option is only used if the "normal" build fails.
   #BOOST_WGET_OPTIONS: '--no-check-certificate'
-  BOOST_ROOT: ${{ github.workspace }}/_cache/boost_1_70_0
+  BOOST_ROOT: ${{ github.workspace }}/_cache/boost_1_75_0
   commit_message: ${{ github.event.head_commit.message }}
 
 jobs:
@@ -127,6 +127,7 @@ jobs:
           echo "NUM PROC is ${NUM_PROCESSORS}"
           if [ "${CMAKE_ADD}" != "" ] ; then export CMAKE_EXTRA_ARGS+=" ${CMAKE_ADD}"; fi
           mkdir -pv "${CACHE_DIR}"
+          echo ${CMAKE_EXTRA_ARGS}
           echo "::set-output name=CC::$(brew --prefix llvm)/bin/clang"
           echo "::set-output name=CXX::$(brew --prefix llvm)/bin/clang++"
       - name: Install boost
