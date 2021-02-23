@@ -6,12 +6,6 @@ on: [push, pull_request]
 # to keep them in sync.
 
 env:
-  CMAKE_EXTRA_ARGS: |
-    -Dwerr=ON -Dwextra=ON
-    -DBOOST_ROOT=${BOOST_ROOT}/_INSTALLED_
-    -DBoost_ARCHITECTURE=-x64
-    -DBoost_NO_SYSTEM_PATHS=ON
-    -DCMAKE_VERBOSE_MAKEFILE=ON
   NINJA_BUILD: true
   CACHE_DIR: ${{ github.workspace }}/_cache
   #NIH_CACHE_ROOT: ${{ github.workspace }}/_cache/nih_c
@@ -98,7 +92,10 @@ jobs:
       - name: Install Homebrew packages
         if: steps.cacherubygems.outputs.cache-hit != 'true'
         run: |
+          echo Upgrade all brew packages
           brew upgrade
+          echo Currently installed brews:
+          brew list
           for pkg in protobuf grpc pkg-config bash ninja cmake wget zstd libarchive openssl@1.1
           do
             brew install ${pkg}
@@ -125,9 +122,7 @@ jobs:
         run: |
           export NUM_PROCESSORS=${NUM_PROCESSORS:-$(nproc || sysctl -n hw.logicalcpu || echo 3)}
           echo "NUM PROC is ${NUM_PROCESSORS}"
-          if [ "${CMAKE_ADD}" != "" ] ; then export CMAKE_EXTRA_ARGS+=" ${CMAKE_ADD}"; fi
           mkdir -pv "${CACHE_DIR}"
-          echo ${CMAKE_EXTRA_ARGS}
           echo "::set-output name=CC::$(brew --prefix llvm)/bin/clang"
           echo "::set-output name=CXX::$(brew --prefix llvm)/bin/clang++"
       - name: Install boost
@@ -143,7 +138,7 @@ jobs:
           $CXX --version
           export OPENSSL_ROOT=$(brew --prefix openssl@1.1)
           ./Builds/containers/shared/install_boost.sh
-          brew uninstall --ignore-dependencies boost
+          # brew uninstall --ignore-dependencies boost
       - name: Build and test
         shell: bash
         env:
@@ -154,6 +149,14 @@ jobs:
           ls -l $CC $CXX
           $CC --version
           $CXX --version
+          export CMAKE_EXTRA_ARGS="
+            -Dwerr=ON -Dwextra=ON
+            -DBOOST_ROOT=${BOOST_ROOT}/_INSTALLED_
+            -DBoost_ARCHITECTURE=-x64
+            -DBoost_NO_SYSTEM_PATHS=ON
+            -DCMAKE_VERBOSE_MAKEFILE=ON"
+          if [ "${CMAKE_ADD}" != "" ] ; then export CMAKE_EXTRA_ARGS+=" ${CMAKE_ADD}"; fi
+          echo ${CMAKE_EXTRA_ARGS}
           mkdir -p build.macos && cd build.macos
           cmake -G Ninja ${CMAKE_EXTRA_ARGS} -DCMAKE_BUILD_TYPE=${BLD_CONFIG} ..
           cmake --build . --parallel --verbose
