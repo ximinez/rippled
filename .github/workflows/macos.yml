@@ -24,12 +24,12 @@ env:
   # introduces obvious security risks, but they're Travis's risks.
   # Note that this option is only used if the "normal" build fails.
   #BOOST_WGET_OPTIONS: '--no-check-certificate'
-  BOOST_ROOT: ${{ github.workspace }}/_cache/boost_1_75_0
+  # BOOST_ROOT: ${{ github.workspace }}/_cache/boost_1_75_0
   commit_message: ${{ github.event.head_commit.message }}
 
 jobs:
-  macos_everything_else:
-    name: MacOS
+  macos_cache:
+    name: Seed MacOS cache
     runs-on: "macos-latest"
     timeout-minutes: 720
     if: ${{ !contains(github.event.head_commit.message, 'ci_run_') || contains(github.event.head_commit.message, 'ci_run_mac') }}
@@ -37,22 +37,9 @@ jobs:
       cmakeconfig: ${{ steps.cachekeys.outputs.cmakeconfig }}
       headers: ${{ steps.cachekeys.outputs.headers }}
       source: ${{ steps.cachekeys.outputs.source }}
-    strategy:
-      fail-fast: false
-      matrix:
-        BLD_CONFIG: [ "Debug", "Release" ]
-        TEST_EXTRA_ARGS: [ "" ]
-        include:
-            # Special cases which add to or override the cases in the
-            # matrix.
-            #
-            - BLD_CONFIG: "Release"
-              CMAKE_ADD: "-Dassert=ON"
-            - BLD_CONFIG: "Debug"
-              TEST_EXTRA_ARGS: "--unittest-ipv6"
-    env:
-      BLD_CONFIG: ${{ matrix.BLD_CONFIG }}
-      TEST_EXTRA_ARGS: ${{ matrix.TEST_EXTRA_ARGS }}
+      CC: ${{ steps.pre.outputs.CC }}
+      CXX: ${{ steps.pre.outputs.CXX }}
+      NUM_PROCESSORS: ${{ steps.pre.outputs.NUM_PROCESSORS }}
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -64,15 +51,100 @@ jobs:
           echo "::set-output name=headers::${{ hashfiles('src/**/*.h', 'src/**/*.hpp', 'src/**/*.ipp') }}"
           echo "::set-output name=source::${{ hashfiles('src/**', '!src/**/*.md', '!src/**/*.uml', '!src/**/*.png', '!src/**/*.php') }}"
       - name: Cache
+        if: false
+        continue-on-error: true
+        uses: actions/cache@v2
+        with:
+          path: ${{ env.CACHE_DIR }}
+          key: ${{ runner.os }}-${{ steps.cachekeys.outputs.cmakeconfig }}-nih
+      - name: Install Homebrew packages
+        if: false
+        run: |
+          echo Upgrade all brew packages
+          brew upgrade
+          echo Currently installed brews:
+          brew list
+          for pkg in protobuf grpc pkg-config bash ninja cmake wget zstd libarchive openssl@1.1
+          do
+            brew install ${pkg}
+          done
+      - name: Dump environment
+        if: false
+        run: |
+          env
+          set | grep =
+      - name: Disk space before
+        if: false
+        shell: bash
+        run: |
+          df -h
+          find ${CACHE_DIR} -maxdepth 2 \( -iname src -prune -o \
+            -type d -exec du -sh {} \; \) || true
+      - name: Pre-install
+        id: pre
+        shell: bash
+        run: |
+          export NUM_PROCESSORS=${NUM_PROCESSORS:-$(nproc || sysctl -n hw.logicalcpu || echo 3)}
+          echo "NUM PROC is ${NUM_PROCESSORS}"
+          mkdir -pv "${CACHE_DIR}"
+          echo "::set-output name=NUM_PROCESSORS::${NUM_PROCESSORS}"
+          echo "::set-output name=CC::$(brew --prefix llvm)/bin/clang"
+          echo "::set-output name=CXX::$(brew --prefix llvm)/bin/clang++"
+      - name: Install boost
+        if: false
+        shell: bash
+        env:
+          CC: ${{ steps.pre.outputs.CC }}
+          CXX: ${{ steps.pre.outputs.CXX }}
+          NUM_PROCESSORS: ${{ steps.pre.outputs.NUM_PROCESSORS }}
+        run: |
+          set -x
+          echo $CC $CXX
+          ls -l $CC $CXX
+          $CC --version
+          $CXX --version
+          export OPENSSL_ROOT=$(brew --prefix openssl@1.1)
+          ./Builds/containers/shared/install_boost.sh
+          # brew uninstall --ignore-dependencies boost
+      - name: Disk space after
+        shell: bash
+        if: always()
+        run: |
+          df -h
+          find ${CACHE_DIR} -maxdepth 2 \( -iname src -prune -o \
+            -type d -exec du -sh {} \; \) || true
+  macos:
+    name: MacOS
+    needs: macos_cache
+    runs-on: "macos-latest"
+    timeout-minutes: 720
+    if: ${{ !contains(github.event.head_commit.message, 'ci_run_') || contains(github.event.head_commit.message, 'ci_run_mac') }}
+    strategy:
+      fail-fast: false
+      matrix:
+        BLD_CONFIG: [ "Debug", "Release" ]
+        include:
+            # Special cases which add to or override the cases in the
+            # matrix.
+            #
+            - BLD_CONFIG: "Release"
+              CMAKE_ADD: "-Dassert=ON"
+    env:
+      BLD_CONFIG: ${{ matrix.BLD_CONFIG }}
+      TEST_EXTRA_ARGS: ${{ matrix.TEST_EXTRA_ARGS }}
+      CC: ${{ needs.macos_cache.outputs.CC }}
+      CXX: ${{ needs.macos_cache.outputs.CXX }}
+      NUM_PROCESSORS: ${{ needs.macos_cache.outputs.NUM_PROCESSORS }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Cache
         continue-on-error: true
         uses: actions/cache@v2
         # The cache key is built on the following in order
         # 1) OS.
         # 2) The hash of all the CMake config files.
-        # 3) The build compiler
         # 4) The build type
-        # 5) The build unity setting
-        # 6) The build custom name.
         # 7) The hash of all the header files under the source dir.
         # 8) The hash of all the code files under the source dir.
         # When restoring, if the matching cache is not found, search for a usable
@@ -80,11 +152,11 @@ jobs:
         # found, with a special case for the NIH built in the previous job
         with:
           path: ${{ env.CACHE_DIR }}
-          key: ${{ runner.os }}-${{ steps.cachekeys.outputs.cmakeconfig }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.UNITY }}-${{ matrix.name }}-${{ steps.cachekeys.outputs.headers }}-${{ steps.cachekeys.outputs.source }}
+          key: ${{ runner.os }}-${{ needs.macos_cache.outputs.cmakeconfig }}-${{ matrix.BLD_CONFIG }}-${{ needs.macos_cache.outputs.headers }}-${{ needs.macos_cache.outputs.source }}
           restore-keys: |
-            ${{ runner.os }}-${{ steps.cachekeys.outputs.cmakeconfig }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.UNITY }}-${{ matrix.name }}-${{ steps.cachekeys.outputs.headers }}
-            ${{ runner.os }}-${{ steps.cachekeys.outputs.cmakeconfig }}-${{ matrix.CC }}-${{ matrix.BUILD_TYPE }}-${{ matrix.UNITY }}-${{ matrix.name }}
-            ${{ runner.os }}-${{ steps.cachekeys.outputs.cmakeconfig }}-${{ matrix.image }}-nih
+            ${{ runner.os }}-${{ needs.macos_cache.outputs.cmakeconfig }}-${{ matrix.BLD_CONFIG }}-${{ needs.macos_cache.outputs.headers }}
+            ${{ runner.os }}-${{ needs.macos_cache.outputs.cmakeconfig }}-${{ matrix.BLD_CONFIG }}
+            ${{ runner.os }}-${{ needs.macos_cache.outputs.cmakeconfig }}-nih
       - name: status
         run: |
           df -h .
@@ -96,7 +168,7 @@ jobs:
           brew upgrade
           echo Currently installed brews:
           brew list
-          for pkg in protobuf grpc pkg-config bash ninja cmake wget zstd libarchive openssl@1.1
+          for pkg in protobuf grpc pkg-config bash ninja cmake wget zstd libarchive boost openssl@1.1
           do
             brew install ${pkg}
           done
@@ -112,38 +184,10 @@ jobs:
         shell: bash
         run: |
           df -h
-          du -sh ${CACHE_DIR} || true
-          du -sh ${CCACHE_DIR} || true
-          find ${NIH_CACHE_ROOT} -maxdepth 2 \( -iname src -prune -o \
+          find ${CACHE_DIR} -maxdepth 2 \( -iname src -prune -o \
             -type d -exec du -sh {} \; \) || true
-      - name: Pre-install
-        id: pre
-        shell: bash
-        run: |
-          export NUM_PROCESSORS=${NUM_PROCESSORS:-$(nproc || sysctl -n hw.logicalcpu || echo 3)}
-          echo "NUM PROC is ${NUM_PROCESSORS}"
-          mkdir -pv "${CACHE_DIR}"
-          echo "::set-output name=CC::$(brew --prefix llvm)/bin/clang"
-          echo "::set-output name=CXX::$(brew --prefix llvm)/bin/clang++"
-      - name: Install boost
-        shell: bash
-        env:
-          CC: ${{ steps.pre.outputs.CC }}
-          CXX: ${{ steps.pre.outputs.CXX }}
-        run: |
-          set -x
-          echo $CC $CXX
-          ls -l $CC $CXX
-          $CC --version
-          $CXX --version
-          export OPENSSL_ROOT=$(brew --prefix openssl@1.1)
-          ./Builds/containers/shared/install_boost.sh
-          # brew uninstall --ignore-dependencies boost
       - name: Build and test
         shell: bash
-        env:
-          CC: ${{ steps.pre.outputs.CC }}
-          CXX: ${{ steps.pre.outputs.CXX }}
         run: |
           echo $CC $CXX
           ls -l $CC $CXX
@@ -151,7 +195,6 @@ jobs:
           $CXX --version
           export CMAKE_EXTRA_ARGS="
             -Dwerr=ON -Dwextra=ON
-            -DBOOST_ROOT=${BOOST_ROOT}/_INSTALLED_
             -DBoost_ARCHITECTURE=-x64
             -DBoost_NO_SYSTEM_PATHS=ON
             -DCMAKE_VERBOSE_MAKEFILE=ON"
@@ -160,22 +203,20 @@ jobs:
           mkdir -p build.macos && cd build.macos
           cmake -G Ninja ${CMAKE_EXTRA_ARGS} -DCMAKE_BUILD_TYPE=${BLD_CONFIG} ..
           cmake --build . --parallel --verbose
-          ./rippled --unittest --quiet --unittest-log --unittest-jobs ${NUM_PROCESSORS} ${TEST_EXTRA_ARGS}
+          ./rippled --unittest --quiet --unittest-log --unittest-jobs ${NUM_PROCESSORS}
       - name: Disk space after
         shell: bash
         if: always()
         run: |
           df -h
-          du -sh ${CACHE_DIR} || true
-          du -sh ${CCACHE_DIR} || true
-          find ${NIH_CACHE_ROOT} -maxdepth 2 \( -iname src -prune -o \
+          find ${CACHE_DIR} -maxdepth 2 \( -iname src -prune -o \
             -type d -exec du -sh {} \; \) || true
       - name: Debug output artifacts
         if: always()
         uses: actions/upload-artifact@v2
         continue-on-error: true
         with:
-          name: debug-output ${{ matrix.name }} ${{ matrix.CC }} ${{ matrix.BUILD_TYPE }} unity=${{ matrix.UNITY }}
+          name: debug-output ${{ matrix.BLD_CONFIG }}
           retention-days: 7
           if-no-files-found: ignore
           path: |
@@ -185,9 +226,45 @@ jobs:
         uses: actions/upload-artifact@v2
         continue-on-error: true
         with:
-          name: rippled ${{ matrix.name }} ${{ matrix.CC }} ${{ matrix.BUILD_TYPE }} unity=${{ matrix.UNITY }}
+          name: rippled ${{ matrix.BLD_CONFIG }}
           retention-days: 7
           if-no-files-found: ignore
           path: |
             build/**/rippled
             !build/**/_INSTALLED_/**
+  macos_runner:
+    name: Linux
+    needs: [ macos_cache, macos ]
+    runs-on: ubuntu-18.04
+    timeout-minutes: 720
+    strategy:
+      fail-fast: false
+      matrix:
+        name: [ "IPv6 tests" ]
+        BLD_CONFIG: [ "Debug" ]
+        TEST_EXTRA_ARGS: [ "--unittest-ipv6" ]
+    env:
+      BLD_CONFIG: ${{ matrix.BLD_CONFIG }}
+      TEST_EXTRA_ARGS: ${{ matrix.TEST_EXTRA_ARGS }}
+      NUM_PROCESSORS: ${{ needs.macos_cache.outputs.NUM_PROCESSORS }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Download rippled artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: rippled ${{ matrix.BLD_CONFIG }}
+      - name: Run manual tests
+        shell: bash
+        run: |
+            set -x
+
+            : ${APP_ARGS:=}
+            APP_ARGS+=" --unittest --quiet --unittest-log --unittest-jobs ${NUM_PROCESSORS} ${TEST_EXTRA_ARGS}"
+
+            find -iname rippled -ls
+            [[ $( find -name rippled | wc -l ) -eq 1 ]]
+            # There can be only one
+            APP_PATH="$( find -iname rippled )"
+            chmod a+rx "${APP_PATH}"
+            "${APP_PATH}" ${APP_ARGS}
