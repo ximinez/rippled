@@ -200,8 +200,8 @@ jobs:
             -DCMAKE_VERBOSE_MAKEFILE=ON"
           if [ "${CMAKE_ADD}" != "" ] ; then export CMAKE_EXTRA_ARGS+=" ${CMAKE_ADD}"; fi
           echo ${CMAKE_EXTRA_ARGS}
-          mkdir -p build.macos && cd build.macos
-          cmake -G Ninja ${CMAKE_EXTRA_ARGS} -DCMAKE_BUILD_TYPE=${BLD_CONFIG} ..
+          mkdir -p build/macos && cd build/macos
+          cmake -G Ninja ${CMAKE_EXTRA_ARGS} -DCMAKE_BUILD_TYPE=${BLD_CONFIG} ../..
           cmake --build . --parallel --verbose
           ./rippled --unittest --quiet --unittest-log --unittest-jobs ${NUM_PROCESSORS}
       - name: Disk space after
@@ -233,9 +233,9 @@ jobs:
             build/**/rippled
             !build/**/_INSTALLED_/**
   macos_runner:
-    name: Linux
+    name: MacOS
     needs: [ macos_cache, macos ]
-    runs-on: ubuntu-18.04
+    runs-on: "macos-latest"
     timeout-minutes: 720
     strategy:
       fail-fast: false
@@ -248,8 +248,6 @@ jobs:
       TEST_EXTRA_ARGS: ${{ matrix.TEST_EXTRA_ARGS }}
       NUM_PROCESSORS: ${{ needs.macos_cache.outputs.NUM_PROCESSORS }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
       - name: Download rippled artifact
         uses: actions/download-artifact@v2
         with:
