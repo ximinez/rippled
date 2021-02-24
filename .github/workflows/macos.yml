@@ -135,15 +135,15 @@ jobs:
             ${CC} --version
             ${CXX} --version
 
+            set -x
+
             for BLD_CONFIG in ${BLD_CONFIGS}
             do
                 export BLD_CONFIG
-                dir="${builddir}.${BUILD_TYPE}"
+                dir="${builddir}.${BLD_CONFIG}"
                 mkdir -pv "${dir}"
                 pushd "${dir}"
-                set -x
-                cmake -DCMAKE_BUILD_TYPE=${BUILD_TYPE} ${CMAKE_ARGS} ${srcdir}
-                set +x
+                cmake -DCMAKE_BUILD_TYPE=${BLD_CONFIG} ${CMAKE_ARGS} ${srcdir}
                 popd
             done
 
