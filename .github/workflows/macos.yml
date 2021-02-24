@@ -8,16 +8,15 @@ on: [push, pull_request]
 env:
   NINJA_BUILD: true
   CACHE_DIR: ${{ github.workspace }}/_cache
-  #NIH_CACHE_ROOT: ${{ github.workspace }}/_cache/nih_c
+  NIH_CACHE_ROOT: ${{ github.workspace }}/_cache/nih_c
   # put NIH in non-cache location since it seems to
   # cause failures when homebrew updates
-  NIH_CACHE_ROOT: ${{ github.workspace }}/nih_c
+  # NIH_CACHE_ROOT: ${{ github.workspace }}/nih_c
   PARALLEL_TESTS: true
   USE_CCACHE: true
   CCACHE_BASEDIR: ${{ github.workspace }}
   CCACHE_NOHASHDIR: true
   CCACHE_DIR: ${{ github.workspace }}/_cache/ccache
-  BOOST_VERSION: '1.74.0'
   BOOST_URL: 'https://dl.bintray.com/boostorg/release/1.74.0/source/boost_1_74_0.tar.bz2'
   # Alternate dowload location
   BOOST_URL2: 'https://downloads.sourceforge.net/project/boost/boost/1.74.0/boost_1_74_0.tar.bz2?r=&amp;ts=1594393912&amp;use_mirror=newcontinuum'
@@ -26,7 +25,10 @@ env:
   # introduces obvious security risks, but they're Travis's risks.
   # Note that this option is only used if the "normal" build fails.
   #BOOST_WGET_OPTIONS: '--no-check-certificate'
-  homebrew_packages: 'protobuf grpc pkg-config bash ninja cmake wget zstd openssl@1.1'
+  CMAKE_ARGS: "-G Ninja -Dwerr=ON -Dwextra=ON -DBoost_ARCHITECTURE=-x64 -DBoost_NO_SYSTEM_PATHS=ON -DCMAKE_VERBOSE_MAKEFILE=ON"
+  homebrew_packages: 'protobuf grpc pkg-config bash ninja cmake wget zstd libarchive openssl@1.1'
+  srcdir: ${{ github.workspace }}/rippled
+  builddir: ${{ github.workspace }}/rippled/build/macos
   commit_message: ${{ github.event.head_commit.message }}
 
 jobs:
@@ -54,22 +56,32 @@ jobs:
           echo "::set-output name=cmakeconfig::${{ hashfiles('rippled/CMakeFiles.txt', 'rippled/Builds/CMake/**') }}"
           echo "::set-output name=headers::${{ hashfiles('rippled/src/**/*.h', 'rippled/src/**/*.hpp', 'rippled/src/**/*.ipp') }}"
           echo "::set-output name=source::${{ hashfiles('rippled/src/**', '!rippled/src/**/*.md', '!rippled/src/**/*.uml', '!rippled/src/**/*.png', '!rippled/src/**/*.php') }}"
-      - name: Cache
-        continue-on-error: true
-        uses: actions/cache@v2
-        with:
-          path: ${{ env.CACHE_DIR }}
-          key: ${{ runner.os }}-${{ env.BOOST_VERSION }}-${{ steps.cachekeys.outputs.cmakeconfig }}-nih
       - name: Install Homebrew packages
         run: |
           echo Upgrade all brew packages
           brew upgrade
           echo Currently installed brews:
-          brew list
           for pkg in ${homebrew_packages}
           do
+            echo INSTALLING ${pkg}
             brew install ${pkg}
           done
+          set -x
+          brew list
+          brew info
+      - name: Boost cache
+        continue-on-error: true
+        uses: actions/cache@v2
+        with:
+          path: ${{ env.BOOST_ROOT }}
+          key: ${{ runner.os }}-boost-${{ env.BOOST_ROOT }}
+      - name: NIH cache
+        id: nihcache
+        continue-on-error: true
+        uses: actions/cache@v2
+        with:
+          path: ${{ env.NIH_CACHE_ROOT }}
+          key: ${{ runner.os }}-${{ steps.cachekeys.outputs.cmakeconfig }}-nih
       - name: Dump environment
         run: |
           env
@@ -104,6 +116,39 @@ jobs:
           cd rippled
           ./Builds/containers/shared/install_boost.sh
           # brew uninstall --ignore-dependencies boost
+      - name: Initialize CMake cache
+        if: ${{ ! steps.nihcache.outputs.cache-hit }}
+        shell: bash
+        env:
+          CC: ${{ steps.pre.outputs.CC }}
+          CXX: ${{ steps.pre.outputs.CXX }}
+          NUM_PROCESSORS: ${{ steps.pre.outputs.NUM_PROCESSORS }}
+          BLD_CONFIGS: "Debug Release"
+        run: |
+            if [[ -e "${NIH_CACHE_ROOT}" ]]
+            then
+                echo Cache is already set up.
+                exit
+            fi
+
+            cmake --version
+            ${CC} --version
+            ${CXX} --version
+
+            for BLD_CONFIG in ${BLD_CONFIGS}
+            do
+                export BLD_CONFIG
+                dir="${builddir}.${BUILD_TYPE}"
+                mkdir -pv "${dir}"
+                pushd "${dir}"
+                set -x
+                cmake -DCMAKE_BUILD_TYPE=${BUILD_TYPE} ${CMAKE_ARGS} ${srcdir}
+                set +x
+                popd
+            done
+
+            du -sh ${CACHE_DIR}
+            find ${NIH_CACHE_ROOT} -maxdepth 2 \( -iname src -prune -o -type d -exec du -sh {} \; \)
       - name: Disk space after
         shell: bash
         if: always()
@@ -111,6 +156,26 @@ jobs:
           df -h
           find ${CACHE_DIR} -maxdepth 2 \( -iname src -prune -o \
             -type d -exec du -sh {} \; \) || true
+      - name: Debug output
+        if: ${{ ! steps.cache.outputs.cache-hit || failure() }}
+        shell: bash
+        continue-on-error: true
+        run: |
+          time df -h
+          dir=rippled/build
+          if [ -e ${dir} ] ; then find ${dir} \( -name CMakeOutput.log -o \
+            -name CMakeError.log \) -ls -exec cat {} \; ; fi
+      - name: Debug output artifacts
+        if: ${{ ! steps.cache.outputs.cache-hit || failure() }}
+        uses: actions/upload-artifact@v2
+        continue-on-error: true
+        with:
+          name: debug-output NIH
+          retention-days: 7
+          if-no-files-found: ignore
+          path: |
+            rippled/build/**/CMakeOutput.log
+            rippled/build/**/CMakeError.log
   macos:
     name: MacOS
     needs: macos_cache
@@ -138,44 +203,45 @@ jobs:
         uses: actions/checkout@v2
         with:
           path: rippled
-      - name: Cache
-        continue-on-error: true
-        uses: actions/cache@v2
-        # The cache key is built on the following in order
-        # 1) OS.
-        # 2) The hash of all the CMake config files.
-        # 4) The build type
-        # 7) The hash of all the header files under the source dir.
-        # 8) The hash of all the code files under the source dir.
-        # When restoring, if the matching cache is not found, search for a usable
-        # cache by chopping pieces off the end of the cache key until a match is
-        # found, with a special case for the NIH built in the previous job
-        with:
-          path: ${{ env.CACHE_DIR }}
-          key: ${{ runner.os }}-${{ env.BOOST_VERSION }}-${{ needs.macos_cache.outputs.cmakeconfig }}-${{ matrix.BLD_CONFIG }}-${{ needs.macos_cache.outputs.headers }}-${{ needs.macos_cache.outputs.source }}
-          restore-keys: |
-            ${{ runner.os }}-${{ env.BOOST_VERSION }}-${{ needs.macos_cache.outputs.cmakeconfig }}-${{ matrix.BLD_CONFIG }}-${{ needs.macos_cache.outputs.headers }}
-            ${{ runner.os }}-${{ env.BOOST_VERSION }}-${{ needs.macos_cache.outputs.cmakeconfig }}-${{ matrix.BLD_CONFIG }}
-            ${{ runner.os }}-${{ env.BOOST_VERSION }}-${{ needs.macos_cache.outputs.cmakeconfig }}-nih
-      - name: status
-        run: |
-          df -h .
-          du -hs ${{ steps.set-up-homebrew.outputs.gems-path }}
       - name: Install Homebrew packages
         run: |
           echo Upgrade all brew packages
           brew upgrade
           echo Currently installed brews:
-          brew list
           for pkg in ${homebrew_packages}
           do
             echo INSTALLING ${pkg}
             brew install ${pkg}
           done
-      - name: status
-        run: |
-          df -h .
-          du -hs ${{ steps.set-up-homebrew.outputs.gems-path }}
+          set -x
+          brew list
+          brew info
+      - name: Boost cache
+        continue-on-error: true
+        uses: actions/cache@v2
+        with:
+          path: ${{ env.BOOST_ROOT }}
+          key: ${{ runner.os }}-boost-${{ env.BOOST_ROOT }}
+      - name: NIH cache
+        id: nihcache
+        continue-on-error: true
+        uses: actions/cache@v2
+        # The cache key is built on the following in order
+        # 1) OS.
+        # 2) The hash of all the CMake config files.
+        # 3) The build type
+        # 4) The hash of all the header files under the source dir.
+        # 5) The hash of all the code files under the source dir.
+        # When restoring, if the matching cache is not found, search for a usable
+        # cache by chopping pieces off the end of the cache key until a match is
+        # found, with a special case for the NIH built in the previous job
+        with:
+          path: ${{ env.NIH_CACHE_ROOT }}
+          key: ${{ runner.os }}-${{ needs.macos_cache.outputs.cmakeconfig }}-${{ matrix.BLD_CONFIG }}-${{ needs.macos_cache.outputs.headers }}-${{ needs.macos_cache.outputs.source }}
+          restore-keys: |
+            ${{ runner.os }}-${{ needs.macos_cache.outputs.cmakeconfig }}-${{ matrix.BLD_CONFIG }}-${{ needs.macos_cache.outputs.headers }}
+            ${{ runner.os }}-${{ needs.macos_cache.outputs.cmakeconfig }}-${{ matrix.BLD_CONFIG }}
+            ${{ runner.os }}-${{ steps.cachekeys.outputs.cmakeconfig }}-nih
       - name: Dump environment
         run: |
           env
@@ -192,17 +258,10 @@ jobs:
           set -x
           $CC --version
           $CXX --version
-          export CMAKE_EXTRA_ARGS="
-            -Dwerr=ON -Dwextra=ON
-            -DBoost_ARCHITECTURE=-x64
-            -DBoost_NO_SYSTEM_PATHS=ON
-            -DCMAKE_VERBOSE_MAKEFILE=ON"
-          if [ "${CMAKE_ADD}" != "" ] ; then export CMAKE_EXTRA_ARGS+=" ${CMAKE_ADD}"; fi
-          echo ${CMAKE_EXTRA_ARGS}
-          srcdir=$(pwd)/rippled
-          builddir=${srcdir}/build/macos
+          if [ "${CMAKE_ADD}" != "" ] ; then export CMAKE_ARGS+=" ${CMAKE_ADD}"; fi
+          echo ${CMAKE_ARGS}
           mkdir -p $builddir && cd $builddir
-          cmake -G Ninja ${CMAKE_EXTRA_ARGS} -DCMAKE_BUILD_TYPE=${BLD_CONFIG} ${srcdir}
+          cmake ${CMAKE_ARGS} -DCMAKE_BUILD_TYPE=${BLD_CONFIG} ${srcdir}
           cmake --build . --parallel --verbose
           ./rippled --unittest --quiet --unittest-log --unittest-jobs ${NUM_PROCESSORS}
       - name: Disk space after
@@ -221,8 +280,8 @@ jobs:
           retention-days: 7
           if-no-files-found: ignore
           path: |
-            build/**/CMakeOutput.log
-            build/**/CMakeError.log
+            rippled/build/**/CMakeOutput.log
+            rippled/build/**/CMakeError.log
       - name: rippled executable artifact
         uses: actions/upload-artifact@v2
         continue-on-error: true
@@ -231,8 +290,8 @@ jobs:
           retention-days: 7
           if-no-files-found: ignore
           path: |
-            build/**/rippled
-            !build/**/_INSTALLED_/**
+            rippled/build/**/rippled
+            !rippled/build/**/_INSTALLED_/**
   macos_runner:
     name: MacOS
     needs: [ macos_cache, macos ]
@@ -262,8 +321,8 @@ jobs:
             APP_ARGS+=" --unittest --quiet --unittest-log --unittest-jobs ${NUM_PROCESSORS} ${TEST_EXTRA_ARGS}"
 
             find -iname rippled -ls
-            [[ $( find -name rippled | wc -l ) -eq 1 ]]
             # There can be only one
+            [[ $( find -name rippled | wc -l ) -eq 1 ]]
             APP_PATH="$( find -iname rippled )"
             chmod a+rx "${APP_PATH}"
             "${APP_PATH}" ${APP_ARGS}

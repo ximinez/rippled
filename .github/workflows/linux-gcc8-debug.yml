@@ -345,8 +345,8 @@ jobs:
             APP_ARGS+=" --unittest-jobs ${NUM_PROCESSORS:-2}"
 
             find -iname rippled -ls
-            [[ $( find -name rippled | wc -l ) -eq 1 ]]
             # There can be only one
+            [[ $( find -name rippled | wc -l ) -eq 1 ]]
             APP_PATH="$( find -iname rippled )"
             chmod a+rx "${APP_PATH}"
             "${APP_PATH}" ${APP_ARGS}
