@@ -17,14 +17,16 @@ env:
   CCACHE_BASEDIR: ${{ github.workspace }}
   CCACHE_NOHASHDIR: true
   CCACHE_DIR: ${{ github.workspace }}/_cache/ccache
-  BOOST_URL: 'https://dl.bintray.com/boostorg/release/1.75.0/source/boost_1_75_0.tar.bz2'
+  BOOST_VERSION: '1.74.0'
+  BOOST_URL: 'https://dl.bintray.com/boostorg/release/1.74.0/source/boost_1_74_0.tar.bz2'
   # Alternate dowload location
-  BOOST_URL2: 'https://downloads.sourceforge.net/project/boost/boost/1.75.0/boost_1_75_0.tar.bz2?r=&amp;ts=1594393912&amp;use_mirror=newcontinuum'
+  BOOST_URL2: 'https://downloads.sourceforge.net/project/boost/boost/1.74.0/boost_1_74_0.tar.bz2?r=&amp;ts=1594393912&amp;use_mirror=newcontinuum'
+  BOOST_ROOT: ${{ github.workspace }}/_cache/boost_1_74_0
   # Travis downloader doesn't seem to have updated certs. Using this option
   # introduces obvious security risks, but they're Travis's risks.
   # Note that this option is only used if the "normal" build fails.
   #BOOST_WGET_OPTIONS: '--no-check-certificate'
-  # BOOST_ROOT: ${{ github.workspace }}/_cache/boost_1_75_0
+  homebrew_packages: 'protobuf grpc pkg-config bash ninja cmake wget zstd openssl@1.1'
   commit_message: ${{ github.event.head_commit.message }}
 
 jobs:
@@ -43,38 +45,36 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+        with:
+          path: rippled
       - name: Build cache keys
         id: cachekeys
         shell: bash
         run: |
-          echo "::set-output name=cmakeconfig::${{ hashfiles('CMakeFiles.txt', 'Builds/CMake/**') }}"
-          echo "::set-output name=headers::${{ hashfiles('src/**/*.h', 'src/**/*.hpp', 'src/**/*.ipp') }}"
-          echo "::set-output name=source::${{ hashfiles('src/**', '!src/**/*.md', '!src/**/*.uml', '!src/**/*.png', '!src/**/*.php') }}"
+          echo "::set-output name=cmakeconfig::${{ hashfiles('rippled/CMakeFiles.txt', 'rippled/Builds/CMake/**') }}"
+          echo "::set-output name=headers::${{ hashfiles('rippled/src/**/*.h', 'rippled/src/**/*.hpp', 'rippled/src/**/*.ipp') }}"
+          echo "::set-output name=source::${{ hashfiles('rippled/src/**', '!rippled/src/**/*.md', '!rippled/src/**/*.uml', '!rippled/src/**/*.png', '!rippled/src/**/*.php') }}"
       - name: Cache
-        if: false
         continue-on-error: true
         uses: actions/cache@v2
         with:
           path: ${{ env.CACHE_DIR }}
-          key: ${{ runner.os }}-${{ steps.cachekeys.outputs.cmakeconfig }}-nih
+          key: ${{ runner.os }}-${{ env.BOOST_VERSION }}-${{ steps.cachekeys.outputs.cmakeconfig }}-nih
       - name: Install Homebrew packages
-        if: false
         run: |
           echo Upgrade all brew packages
           brew upgrade
           echo Currently installed brews:
           brew list
-          for pkg in protobuf grpc pkg-config bash ninja cmake wget zstd libarchive openssl@1.1
+          for pkg in ${homebrew_packages}
           do
             brew install ${pkg}
           done
       - name: Dump environment
-        if: false
         run: |
           env
           set | grep =
       - name: Disk space before
-        if: false
         shell: bash
         run: |
           df -h
@@ -91,7 +91,6 @@ jobs:
           echo "::set-output name=CC::$(brew --prefix llvm)/bin/clang"
           echo "::set-output name=CXX::$(brew --prefix llvm)/bin/clang++"
       - name: Install boost
-        if: false
         shell: bash
         env:
           CC: ${{ steps.pre.outputs.CC }}
@@ -99,11 +98,10 @@ jobs:
           NUM_PROCESSORS: ${{ steps.pre.outputs.NUM_PROCESSORS }}
         run: |
           set -x
-          echo $CC $CXX
-          ls -l $CC $CXX
           $CC --version
           $CXX --version
           export OPENSSL_ROOT=$(brew --prefix openssl@1.1)
+          cd rippled
           ./Builds/containers/shared/install_boost.sh
           # brew uninstall --ignore-dependencies boost
       - name: Disk space after
@@ -138,6 +136,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+        with:
+          path: rippled
       - name: Cache
         continue-on-error: true
         uses: actions/cache@v2
@@ -152,24 +152,24 @@ jobs:
         # found, with a special case for the NIH built in the previous job
         with:
           path: ${{ env.CACHE_DIR }}
-          key: ${{ runner.os }}-${{ needs.macos_cache.outputs.cmakeconfig }}-${{ matrix.BLD_CONFIG }}-${{ needs.macos_cache.outputs.headers }}-${{ needs.macos_cache.outputs.source }}
+          key: ${{ runner.os }}-${{ env.BOOST_VERSION }}-${{ needs.macos_cache.outputs.cmakeconfig }}-${{ matrix.BLD_CONFIG }}-${{ needs.macos_cache.outputs.headers }}-${{ needs.macos_cache.outputs.source }}
           restore-keys: |
-            ${{ runner.os }}-${{ needs.macos_cache.outputs.cmakeconfig }}-${{ matrix.BLD_CONFIG }}-${{ needs.macos_cache.outputs.headers }}
-            ${{ runner.os }}-${{ needs.macos_cache.outputs.cmakeconfig }}-${{ matrix.BLD_CONFIG }}
-            ${{ runner.os }}-${{ needs.macos_cache.outputs.cmakeconfig }}-nih
+            ${{ runner.os }}-${{ env.BOOST_VERSION }}-${{ needs.macos_cache.outputs.cmakeconfig }}-${{ matrix.BLD_CONFIG }}-${{ needs.macos_cache.outputs.headers }}
+            ${{ runner.os }}-${{ env.BOOST_VERSION }}-${{ needs.macos_cache.outputs.cmakeconfig }}-${{ matrix.BLD_CONFIG }}
+            ${{ runner.os }}-${{ env.BOOST_VERSION }}-${{ needs.macos_cache.outputs.cmakeconfig }}-nih
       - name: status
         run: |
           df -h .
           du -hs ${{ steps.set-up-homebrew.outputs.gems-path }}
       - name: Install Homebrew packages
-        if: steps.cacherubygems.outputs.cache-hit != 'true'
         run: |
           echo Upgrade all brew packages
           brew upgrade
           echo Currently installed brews:
           brew list
-          for pkg in protobuf grpc pkg-config bash ninja cmake wget zstd libarchive boost@1.74 openssl@1.1
+          for pkg in ${homebrew_packages}
           do
+            echo INSTALLING ${pkg}
             brew install ${pkg}
           done
       - name: status
@@ -199,8 +199,10 @@ jobs:
             -DCMAKE_VERBOSE_MAKEFILE=ON"
           if [ "${CMAKE_ADD}" != "" ] ; then export CMAKE_EXTRA_ARGS+=" ${CMAKE_ADD}"; fi
           echo ${CMAKE_EXTRA_ARGS}
-          mkdir -p build/macos && cd build/macos
-          cmake -G Ninja ${CMAKE_EXTRA_ARGS} -DCMAKE_BUILD_TYPE=${BLD_CONFIG} ../..
+          srcdir=$(pwd)/rippled
+          builddir=${srcdir}/build/macos
+          mkdir -p $builddir && cd $builddir
+          cmake -G Ninja ${CMAKE_EXTRA_ARGS} -DCMAKE_BUILD_TYPE=${BLD_CONFIG} ${srcdir}
           cmake --build . --parallel --verbose
           ./rippled --unittest --quiet --unittest-log --unittest-jobs ${NUM_PROCESSORS}
       - name: Disk space after
