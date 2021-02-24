@@ -168,7 +168,7 @@ jobs:
           brew upgrade
           echo Currently installed brews:
           brew list
-          for pkg in protobuf grpc pkg-config bash ninja cmake wget zstd libarchive boost openssl@1.1
+          for pkg in protobuf grpc pkg-config bash ninja cmake wget zstd libarchive boost@1.74 openssl@1.1
           do
             brew install ${pkg}
           done
@@ -189,8 +189,7 @@ jobs:
       - name: Build and test
         shell: bash
         run: |
-          echo $CC $CXX
-          ls -l $CC $CXX
+          set -x
           $CC --version
           $CXX --version
           export CMAKE_EXTRA_ARGS="
