@@ -58,8 +58,10 @@ jobs:
           echo "::set-output name=source::${{ hashfiles('rippled/src/**', '!rippled/src/**/*.md', '!rippled/src/**/*.uml', '!rippled/src/**/*.png', '!rippled/src/**/*.php') }}"
       - name: Install Homebrew packages
         run: |
+          type -a find
           echo Upgrade all brew packages
           brew upgrade
+          type -a find
           echo Currently installed brews:
           for pkg in ${homebrew_packages}
           do
@@ -68,7 +70,8 @@ jobs:
           done
           set -x
           brew list
-          brew info
+          brew info --all
+          type -a find
       - name: Boost cache
         continue-on-error: true
         uses: actions/cache@v2
@@ -316,6 +319,7 @@ jobs:
         shell: bash
         run: |
             set -x
+            brew install bash
 
             : ${APP_ARGS:=}
             APP_ARGS+=" --unittest --quiet --unittest-log --unittest-jobs ${NUM_PROCESSORS} ${TEST_EXTRA_ARGS}"
