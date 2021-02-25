@@ -62,7 +62,6 @@ jobs:
           echo "::set-output name=headers::${{ hashfiles('rippled/src/**/*.h', 'rippled/src/**/*.hpp', 'rippled/src/**/*.ipp') }}"
           echo "::set-output name=source::${{ hashfiles('rippled/src/**', '!rippled/src/**/*.md', '!rippled/src/**/*.uml', '!rippled/src/**/*.png', '!rippled/src/**/*.php') }}"
       - name: Install Homebrew packages
-        id: brew
         run: |
           echo Upgrade all brew packages
           brew upgrade
@@ -75,6 +74,9 @@ jobs:
           set -x
           brew list
           brew info --all --json > brew.info
+      - name: Hash Homebrew info
+        id: brew
+        run: |
           echo "::set-output name=brewinfo::${{ hashfiles('brew.info') }}"
       - name: Boost cache
         continue-on-error: true
