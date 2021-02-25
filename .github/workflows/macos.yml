@@ -29,7 +29,6 @@ env:
   homebrew_packages: 'protobuf grpc pkg-config bash ninja cmake wget zstd libarchive openssl@1.1'
   srcdir: ${{ github.workspace }}/rippled
   builddir: ${{ github.workspace }}/rippled/build/macos
-  commit_message: ${{ github.event.head_commit.message }}
 
 jobs:
   macos_cache:
@@ -41,11 +40,13 @@ jobs:
       cmakeconfig: ${{ steps.cachekeys.outputs.cmakeconfig }}
       headers: ${{ steps.cachekeys.outputs.headers }}
       source: ${{ steps.cachekeys.outputs.source }}
+      brewinfo: ${{ steps.brew.outputs.brewinfo }}
       CC: ${{ steps.pre.outputs.CC }}
       CXX: ${{ steps.pre.outputs.CXX }}
       NUM_PROCESSORS: ${{ steps.pre.outputs.NUM_PROCESSORS }}
     steps:
       - name: Cancel Previous Runs
+        if: ${{ !contains(github.event.head_commit.message, 'no_cancel') }}
         uses: styfle/cancel-workflow-action@0.8.0
         with:
           access_token: ${{ github.token }}
@@ -61,11 +62,10 @@ jobs:
           echo "::set-output name=headers::${{ hashfiles('rippled/src/**/*.h', 'rippled/src/**/*.hpp', 'rippled/src/**/*.ipp') }}"
           echo "::set-output name=source::${{ hashfiles('rippled/src/**', '!rippled/src/**/*.md', '!rippled/src/**/*.uml', '!rippled/src/**/*.png', '!rippled/src/**/*.php') }}"
       - name: Install Homebrew packages
+        id: brew
         run: |
-          type -a find
           echo Upgrade all brew packages
           brew upgrade
-          type -a find
           echo Currently installed brews:
           for pkg in ${homebrew_packages}
           do
@@ -74,8 +74,8 @@ jobs:
           done
           set -x
           brew list
-          brew info --all --json
-          type -a find
+          brew info --all --json > brew.info
+          echo "::set-output name=brewinfo::${{ hashfiles('brew.info') }}"
       - name: Boost cache
         continue-on-error: true
         uses: actions/cache@v2
@@ -88,7 +88,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ${{ env.NIH_CACHE_ROOT }}
-          key: ${{ runner.os }}-${{ steps.cachekeys.outputs.cmakeconfig }}-nih
+          key: ${{ runner.os }}-${{ steps.brew.outputs.brewinfo }}-${{ steps.cachekeys.outputs.cmakeconfig }}-nih
       - name: Dump environment
         run: |
           env
@@ -109,7 +109,7 @@ jobs:
           echo "::set-output name=NUM_PROCESSORS::${NUM_PROCESSORS}"
           echo "::set-output name=CC::$(brew --prefix llvm)/bin/clang"
           echo "::set-output name=CXX::$(brew --prefix llvm)/bin/clang++"
-      - name: Install boost
+      - name: Build boost
         shell: bash
         env:
           CC: ${{ steps.pre.outputs.CC }}
@@ -188,7 +188,6 @@ jobs:
     needs: macos_cache
     runs-on: "macos-latest"
     timeout-minutes: 720
-    if: ${{ !contains(github.event.head_commit.message, 'ci_run_') || contains(github.event.head_commit.message, 'ci_run_mac') }}
     strategy:
       fail-fast: false
       matrix:
@@ -248,7 +247,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-${{ needs.macos_cache.outputs.cmakeconfig }}-${{ matrix.BLD_CONFIG }}-${{ needs.macos_cache.outputs.headers }}
             ${{ runner.os }}-${{ needs.macos_cache.outputs.cmakeconfig }}-${{ matrix.BLD_CONFIG }}
-            ${{ runner.os }}-${{ steps.cachekeys.outputs.cmakeconfig }}-nih
+            ${{ runner.os }}-${{ needs.macos_cache.outputs.brewinfo }}-${{ needs.macos_cache.outputs.cmakeconfig }}-nih
       - name: Dump environment
         run: |
           env
@@ -328,9 +327,9 @@ jobs:
             : ${APP_ARGS:=}
             APP_ARGS+=" --unittest --quiet --unittest-log --unittest-jobs ${NUM_PROCESSORS} ${TEST_EXTRA_ARGS}"
 
-            find -name rippled -ls
+            find . -name rippled -ls
             # There can be only one
-            [[ $( find -name rippled | wc -l ) -eq 1 ]]
-            APP_PATH="$( find -name rippled )"
+            [[ $( find . -name rippled | wc -l ) -eq 1 ]]
+            APP_PATH="$( find . -name rippled )"
             chmod a+rx "${APP_PATH}"
             "${APP_PATH}" ${APP_ARGS}
