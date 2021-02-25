@@ -43,7 +43,7 @@ jobs:
       NUM_PROCESSORS: ${{ matrix.NUM_PROCESSORS }}
     steps:
       - name: Cancel Previous Runs
-        if: ${{ !contains(github.event.head_commit.message, 'no_cancel') }}
+        if: ${{ !contains(github.event.head_commit.message, 'ci_no_cancel') }}
         uses: styfle/cancel-workflow-action@0.8.0
         with:
           access_token: ${{ github.token }}
@@ -338,8 +338,10 @@ jobs:
           name: rippled base ${{ matrix.CC }} ${{ matrix.BUILD_TYPE }} unity=${{ matrix.UNITY }}
       - name: Run manual tests
         shell: bash
+        env:
+          verbose: ${{ contains(env.commit_message, 'ci_verbose') }}
         run: |
-            set -x
+            [[ "${verbose}" == "true" ]] && set -x || true
             function join_by { local IFS="$1"; shift; echo "$*"; }
 
             : ${APP_ARGS:=}
@@ -353,4 +355,6 @@ jobs:
             [[ $( find -name rippled | wc -l ) -eq 1 ]]
             APP_PATH="$( find -iname rippled )"
             chmod a+rx "${APP_PATH}"
+            # Verbose or not, it's good to see the right params are being used
+            echo Run: "${APP_PATH}" ${APP_ARGS}
             "${APP_PATH}" ${APP_ARGS}

@@ -56,7 +56,7 @@ jobs:
       source: ${{ steps.cachekeys.outputs.source }}
     steps:
       - name: Cancel Previous Runs
-        if: ${{ !contains(github.event.head_commit.message, 'no_cancel') }}
+        if: ${{ !contains(github.event.head_commit.message, 'ci_no_cancel') }}
         uses: styfle/cancel-workflow-action@0.8.0
         with:
           access_token: ${{ github.token }}
@@ -107,7 +107,10 @@ jobs:
                     mkdir -pv "${dir}"
                     pushd "${dir}"
                     set -x
-                    cmake -DCMAKE_BUILD_TYPE=${BUILD_TYPE} ${CMAKE_EXTRA_ARGS} ../..
+                    # Verbose or not, it's good to see the right params
+                    # are being used
+                    cmake -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
+                        ${CMAKE_EXTRA_ARGS} ../..
                     set +x
                     popd
                 done
@@ -128,7 +131,10 @@ jobs:
                     mkdir -pv "${dir}"
                     pushd "${dir}"
                     set -x
-                    cmake -DCMAKE_BUILD_TYPE=${BUILD_TYPE} ${CMAKE_EXTRA_ARGS} ../..
+                    # Verbose or not, it's good to see the right params
+                    # are being used
+                    cmake -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
+                        ${CMAKE_EXTRA_ARGS} ../..
                     set +x
                     popd
                 done

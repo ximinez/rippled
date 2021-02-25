@@ -29,6 +29,8 @@ env:
   homebrew_packages: 'protobuf grpc pkg-config bash ninja cmake wget zstd libarchive openssl@1.1 ccache'
   srcdir: ${{ github.workspace }}/rippled
   builddir: ${{ github.workspace }}/rippled/build/macos
+  # This can't be used in the if: clauses
+  commit_message: ${{ github.event.head_commit.message }}
 
 jobs:
   macos_cache:
@@ -46,7 +48,7 @@ jobs:
       NUM_PROCESSORS: ${{ steps.pre.outputs.NUM_PROCESSORS }}
     steps:
       - name: Cancel Previous Runs
-        if: ${{ !contains(github.event.head_commit.message, 'no_cancel') }}
+        if: ${{ !contains(github.event.head_commit.message, 'ci_no_cancel') }}
         uses: styfle/cancel-workflow-action@0.8.0
         with:
           access_token: ${{ github.token }}
@@ -62,16 +64,18 @@ jobs:
           echo "::set-output name=headers::${{ hashfiles('rippled/src/**/*.h', 'rippled/src/**/*.hpp', 'rippled/src/**/*.ipp') }}"
           echo "::set-output name=source::${{ hashfiles('rippled/src/**', '!rippled/src/**/*.md', '!rippled/src/**/*.uml', '!rippled/src/**/*.png', '!rippled/src/**/*.php') }}"
       - name: Install Homebrew packages
+        env:
+          verbose: ${{ contains(env.commit_message, 'ci_verbose') }}
         run: |
           echo Upgrade all brew packages
           brew upgrade
           echo Currently installed brews:
           for pkg in ${homebrew_packages}
           do
-            echo INSTALLING ${pkg}
+            [[ "${verbose}" == "true" ]] && echo INSTALLING ${pkg} || true
             brew install ${pkg}
           done
-          set -x
+          [[ "${verbose}" == "true" ]] && set -x || true
           brew list
           brew info --all --json > brew.info
       - name: Hash Homebrew info
@@ -117,8 +121,9 @@ jobs:
           CC: ${{ steps.pre.outputs.CC }}
           CXX: ${{ steps.pre.outputs.CXX }}
           NUM_PROCESSORS: ${{ steps.pre.outputs.NUM_PROCESSORS }}
+          verbose: ${{ contains(env.commit_message, 'ci_verbose') }}
         run: |
-          set -x
+          [[ "${verbose}" == "true" ]] && set -x || true
           $CC --version
           $CXX --version
           export OPENSSL_ROOT=$(brew --prefix openssl@1.1)
@@ -133,6 +138,7 @@ jobs:
           CXX: ${{ steps.pre.outputs.CXX }}
           NUM_PROCESSORS: ${{ steps.pre.outputs.NUM_PROCESSORS }}
           BLD_CONFIGS: "Debug Release"
+          verbose: ${{ contains(env.commit_message, 'ci_verbose') }}
         run: |
             if [[ -e "${NIH_CACHE_ROOT}" ]]
             then
@@ -144,7 +150,7 @@ jobs:
             ${CC} --version
             ${CXX} --version
 
-            set -x
+            [[ "${verbose}" == "true" ]] && set -x || true
 
             for BLD_CONFIG in ${BLD_CONFIGS}
             do
@@ -212,6 +218,8 @@ jobs:
         with:
           path: rippled
       - name: Install Homebrew packages
+        env:
+          verbose: ${{ contains(env.commit_message, 'ci_verbose') }}
         run: |
           echo Upgrade all brew packages
           brew upgrade
@@ -221,9 +229,7 @@ jobs:
             echo INSTALLING ${pkg}
             brew install ${pkg}
           done
-          set -x
-          brew list
-          brew info
+          [[ "${verbose}" == "true" ]] && set -x || true
       - name: Boost cache
         continue-on-error: true
         uses: actions/cache@v2
@@ -268,8 +274,10 @@ jobs:
             -type d -exec du -sh {} \; \) || true
       - name: Build and test
         shell: bash
+        env:
+          verbose: ${{ contains(env.commit_message, 'ci_verbose') }}
         run: |
-          set -x
+          [[ "${verbose}" == "true" ]] && set -x || true
           $CC --version
           $CXX --version
           if [ "${CMAKE_ADD}" != "" ] ; then export CMAKE_ARGS+=" ${CMAKE_ADD}"; fi
@@ -335,9 +343,10 @@ jobs:
           name: rippled ${{ matrix.BLD_CONFIG }}
       - name: Run manual tests
         shell: bash
+        env:
+          verbose: ${{ contains(env.commit_message, 'ci_verbose') }}
         run: |
-            set -x
-            brew install bash
+            [[ "${verbose}" == "true" ]] && set -x || true
 
             : ${APP_ARGS:=}
             APP_ARGS+=" --unittest --quiet --unittest-log --unittest-jobs ${NUM_PROCESSORS} ${TEST_EXTRA_ARGS}"
@@ -347,4 +356,6 @@ jobs:
             [[ $( find . -name rippled | wc -l ) -eq 1 ]]
             APP_PATH="$( find . -name rippled )"
             chmod a+rx "${APP_PATH}"
+            # Verbose or not, it's good to see the right params are being used
+            echo Run: "${APP_PATH}" ${APP_ARGS}
             "${APP_PATH}" ${APP_ARGS}
