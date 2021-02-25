@@ -320,9 +320,9 @@ jobs:
             : ${APP_ARGS:=}
             APP_ARGS+=" --unittest --quiet --unittest-log --unittest-jobs ${NUM_PROCESSORS} ${TEST_EXTRA_ARGS}"
 
-            find -iname rippled -ls
+            find -name rippled -ls
             # There can be only one
             [[ $( find -name rippled | wc -l ) -eq 1 ]]
-            APP_PATH="$( find -iname rippled )"
+            APP_PATH="$( find -name rippled )"
             chmod a+rx "${APP_PATH}"
             "${APP_PATH}" ${APP_ARGS}
