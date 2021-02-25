@@ -250,7 +250,7 @@ jobs:
         # cache by chopping pieces off the end of the cache key until a match is
         # found, with a special case for the NIH built in the previous job
         with:
-          path: ${{ env.CACHE_ROOT }}
+          path: ${{ env.CACHE_DIR }}
           key: ${{ runner.os }}-${{ needs.macos_cache.outputs.cmakeconfig }}-${{ matrix.BLD_CONFIG }}-${{ needs.macos_cache.outputs.headers }}-${{ needs.macos_cache.outputs.source }}
           restore-keys: |
             ${{ runner.os }}-${{ needs.macos_cache.outputs.cmakeconfig }}-${{ matrix.BLD_CONFIG }}-${{ needs.macos_cache.outputs.headers }}
