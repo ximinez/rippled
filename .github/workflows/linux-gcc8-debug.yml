@@ -43,6 +43,10 @@ jobs:
       CMAKE_ADD: "-Dunity=${{ matrix.unity }} ${{ matrix.CMAKE_ADD }}"
       NUM_PROCESSORS: ${{ matrix.NUM_PROCESSORS }}
     steps:
+      - name: Cancel Previous Runs
+        uses: styfle/cancel-workflow-action@0.8.0
+        with:
+          access_token: ${{ github.token }}
       - name: Checkout
         uses: actions/checkout@v2
       - name: Build cache keys
