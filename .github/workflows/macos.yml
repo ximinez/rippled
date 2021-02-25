@@ -69,13 +69,13 @@ jobs:
         run: |
           echo Upgrade all brew packages
           brew upgrade
-          echo Currently installed brews:
           for pkg in ${homebrew_packages}
           do
             [[ "${verbose}" == "true" ]] && echo INSTALLING ${pkg} || true
             brew install ${pkg}
           done
           [[ "${verbose}" == "true" ]] && set -x || true
+          echo Currently installed brews:
           brew list
           brew info --all --json > brew.info
       - name: Hash Homebrew info
@@ -221,15 +221,14 @@ jobs:
         env:
           verbose: ${{ contains(env.commit_message, 'ci_verbose') }}
         run: |
+          [[ "${verbose}" == "true" ]] && set -x || true
           echo Upgrade all brew packages
           brew upgrade
-          echo Currently installed brews:
           for pkg in ${homebrew_packages}
           do
-            echo INSTALLING ${pkg}
+            [[ "${verbose}" == "true" ]] && echo INSTALLING ${pkg} || true
             brew install ${pkg}
           done
-          [[ "${verbose}" == "true" ]] && set -x || true
       - name: Boost cache
         continue-on-error: true
         uses: actions/cache@v2
@@ -341,7 +340,22 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: rippled ${{ matrix.BLD_CONFIG }}
-      - name: Run manual tests
+      - name: Install Homebrew packages
+        env:
+          verbose: ${{ contains(env.commit_message, 'ci_verbose') }}
+        run: |
+          [[ "${verbose}" == "true" ]] && set -x || true
+          echo Upgrade all brew packages
+          brew upgrade
+          for pkg in ${homebrew_packages}
+          do
+            [[ "${verbose}" == "true" ]] && echo INSTALLING ${pkg} || true
+            brew install ${pkg}
+          done
+          echo Currently installed brews:
+          brew list
+          brew info --all --json > brew.info
+      - name: Run IPv6 tests
         shell: bash
         env:
           verbose: ${{ contains(env.commit_message, 'ci_verbose') }}
