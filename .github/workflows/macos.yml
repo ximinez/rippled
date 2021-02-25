@@ -74,7 +74,7 @@ jobs:
           done
           set -x
           brew list
-          brew info --all
+          brew info --all --json
           type -a find
       - name: Boost cache
         continue-on-error: true
