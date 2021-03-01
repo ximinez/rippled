@@ -15,6 +15,21 @@ env:
   CCACHE_BASEDIR: ${{ github.workspace }}
   CCACHE_NOHASHDIR: true
   CCACHE_DIR: ${{ github.workspace }}/_cache/ccache
+  BOOST_TOOLSET: msvc-14.1
+  CMAKE_ADD: |
+    -DCMAKE_PREFIX_PATH=${BOOST_ROOT}/_INSTALLED_
+    -DBOOST_ROOT=${BOOST_ROOT}/_INSTALLED_
+    -DBoost_ROOT=${BOOST_ROOT}/_INSTALLED_
+    -DBoost_DIR=${BOOST_ROOT}/_INSTALLED_/lib/cmake/Boost-1.70.0
+    -DBoost_COMPILER=vc141
+    -DCMAKE_VERBOSE_MAKEFILE=ON
+    -DCMAKE_TOOLCHAIN_FILE=${VCPKG_DIR}/scripts/buildsystems/vcpkg.cmake
+    -DVCPKG_TARGET_TRIPLET=x64-windows-static
+  VCPKG_DEFAULT_TRIPLET: "x64-windows-static"
+  CC: cl.exe
+  CXX: cl.exe"
+  srcdir: ${{ github.workspace }}/rippled
+  builddir: ${{ github.workspace }}/rippled/build/ms
 
 jobs:
   windows_cache:
@@ -34,22 +49,7 @@ jobs:
     # docker images, so there will be one cache per image.
     runs-on: ubuntu-18.04
     timeout-minutes: 720
-    if: ${{ false && ( !contains(github.event.head_commit.message, 'ci_run_') || contains(github.event.head_commit.message, 'ci_run_win') ) }}
-    strategy:
-      matrix:
-        include:
-          - ninja_ccs: "gcc-8 gcc-9 clang-8 clang-9"
-            ninja_types: "Debug Release"
-            image: "rippled-ci-builder:2020-01-08"
-            make_ccs: "gcc-8"
-            make_types: "Debug"
-          - ninja_ccs: "clang-10"
-            ninja_types: "Debug Release"
-            image: "rippled-ci-builder:2944b78d22db"
-            make_ccs: ""
-            make_types: ""
-    container:
-      image: rippleci/${{ matrix.image }}
+    if: ${{ !contains(github.event.head_commit.message, 'ci_run_') || contains(github.event.head_commit.message, 'ci_run_win') }}
     outputs:
       cmakeconfig: ${{ steps.cachekeys.outputs.cmakeconfig }}
       headers: ${{ steps.cachekeys.outputs.headers }}
@@ -62,6 +62,8 @@ jobs:
           access_token: ${{ github.token }}
       - name: Checkout
         uses: actions/checkout@v2
+        with:
+          path: rippled
       - name: Build cache keys
         id: cachekeys
         shell: bash
@@ -75,70 +77,25 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ${{ env.CACHE_DIR }}
-          key: ${{ runner.os }}-${{ steps.cachekeys.outputs.cmakeconfig }}-${{ matrix.image }}-nih-${{ matrix.ninja_ccs }}-${{ matrix.make_ccs }}
+          key: ${{ runner.os }}-${{ steps.cachekeys.outputs.cmakeconfig }}-nih
       - name: Initialize CMake cache
         if: ${{ ! steps.cache.outputs.cache-hit }}
         shell: bash
         run: |
-            if [[ -e "${NIH_CACHE_ROOT}" ]]
-            then
-                echo Cache is already set up.
-                exit
-            fi
+            choco upgrade cmake.install
+            choco install ninja visualstudio2017-workload-vctools -y
+            choco install visualstudio2019buildtools visualstudio2019community visualstudio2019-workload-vctools -y
 
-            cmake --version
+            df -h
+            env
+            bin/sh/install-vcpkg.sh openssl
+            bin/sh/install-vcpkg.sh libarchive[lz4]
+            bin/sh/install-vcpkg.sh grpc
+            # TBD consider rocksdb via vcpkg if/when we can build with the
+            # vcpkg version
+            # bin/sh/install-vcpkg.sh rocksdb[snappy,lz4,zlib]
 
-            if [ "${{ matrix.image }}" == "rippled-ci-builder:2944b78d22db" ]
-            then
-                export CMAKE_EXTRA_ARGS+=" -DBoost_NO_BOOST_CMAKE=ON"
-            fi
-
-            # Builds that use unix-makefiles
-            for CC in ${{ matrix.make_ccs }}
-            do
-                for BLD_CONFIG in ${{ matrix.make_types }}
-                do
-                    export CC BLD_CONFIG
-                    export CXX=${CC/gcc/g++}
-                    export CXX=${CXX/clang/clang++}
-                    ${CC} --version
-                    ${CXX} --version
-                    dir="build/$( basename ${CXX} ).${BLD_CONFIG}.makefile"
-                    mkdir -pv "${dir}"
-                    pushd "${dir}"
-                    set -x
-                    # Verbose or not, it's good to see the right params
-                    # are being used
-                    cmake -DCMAKE_BLD_CONFIG=${BLD_CONFIG} \
-                        ${CMAKE_EXTRA_ARGS} ../..
-                    set +x
-                    popd
-                done
-            done
-
-            # Builds that use Ninja
-            export CMAKE_EXTRA_ARGS+=" -G Ninja"
-            for CC in ${{ matrix.ninja_ccs }}
-            do
-                for BLD_CONFIG in ${{ matrix.ninja_types }}
-                do
-                    export CC BLD_CONFIG
-                    export CXX=${CC/gcc/g++}
-                    export CXX=${CXX/clang/clang++}
-                    ${CC} --version
-                    ${CXX} --version
-                    dir="build/$( basename ${CXX} ).${BLD_CONFIG}"
-                    mkdir -pv "${dir}"
-                    pushd "${dir}"
-                    set -x
-                    # Verbose or not, it's good to see the right params
-                    # are being used
-                    cmake -DCMAKE_BLD_CONFIG=${BLD_CONFIG} \
-                        ${CMAKE_EXTRA_ARGS} ../..
-                    set +x
-                    popd
-                done
-            done
+            Builds/containers/shared/install_boost.sh
 
             du -sh ${CACHE_DIR}
             du -sh ${CCACHE_DIR} || true
@@ -163,7 +120,7 @@ jobs:
             build/**/CMakeError.log
   windows_everything_else:
     name: Windows
-    # needs: windows_cache
+    needs: windows_cache
     runs-on: ubuntu-18.04
     timeout-minutes: 720
     if: ${{ !contains(github.event.head_commit.message, 'ci_run_') || contains(github.event.head_commit.message, 'ci_run_win') }}
@@ -173,41 +130,31 @@ jobs:
         BLD_CONFIG: [ Debug ]
     env:
       BLD_CONFIG: ${{ matrix.BLD_CONFIG }}
-      CMAKE_ADD: |
-        -DCMAKE_PREFIX_PATH=${BOOST_ROOT}/_INSTALLED_
-        -DBOOST_ROOT=${BOOST_ROOT}/_INSTALLED_
-        -DBoost_ROOT=${BOOST_ROOT}/_INSTALLED_
-        -DBoost_DIR=${BOOST_ROOT}/_INSTALLED_/lib/cmake/Boost-1.70.0
-        -DBoost_COMPILER=vc141
-        -DCMAKE_VERBOSE_MAKEFILE=ON
-        -DCMAKE_TOOLCHAIN_FILE=${VCPKG_DIR}/scripts/buildsystems/vcpkg.cmake
-        -DVCPKG_TARGET_TRIPLET=x64-windows-static
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+        with:
+          path: rippled
       - name: Cache
         continue-on-error: true
-        if: false
         uses: actions/cache@v2
         # The cache key is built on the following in order
         # 1) OS.
         # 2) The hash of all the CMake config files.
-        # 3) The build compiler
-        # 4) The build type
-        # 5) The build unity setting
-        # 6) The build custom name.
-        # 7) The hash of all the header files under the source dir.
-        # 8) The hash of all the code files under the source dir.
+        # 3) The build type
+        # 4) The build custom name
+        # 5) The hash of all the header files under the source dir.
+        # 6) The hash of all the code files under the source dir.
         # When restoring, if the matching cache is not found, search for a usable
         # cache by chopping pieces off the end of the cache key until a match is
         # found, with a special case for the NIH built in the previous job
         with:
           path: ${{ env.CACHE_DIR }}
-          key: ${{ runner.os }}-${{ needs.windows_cache.outputs.cmakeconfig }}-${{ matrix.CC }}-${{ matrix.BLD_CONFIG }}-${{ matrix.UNITY }}-${{ matrix.name }}-${{ needs.windows_cache.outputs.headers }}-${{ needs.windows_cache.outputs.source }}
+          key: ${{ runner.os }}-${{ needs.windows_cache.outputs.cmakeconfig }}-${{ matrix.BLD_CONFIG }}-${{ matrix.name }}-${{ needs.windows_cache.outputs.headers }}-${{ needs.windows_cache.outputs.source }}
           restore-keys: |
-            ${{ runner.os }}-${{ needs.windows_cache.outputs.cmakeconfig }}-${{ matrix.CC }}-${{ matrix.BLD_CONFIG }}-${{ matrix.UNITY }}-${{ matrix.name }}-${{ needs.windows_cache.outputs.headers }}
-            ${{ runner.os }}-${{ needs.windows_cache.outputs.cmakeconfig }}-${{ matrix.CC }}-${{ matrix.BLD_CONFIG }}-${{ matrix.UNITY }}-${{ matrix.name }}
-            ${{ runner.os }}-${{ needs.windows_cache.outputs.cmakeconfig }}-${{ matrix.image }}-nih
+            ${{ runner.os }}-${{ needs.windows_cache.outputs.cmakeconfig }}-${{ matrix.BLD_CONFIG }}-${{ matrix.name }}-${{ needs.windows_cache.outputs.headers }}
+            ${{ runner.os }}-${{ needs.windows_cache.outputs.cmakeconfig }}-${{ matrix.BLD_CONFIG }}-${{ matrix.name }}
+            ${{ runner.os }}-${{ needs.windows_cache.outputs.cmakeconfig }}-nih
       - name: Dump environment
         run: |
           env
@@ -237,12 +184,12 @@ jobs:
         run: |
           df -h
           . ./bin/sh/setup-msvc.sh
-          mkdir -p build.ms && cd build.ms
-          cmake -G Ninja ${CMAKE_EXTRA_ARGS} -DCMAKE_BLD_CONFIG=${BLD_CONFIG} ..
-          travis_wait ${MAX_TIME_MIN} cmake --build . --parallel --verbose
+          mkdir -p $builddir && cd $builddir
+          cmake -G Ninja ${CMAKE_EXTRA_ARGS} -DCMAKE_BLD_CONFIG=${BLD_CONFIG} ${srcdir}
+          cmake --build . --parallel --verbose
           # override num procs to force fewer unit test jobs
           export NUM_PROCESSORS=2
-          travis_wait ${MAX_TIME_MIN} ./rippled.exe --unittest --quiet --unittest-log --unittest-jobs ${NUM_PROCESSORS}
+          ./rippled.exe --unittest --quiet --unittest-log --unittest-jobs ${NUM_PROCESSORS}
       - name: Disk space after
         shell: bash
         if: always()
