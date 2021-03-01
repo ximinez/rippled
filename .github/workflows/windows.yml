@@ -227,6 +227,7 @@ jobs:
         shell: bash
         run: |
           df -h
+          mkdir -pv ${CACHE_DIR} ${CCACHE_DIR} ${NIH_CACHE_ROOT}
           du -sh ${CACHE_DIR}
           du -sh ${CCACHE_DIR} || true
           find ${NIH_CACHE_ROOT} -maxdepth 2 \( -iname src -prune -o \
