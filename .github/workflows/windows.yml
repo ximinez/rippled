@@ -15,19 +15,21 @@ env:
   CCACHE_BASEDIR: ${{ github.workspace }}
   CCACHE_NOHASHDIR: true
   CCACHE_DIR: ${{ github.workspace }}/_cache/ccache
-  BOOST_TOOLSET: msvc-14.1
+  # BOOST_TOOLSET: msvc-14.1
   CMAKE_ADD: |
-    -DCMAKE_PREFIX_PATH=${BOOST_ROOT}/_INSTALLED_
-    -DBOOST_ROOT=${BOOST_ROOT}/_INSTALLED_
-    -DBoost_ROOT=${BOOST_ROOT}/_INSTALLED_
-    -DBoost_DIR=${BOOST_ROOT}/_INSTALLED_/lib/cmake/Boost-1.70.0
+    -DCMAKE_PREFIX_PATH=${BOOST_ROOT_1_72_0}/_INSTALLED_
+    -DBOOST_ROOT=${BOOST_ROOT_1_72_0}/_INSTALLED_
+    -DBoost_ROOT=${BOOST_ROOT_1_72_0}/_INSTALLED_
+    -DBoost_DIR=${BOOST_ROOT_1_72_0}/_INSTALLED_/lib/cmake/Boost-1.70.0
     -DBoost_COMPILER=vc141
     -DCMAKE_VERBOSE_MAKEFILE=ON
     -DCMAKE_TOOLCHAIN_FILE=${VCPKG_DIR}/scripts/buildsystems/vcpkg.cmake
     -DVCPKG_TARGET_TRIPLET=x64-windows-static
+  VCPKG_DIR: '/c/vcpkg'
   VCPKG_DEFAULT_TRIPLET: "x64-windows-static"
+  MSVC_DIR: '/c/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise'
   CC: cl.exe
-  CXX: cl.exe"
+  CXX: cl.exe
   srcdir: ${{ github.workspace }}/rippled
   builddir: ${{ github.workspace }}/rippled/build/ms
 
@@ -47,7 +49,7 @@ jobs:
     #    though a failed build will not push a cache.
     # The one downside is that not all compilers are available on all
     # docker images, so there will be one cache per image.
-    runs-on: ubuntu-18.04
+    runs-on: windows-latest
     timeout-minutes: 720
     if: ${{ !contains(github.event.head_commit.message, 'ci_run_') || contains(github.event.head_commit.message, 'ci_run_win') }}
     outputs:
@@ -68,9 +70,9 @@ jobs:
         id: cachekeys
         shell: bash
         run: |
-          echo "::set-output name=cmakeconfig::${{ hashfiles('CMakeFiles.txt', 'Builds/CMake/**') }}"
-          echo "::set-output name=headers::${{ hashfiles('src/**/*.h', 'src/**/*.hpp', 'src/**/*.ipp') }}"
-          echo "::set-output name=source::${{ hashfiles('src/**', '!src/**/*.md', '!src/**/*.uml', '!src/**/*.png', '!src/**/*.php') }}"
+          echo "::set-output name=cmakeconfig::${{ hashfiles('rippled/CMakeFiles.txt', 'rippled/Builds/CMake/**') }}"
+          echo "::set-output name=headers::${{ hashfiles('rippled/src/**/*.h', 'rippled/src/**/*.hpp', 'rippled/src/**/*.ipp') }}"
+          echo "::set-output name=source::${{ hashfiles('rippled/src/**', '!rippled/src/**/*.md', '!rippled/src/**/*.uml', '!rippled/src/**/*.png', '!rippled/src/**/*.php') }}"
       - name: Cache
         id: cache
         continue-on-error: true
@@ -78,10 +80,28 @@ jobs:
         with:
           path: ${{ env.CACHE_DIR }}
           key: ${{ runner.os }}-${{ steps.cachekeys.outputs.cmakeconfig }}-nih
-      - name: Initialize CMake cache
+      - name: Dump environment
+        shell: bash
+        run: |
+          env
+          set | grep =
+      - name: Initialize cache
         if: ${{ ! steps.cache.outputs.cache-hit }}
         shell: bash
         run: |
+            set -x
+            # Temporary workaround. Pre-installed boost is going to be deprecated
+            # https://github.com/actions/virtual-environments/issues/2667
+            export BOOST_ROOT=${BOOST_ROOT_1_72_0}
+
+            ls -l
+            ls -l /
+            find ${MSVC_DIR} -type d || true
+            cd rippled
+            . ./bin/sh/setup-msvc.sh
+            type -a cl.exe || true
+
+            find / -iname '*choco*'
             choco upgrade cmake.install
             choco install ninja visualstudio2017-workload-vctools -y
             choco install visualstudio2019buildtools visualstudio2019community visualstudio2019-workload-vctools -y
@@ -95,7 +115,7 @@ jobs:
             # vcpkg version
             # bin/sh/install-vcpkg.sh rocksdb[snappy,lz4,zlib]
 
-            Builds/containers/shared/install_boost.sh
+            # Builds/containers/shared/install_boost.sh
 
             du -sh ${CACHE_DIR}
             du -sh ${CCACHE_DIR} || true
@@ -121,7 +141,7 @@ jobs:
   windows_everything_else:
     name: Windows
     needs: windows_cache
-    runs-on: ubuntu-18.04
+    runs-on: windows-latest
     timeout-minutes: 720
     if: ${{ !contains(github.event.head_commit.message, 'ci_run_') || contains(github.event.head_commit.message, 'ci_run_win') }}
     strategy:
@@ -156,6 +176,7 @@ jobs:
             ${{ runner.os }}-${{ needs.windows_cache.outputs.cmakeconfig }}-${{ matrix.BLD_CONFIG }}-${{ matrix.name }}
             ${{ runner.os }}-${{ needs.windows_cache.outputs.cmakeconfig }}-nih
       - name: Dump environment
+        shell: bash
         run: |
           env
           set | grep =
@@ -182,14 +203,17 @@ jobs:
       - name: Build and test
         shell: bash
         run: |
-          df -h
-          . ./bin/sh/setup-msvc.sh
-          mkdir -p $builddir && cd $builddir
-          cmake -G Ninja ${CMAKE_EXTRA_ARGS} -DCMAKE_BLD_CONFIG=${BLD_CONFIG} ${srcdir}
-          cmake --build . --parallel --verbose
-          # override num procs to force fewer unit test jobs
-          export NUM_PROCESSORS=2
-          ./rippled.exe --unittest --quiet --unittest-log --unittest-jobs ${NUM_PROCESSORS}
+            set -x
+            export BOOST_ROOT=${BOOST_ROOT_1_72_0}
+            df -h
+            cd rippled
+            . ./bin/sh/setup-msvc.sh
+            mkdir -p $builddir && cd $builddir
+            cmake -G Ninja ${CMAKE_EXTRA_ARGS} -DCMAKE_BLD_CONFIG=${BLD_CONFIG} ${srcdir}
+            cmake --build . --parallel --verbose
+            # override num procs to force fewer unit test jobs
+            export NUM_PROCESSORS=2
+            ./rippled.exe --unittest --quiet --unittest-log --unittest-jobs ${NUM_PROCESSORS}
       - name: Disk space after
         shell: bash
         if: always()
