@@ -192,6 +192,11 @@ jobs:
             rippled/build/**/CMakeOutput.log
             rippled/build/**/CMakeError.log
   macos:
+    # These two matrix jobs could be split into separate jobs (debug
+    # and release), so the test runner job only needs to depend on
+    # the debug, but it doesn't seem worth the duplication at this
+    # time, since it's only one extra job (as opposed to a dozen),
+    # and the jobs appear to be pretty reliable so far.
     name: MacOS
     needs: macos_cache
     runs-on: "macos-latest"
