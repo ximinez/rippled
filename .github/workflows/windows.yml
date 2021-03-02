@@ -96,12 +96,11 @@ jobs:
 
             ls -l
             ls -l /
-            find ${MSVC_DIR} -type d || true
             cd rippled
             . ./bin/sh/setup-msvc.sh
             type -a cl.exe || true
 
-            find / -iname '*choco*'
+            type -a choco
             choco upgrade cmake.install
             choco install ninja visualstudio2017-workload-vctools -y
             choco install visualstudio2019buildtools visualstudio2019community visualstudio2019-workload-vctools -y
