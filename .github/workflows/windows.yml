@@ -25,8 +25,9 @@ env:
     -DCMAKE_VERBOSE_MAKEFILE=ON
     -DCMAKE_TOOLCHAIN_FILE=${VCPKG_DIR}/scripts/buildsystems/vcpkg.cmake
     -DVCPKG_TARGET_TRIPLET=x64-windows-static
-  VCAPP_DIR: '/c/vcpkg'
-  VCPKG_DIR: ${{ github.workspace }}/_cache/vcpkg
+  VCPKG_DIR: '/c/vcpkg'
+  VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}/_cache/vcpkg/binary
+  VCPKG_DOWNLOADS: ${{ github.workspace }}/_cache/vcpkg/download
   VCPKG_DEFAULT_TRIPLET: "x64-windows-static"
   MSVC_DIR: '/c/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise'
   CC: cl.exe
@@ -108,7 +109,9 @@ jobs:
             # https://github.com/actions/virtual-environments/issues/2667
             export BOOST_ROOT=${BOOST_ROOT_1_72_0}
 
-            mkdir -pv ${CACHE_DIR} ${CCACHE_DIR} ${NIH_CACHE_ROOT} ${VCPKG_DIR}
+            mkdir -pv ${CACHE_DIR} ${CCACHE_DIR} ${NIH_CACHE_ROOT} \
+              ${VCPKG_DIR} ${VCPKG_DEFAULT_BINARY_CACHE} ${VCPKG_DOWNLOADS}
+
 
             type -a cl.exe || true
             ls -l
@@ -119,8 +122,8 @@ jobs:
 
             type -a choco
             type -a vcpkg
-            ls -l ${VCAPP_DIR}
-            mkdir -pv ${VCAPP_DIR}/installed
+            ls -l ${VCPKG_DIR}
+            mkdir -pv ${VCPKG_DIR}/installed
             choco upgrade cmake.install
             choco install ninja -y
             # choco install ninja visualstudio2017-workload-vctools -y
@@ -130,6 +133,8 @@ jobs:
             bin/sh/install-vcpkg.sh openssl
             bin/sh/install-vcpkg.sh libarchive[lz4]
             bin/sh/install-vcpkg.sh grpc
+
+            find ${VCPKG_DIR} -mmin -120
             # TBD consider rocksdb via vcpkg if/when we can build with the
             # vcpkg version
             # bin/sh/install-vcpkg.sh rocksdb[snappy,lz4,zlib]
@@ -142,6 +147,8 @@ jobs:
             mkdir -p $builddir && cd $builddir
             if [ "${CMAKE_ADD}" != "" ] ; then export CMAKE_EXTRA_ARGS="${CMAKE_EXTRA_ARGS} $( eval echo ${CMAKE_ADD} )"; fi
             cmake -G Ninja ${CMAKE_EXTRA_ARGS} -DCMAKE_BLD_CONFIG=${BLD_CONFIG} ${srcdir}
+
+            grep -i -e vcpkg -e _cache CMakeCache.txt
 
             du -sh ${CACHE_DIR}
             du -sh ${CCACHE_DIR} || true

@@ -3,7 +3,6 @@ set -exu
 
 : ${TRAVIS_BUILD_DIR:=""}
 : ${VCPKG_DIR:=".vcpkg"}
-: ${VCAPP_DIR:=${VCPKG_DIR}}
 export VCPKG_ROOT=${VCPKG_DIR}
 : ${VCPKG_DEFAULT_TRIPLET:="x64-windows-static"}
 
@@ -14,15 +13,15 @@ if [[ -z ${COMSPEC:-} ]]; then
     EXE="${EXE}.exe"
 fi
 
-if [[ -d "${VCAPP_DIR}" && -x "${VCAPP_DIR}/${EXE}" && -d "${VCAPP_DIR}/installed" ]] ; then
-    echo "Using cached vcpkg at ${VCAPP_DIR}"
-    ${VCAPP_DIR}/${EXE} list
+if [[ -d "${VCPKG_DIR}" && -x "${VCPKG_DIR}/${EXE}" && -d "${VCPKG_DIR}/installed" ]] ; then
+    echo "Using cached vcpkg at ${VCPKG_DIR}"
+    ${VCPKG_DIR}/${EXE} list
 else
-    if [[ -d "${VCAPP_DIR}" ]] ; then
-        rm -rf "${VCAPP_DIR}"
+    if [[ -d "${VCPKG_DIR}" ]] ; then
+        rm -rf "${VCPKG_DIR}"
     fi
-    git clone --branch 2019.12 https://github.com/Microsoft/vcpkg.git ${VCAPP_DIR}
-    pushd ${VCAPP_DIR}
+    git clone --branch 2019.12 https://github.com/Microsoft/vcpkg.git ${VCPKG_DIR}
+    pushd ${VCPKG_DIR}
     BSARGS=()
     if [[ "$(uname)" == "Darwin" ]] ; then
         BSARGS+=(--allowAppleClang)
@@ -46,7 +45,7 @@ else
     PKGS=( "$@" )
 fi
 for LIB in "${PKGS[@]}"; do
-    time ${VCAPP_DIR}/${EXE} --clean-after-build install ${LIB}
+    time ${VCPKG_DIR}/${EXE} --clean-after-build install ${LIB}
 done
 
 
