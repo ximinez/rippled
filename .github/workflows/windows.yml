@@ -33,6 +33,7 @@ env:
   CXX: cl.exe
   srcdir: ${{ github.workspace }}/rippled
   builddir: ${{ github.workspace }}/rippled/build/ms
+  invalidate_cache: ${{ contains(github.event.head_commit.message, 'ci_invalidate_cache') }}
 
 jobs:
   windows_cache:
@@ -54,6 +55,7 @@ jobs:
     timeout-minutes: 720
     if: ${{ !contains(github.event.head_commit.message, 'ci_run_') || contains(github.event.head_commit.message, 'ci_run_win') }}
     outputs:
+      cachesuffix: ${{ steps.cachekeys.outputs.suffix }}
       cmakeconfig: ${{ steps.cachekeys.outputs.cmakeconfig }}
       headers: ${{ steps.cachekeys.outputs.headers }}
       source: ${{ steps.cachekeys.outputs.source }}
@@ -72,6 +74,10 @@ jobs:
         id: cachekeys
         shell: bash
         run: |
+          if [[ "${invalidate_cache}" == "true" ]]
+          then
+            echo "::set-output name=suffix::-$( date +%s )"
+          fi
           echo "::set-output name=cmakeconfig::${{ hashfiles('rippled/CMakeFiles.txt', 'rippled/Builds/CMake/**') }}"
           echo "::set-output name=headers::${{ hashfiles('rippled/src/**/*.h', 'rippled/src/**/*.hpp', 'rippled/src/**/*.ipp') }}"
           echo "::set-output name=source::${{ hashfiles('rippled/src/**', '!rippled/src/**/*.md', '!rippled/src/**/*.uml', '!rippled/src/**/*.png', '!rippled/src/**/*.php') }}"
@@ -84,7 +90,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ${{ env.CACHE_DIR }}
-          key: ${{ runner.os }}-${{ steps.cachekeys.outputs.cmakeconfig }}-nih
+          key: ${{ runner.os }}-${{ steps.cachekeys.outputs.cmakeconfig }}-nih${{ steps.cachekeys.outputs.suffix }}
       - name: Dump environment
         shell: bash
         run: |
@@ -102,8 +108,9 @@ jobs:
             # https://github.com/actions/virtual-environments/issues/2667
             export BOOST_ROOT=${BOOST_ROOT_1_72_0}
 
-            mkdir -pv ${CACHE_DIR} ${CCACHE_DIR} ${NIH_CACHE_ROOT}
+            mkdir -pv ${CACHE_DIR} ${CCACHE_DIR} ${NIH_CACHE_ROOT} ${VCPKG_DIR}
 
+            type -a cl.exe || true
             ls -l
             ls -l /
             cd rippled
@@ -112,8 +119,8 @@ jobs:
 
             type -a choco
             type -a vcpkg
-            ls -l ${VCPKG_DIR}
-            mkdir -pv ${VCPKG_DIR}/installed
+            ls -l ${VCAPP_DIR}
+            mkdir -pv ${VCAPP_DIR}/installed
             choco upgrade cmake.install
             choco install ninja -y
             # choco install ninja visualstudio2017-workload-vctools -y
@@ -162,7 +169,6 @@ jobs:
     needs: windows_cache
     runs-on: windows-latest
     timeout-minutes: 720
-    if: ${{ !contains(github.event.head_commit.message, 'ci_run_') || contains(github.event.head_commit.message, 'ci_run_win') }}
     strategy:
       fail-fast: false
       matrix:
@@ -185,15 +191,20 @@ jobs:
         # 4) The build custom name
         # 5) The hash of all the header files under the source dir.
         # 6) The hash of all the code files under the source dir.
-        # When restoring, if the matching cache is not found, search for a usable
-        # cache by chopping pieces off the end of the cache key until a match is
-        # found, with a special case for the NIH built in the previous job
+        # 7) The cache invalidation suffix, if any
+        # When restoring, if the matching cache is not found, search for a
+        # usable cache by chopping pieces off the end of the cache key,
+        # except for the invalidation suffix until a match is found, with
+        # a special case for the NIH built in the previous job.
+        # The invalidation suffix is left on all of the restore keys except
+        # the NIH to ensure a partial match is _not_ found, and to force the
+        # NIH cache to be used.
         with:
           path: ${{ env.CACHE_DIR }}
-          key: ${{ runner.os }}-${{ needs.windows_cache.outputs.cmakeconfig }}-${{ matrix.BLD_CONFIG }}-${{ matrix.name }}-${{ needs.windows_cache.outputs.headers }}-${{ needs.windows_cache.outputs.source }}
+          key: ${{ runner.os }}-${{ needs.windows_cache.outputs.cmakeconfig }}-${{ matrix.BLD_CONFIG }}-${{ matrix.name }}-${{ needs.windows_cache.outputs.headers }}-${{ needs.windows_cache.outputs.source }}${{needs.windows_cache.outputs.suffix}}
           restore-keys: |
-            ${{ runner.os }}-${{ needs.windows_cache.outputs.cmakeconfig }}-${{ matrix.BLD_CONFIG }}-${{ matrix.name }}-${{ needs.windows_cache.outputs.headers }}
-            ${{ runner.os }}-${{ needs.windows_cache.outputs.cmakeconfig }}-${{ matrix.BLD_CONFIG }}-${{ matrix.name }}
+            ${{ runner.os }}-${{ needs.windows_cache.outputs.cmakeconfig }}-${{ matrix.BLD_CONFIG }}-${{ matrix.name }}-${{ needs.windows_cache.outputs.headers }}${{needs.windows_cache.outputs.suffix}}
+            ${{ runner.os }}-${{ needs.windows_cache.outputs.cmakeconfig }}-${{ matrix.BLD_CONFIG }}-${{ matrix.name }}${{needs.windows_cache.outputs.suffix}}
             ${{ runner.os }}-${{ needs.windows_cache.outputs.cmakeconfig }}-nih
       - name: Dump environment
         shell: bash
