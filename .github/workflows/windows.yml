@@ -25,7 +25,8 @@ env:
     -DCMAKE_VERBOSE_MAKEFILE=ON
     -DCMAKE_TOOLCHAIN_FILE=${VCPKG_DIR}/scripts/buildsystems/vcpkg.cmake
     -DVCPKG_TARGET_TRIPLET=x64-windows-static
-  VCPKG_DIR: '/c/vcpkg'
+  VCAPP_DIR: '/c/vcpkg'
+  VCPKG_DIR: ${{ github.workspace }}/_cache/vcpkg
   VCPKG_DEFAULT_TRIPLET: "x64-windows-static"
   MSVC_DIR: '/c/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise'
   CC: cl.exe
@@ -56,6 +57,7 @@ jobs:
       cmakeconfig: ${{ steps.cachekeys.outputs.cmakeconfig }}
       headers: ${{ steps.cachekeys.outputs.headers }}
       source: ${{ steps.cachekeys.outputs.source }}
+      NUM_PROCESSORS: ${{ steps.cachekeys.outputs.NUM_PROCESSORS }}
     steps:
       - name: Cancel Previous Runs
         if: ${{ !contains(github.event.head_commit.message, 'ci_no_cancel') }}
@@ -66,13 +68,16 @@ jobs:
         uses: actions/checkout@v2
         with:
           path: rippled
-      - name: Build cache keys
+      - name: Build parameters
         id: cachekeys
         shell: bash
         run: |
           echo "::set-output name=cmakeconfig::${{ hashfiles('rippled/CMakeFiles.txt', 'rippled/Builds/CMake/**') }}"
           echo "::set-output name=headers::${{ hashfiles('rippled/src/**/*.h', 'rippled/src/**/*.hpp', 'rippled/src/**/*.ipp') }}"
           echo "::set-output name=source::${{ hashfiles('rippled/src/**', '!rippled/src/**/*.md', '!rippled/src/**/*.uml', '!rippled/src/**/*.png', '!rippled/src/**/*.php') }}"
+          export NUM_PROCESSORS=${NUM_PROCESSORS:-$(nproc)}
+          echo "NUM PROC is ${NUM_PROCESSORS}"
+          echo "::set-output name=NUM_PROCESSORS::${NUM_PROCESSORS}"
       - name: Cache
         id: cache
         continue-on-error: true
@@ -87,7 +92,10 @@ jobs:
           set | grep =
       - name: Initialize cache
         if: ${{ ! steps.cache.outputs.cache-hit }}
+        id: work
         shell: bash
+        env:
+          NUM_PROCESSORS: ${{ steps.cachekeys.outputs.NUM_PROCESSORS }}
         run: |
             set -x
             # Temporary workaround. Pre-installed boost is going to be deprecated
@@ -123,6 +131,11 @@ jobs:
             # https://github.com/actions/virtual-environments/issues/2667
             # Builds/containers/shared/install_boost.sh
 
+            # Download the NIH items
+            mkdir -p $builddir && cd $builddir
+            if [ "${CMAKE_ADD}" != "" ] ; then export CMAKE_EXTRA_ARGS="${CMAKE_EXTRA_ARGS} $( eval echo ${CMAKE_ADD} )"; fi
+            cmake -G Ninja ${CMAKE_EXTRA_ARGS} -DCMAKE_BLD_CONFIG=${BLD_CONFIG} ${srcdir}
+
             du -sh ${CACHE_DIR}
             du -sh ${CCACHE_DIR} || true
             find ${NIH_CACHE_ROOT} -maxdepth 2 \( -iname src -prune -o -type d -exec du -sh {} \; \)
@@ -156,6 +169,7 @@ jobs:
         BLD_CONFIG: [ Debug ]
     env:
       BLD_CONFIG: ${{ matrix.BLD_CONFIG }}
+      NUM_PROCESSORS: ${{ needs.windows_cache.outputs.NUM_PROCESSORS }}
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -214,10 +228,11 @@ jobs:
             cd rippled
             . ./bin/sh/setup-msvc.sh
             mkdir -p $builddir && cd $builddir
+            if [ "${CMAKE_ADD}" != "" ] ; then export CMAKE_EXTRA_ARGS="${CMAKE_EXTRA_ARGS} $( eval echo ${CMAKE_ADD} )"; fi
             cmake -G Ninja ${CMAKE_EXTRA_ARGS} -DCMAKE_BLD_CONFIG=${BLD_CONFIG} ${srcdir}
             cmake --build . --parallel --verbose
             # override num procs to force fewer unit test jobs
-            export NUM_PROCESSORS=2
+            # export NUM_PROCESSORS=2
             ./rippled.exe --unittest --quiet --unittest-log --unittest-jobs ${NUM_PROCESSORS}
       - name: Disk space after
         shell: bash
