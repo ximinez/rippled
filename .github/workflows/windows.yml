@@ -20,7 +20,7 @@ env:
     -DCMAKE_PREFIX_PATH=${BOOST_ROOT_1_72_0}/_INSTALLED_
     -DBOOST_ROOT=${BOOST_ROOT_1_72_0}/_INSTALLED_
     -DBoost_ROOT=${BOOST_ROOT_1_72_0}/_INSTALLED_
-    -DBoost_DIR=${BOOST_ROOT_1_72_0}/_INSTALLED_/lib/cmake/Boost-1.70.0
+    -DBoost_DIR=${BOOST_ROOT_1_72_0}/_INSTALLED_/lib/cmake/Boost-1.72.0
     -DBoost_COMPILER=vc141
     -DCMAKE_VERBOSE_MAKEFILE=ON
     -DCMAKE_TOOLCHAIN_FILE=${VCPKG_DIR}/scripts/buildsystems/vcpkg.cmake
@@ -124,6 +124,9 @@ jobs:
             type -a vcpkg
             ls -l ${VCPKG_DIR}
             mkdir -pv ${VCPKG_DIR}/installed
+            vcpkg help || true
+            find ${BOOST_ROOT} -type d
+
             choco upgrade cmake.install
             choco install ninja -y
             # choco install ninja visualstudio2017-workload-vctools -y
