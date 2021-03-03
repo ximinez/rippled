@@ -12,29 +12,34 @@ set -exu
 
 odir=$(pwd)
 : ${BOOST_TOOLSET:=msvc-14.1}
+: ${BOOST_WGET_OPTIONS:=}
 
 if [[ -d "$BOOST_ROOT/lib" || -d "${BOOST_ROOT}/stage/lib" ]] ; then
     echo "Using cached boost at $BOOST_ROOT"
     exit
 fi
 
-#fetch/unpack:
-fn=$(basename -- "$BOOST_URL")
-ext="${fn##*.}"
-wopt="--quiet"
-wget ${wopt} $BOOST_URL -O /tmp/boost.tar.${ext} || \
-  ( [ -n "${BOOST_URL2}" ] && \
-    wget ${wopt} $BOOST_URL2 -O /tmp/boost.tar.${ext} ) || \
-  ( [ -n "${BOOST_WGET_OPTIONS}" ] &&
-    ( wget ${wopt} ${BOOST_WGET_OPTIONS} $BOOST_URL -O /tmp/boost.tar.${ext} || \
+if [[ ! -v BOOST_FILE ]]
+then
+    #fetch/unpack:
+    fn=$(basename -- "$BOOST_URL")
+    ext="${fn##*.}"
+    wopt="--quiet"
+    wget ${wopt} $BOOST_URL -O /tmp/boost.tar.${ext} || \
       ( [ -n "${BOOST_URL2}" ] && \
-        wget ${wopt} ${BOOST_WGET_OPTIONS} $BOOST_URL2 -O /tmp/boost.tar.${ext} )
-    )
-  )
+        wget ${wopt} $BOOST_URL2 -O /tmp/boost.tar.${ext} ) || \
+      ( [ -n "${BOOST_WGET_OPTIONS}" ] &&
+        ( wget ${wopt} ${BOOST_WGET_OPTIONS} $BOOST_URL -O /tmp/boost.tar.${ext} || \
+          ( [ -n "${BOOST_URL2}" ] && \
+            wget ${wopt} ${BOOST_WGET_OPTIONS} $BOOST_URL2 -O /tmp/boost.tar.${ext} )
+        )
+      )
+    BOOST_FILE=/tmp/boost.tar.${ext}
+fi
 cd $(dirname $BOOST_ROOT)
 rm -fr ${BOOST_ROOT}
-mkdir ${BOOST_ROOT}
-tar xf /tmp/boost.tar.${ext} -C ${BOOST_ROOT} --strip-components 1
+mkdir -pv ${BOOST_ROOT}
+tar xf ${BOOST_FILE} -C ${BOOST_ROOT} --strip-components 1
 cd $BOOST_ROOT
 
 BLDARGS=()

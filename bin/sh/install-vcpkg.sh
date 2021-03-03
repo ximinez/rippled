@@ -6,6 +6,11 @@ set -exu
 export VCPKG_ROOT=${VCPKG_DIR}
 : ${VCPKG_DEFAULT_TRIPLET:="x64-windows-static"}
 : ${VCPKG_EXTRA_ARGS:=}
+if [[ -v VCPKG_INSTALL_DIR ]]
+then
+    VCPKG_EXTRA_ARGS+=" --x-install-root=${VCPKG_INSTALL_DIR}"
+fi
+export VCPKG_EXTRA_ARGS
 
 export VCPKG_DEFAULT_TRIPLET
 

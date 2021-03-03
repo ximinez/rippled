@@ -8,41 +8,42 @@ on: [push, pull_request]
 env:
   CMAKE_EXTRA_ARGS: "-Dwerr=ON -Dwextra=ON"
   NINJA_BUILD: true
-  CACHE_DIR: ${{ github.workspace }}/_cache
-  NIH_CACHE_ROOT: ${{ github.workspace }}/_cache/nih_c
+  CACHE_DIR: ${{ github.workspace }}\_cache
+  NIH_CACHE_ROOT: ${{ github.workspace }}\_cache\nih_c
   PARALLEL_TESTS: true
   USE_CCACHE: true
   CCACHE_BASEDIR: ${{ github.workspace }}
   CCACHE_NOHASHDIR: true
-  CCACHE_DIR: ${{ github.workspace }}/_cache/ccache
+  CCACHE_DIR: ${{ github.workspace }}\_cache\ccache
   # BOOST_TOOLSET: msvc-14.1
   BOOST_URL: 'https://dl.bintray.com/boostorg/release/1.75.0/source/boost_1_75_0.tar.bz2'
+  # BOOST_URL: 'https://dl.bintray.com/boostorg/release/1.75.0/binaries/boost_1_75_0-msvc-14.1-64.exe'
   # Alternate dowload location
   BOOST_URL2: 'https://downloads.sourceforge.net/project/boost/boost/1.75.0/boost_1_75_0.tar.bz2?r=&amp;ts=1594393912&amp;use_mirror=newcontinuum'
-  BOOST_ROOT: ${{ github.workspace }}/_cache/boost_1_75_0
+  BOOST_ROOT: ${{ github.workspace }}\_cache\boost_1_75_0
   # Travis downloader doesn't seem to have updated certs. Using this option
   # introduces obvious security risks, but they're Travis's risks.
   # Note that this option is only used if the "normal" build fails.
   #BOOST_WGET_OPTIONS: '--no-check-certificate'
   CMAKE_ADD: |
-    -DCMAKE_PREFIX_PATH=${BOOST_ROOT}/_INSTALLED_
-    -DBOOST_ROOT=${BOOST_ROOT}/_INSTALLED_
-    -DBoost_ROOT=${BOOST_ROOT}/_INSTALLED_
-    -DBoost_DIR=${BOOST_ROOT}/_INSTALLED_/lib/cmake/Boost-1.75.0
+    -DCMAKE_PREFIX_PATH=${BOOST_ROOT}\_INSTALLED_
+    -DBOOST_ROOT=${BOOST_ROOT}\_INSTALLED_
+    -DBoost_ROOT=${BOOST_ROOT}\_INSTALLED_
+    -DBoost_DIR=${BOOST_ROOT}\_INSTALLED_\lib\cmake\Boost-1.75.0
     -DBoost_COMPILER=vc141
     -DCMAKE_VERBOSE_MAKEFILE=ON
-    -DCMAKE_TOOLCHAIN_FILE=${VCPKG_DIR}/scripts/buildsystems/vcpkg.cmake
+    -DCMAKE_TOOLCHAIN_FILE=${VCPKG_DIR}\scripts\buildsystems\vcpkg.cmake
     -DVCPKG_TARGET_TRIPLET=x64-windows-static
   VCPKG_DIR: '/c/vcpkg'
-  VCPKG_INSTALL_DIR: ${{ github.workspace }}/_cache/vcpkg/installed
-  VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}/_cache/vcpkg/binary
-  VCPKG_DOWNLOADS: ${{ github.workspace }}/_cache/vcpkg/download
+  VCPKG_INSTALL_DIR: ${{ github.workspace }}\_cache\vcpkg\installed
+  VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}\_cache\vcpkg\binary
+  VCPKG_DOWNLOADS: ${{ github.workspace }}\_cache\vcpkg\download
   VCPKG_DEFAULT_TRIPLET: "x64-windows-static"
   MSVC_DIR: '/c/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise'
   CC: cl.exe
   CXX: cl.exe
-  srcdir: ${{ github.workspace }}/rippled
-  builddir: ${{ github.workspace }}/rippled/build/ms
+  srcdir: ${{ github.workspace }}\rippled
+  builddir: ${{ github.workspace }}\rippled\build\ms
   invalidate_cache: ${{ contains(github.event.head_commit.message, 'ci_invalidate_cache') }}
 
 jobs:
@@ -106,9 +107,8 @@ jobs:
         run: |
           env
           set | grep =
-      - name: Initialize cache
+      - name: Initialize choco cache
         if: ${{ ! steps.cache.outputs.cache-hit }}
-        id: work
         shell: bash
         env:
           NUM_PROCESSORS: ${{ steps.cachekeys.outputs.NUM_PROCESSORS }}
@@ -118,6 +118,20 @@ jobs:
             mkdir -pv ${CACHE_DIR} ${CCACHE_DIR} ${NIH_CACHE_ROOT} \
               ${VCPKG_DIR} ${VCPKG_DEFAULT_BINARY_CACHE} ${VCPKG_DOWNLOADS}
 
+            type -a choco
+
+            choco upgrade cmake.install
+            choco install ninja -y
+            # choco install ninja visualstudio2017-workload-vctools -y
+            # choco install visualstudio2019buildtools visualstudio2019community visualstudio2019-workload-vctools -y
+
+      - name: Initialize vcpkg cache
+        if: ${{ ! steps.cache.outputs.cache-hit }}
+        shell: bash
+        env:
+          NUM_PROCESSORS: ${{ steps.cachekeys.outputs.NUM_PROCESSORS }}
+        run: |
+            set -x
 
             type -a cl.exe || true
             ls -l
@@ -126,20 +140,13 @@ jobs:
             . ./bin/sh/setup-msvc.sh
             type -a cl.exe || true
 
-            type -a choco
             type -a vcpkg
             ls -l ${VCPKG_DIR}
             mkdir -pv ${VCPKG_DIR}/installed
             vcpkg help || true
             # find ${BOOST_ROOT} -type d
 
-            choco upgrade cmake.install
-            choco install ninja -y
-            # choco install ninja visualstudio2017-workload-vctools -y
-            # choco install visualstudio2019buildtools visualstudio2019community visualstudio2019-workload-vctools -y
-
             df -h
-            export VCPKG_EXTRA_ARGS="--x-install-root=${VCPKG_INSTALL_DIR}"
             # bin/sh/install-vcpkg.sh openssl
             # bin/sh/install-vcpkg.sh libarchive[lz4]
             # bin/sh/install-vcpkg.sh grpc
@@ -148,12 +155,35 @@ jobs:
             # TBD consider rocksdb via vcpkg if/when we can build with the
             # vcpkg version
             # bin/sh/install-vcpkg.sh rocksdb[snappy,lz4,zlib]
+      - name: Download Boost
+        if: ${{ ! steps.cache.outputs.cache-hit }}
+        # Powershell
+        shell: pwsh
+        run: |
+            $Url = "$env:BOOST_URL"
+            (New-Object System.Net.WebClient).DownloadFile($Url, "$env:TEMP\boost.tar.bz2")
+      - name: Install Boost
+        if: ${{ ! steps.cache.outputs.cache-hit }}
+        shell: bash
+        env:
+          BOOST_FILE: ${TEMP}\boost.tar.bz2
+        run: |
+            export BOOST_FILE="${TEMP}\boost.tar.bz2"
+            ls -l "${BOOST_FILE}"
+            ls -l "${CACHE_DIR}" || true
+
+            cd rippled
 
             # Pre-installed boost is going to be deprecated
             # https://github.com/actions/virtual-environments/issues/2667
             # but there are some tips there that might speed this up
             ./Builds/containers/shared/install_boost.sh
-
+      - name: Initialize cmake cache
+        if: ${{ ! steps.cache.outputs.cache-hit }}
+        shell: bash
+        env:
+          NUM_PROCESSORS: ${{ steps.cachekeys.outputs.NUM_PROCESSORS }}
+        run: |
             # Download the NIH items
             mkdir -p $builddir && cd $builddir
             if [ "${CMAKE_ADD}" != "" ] ; then export CMAKE_EXTRA_ARGS="${CMAKE_EXTRA_ARGS} $( eval echo ${CMAKE_ADD} )"; fi
@@ -253,7 +283,6 @@ jobs:
         run: |
             set -x
             df -h
-            export VCPKG_EXTRA_ARGS="--x-install-root=${VCPKG_INSTALL_DIR}"
             # Make sure we can see the installed packages
             bin/sh/install-vcpkg.sh
             cd rippled
