@@ -5,6 +5,7 @@ set -exu
 : ${VCPKG_DIR:=".vcpkg"}
 export VCPKG_ROOT=${VCPKG_DIR}
 : ${VCPKG_DEFAULT_TRIPLET:="x64-windows-static"}
+: ${VCPKG_EXTRA_ARGS:=}
 
 export VCPKG_DEFAULT_TRIPLET
 
@@ -15,7 +16,7 @@ fi
 
 if [[ -d "${VCPKG_DIR}" && -x "${VCPKG_DIR}/${EXE}" && -d "${VCPKG_DIR}/installed" ]] ; then
     echo "Using cached vcpkg at ${VCPKG_DIR}"
-    ${VCPKG_DIR}/${EXE} list
+    ${VCPKG_DIR}/${EXE} ${VCPKG_EXTRA_ARGS} list
 else
     if [[ -d "${VCPKG_DIR}" ]] ; then
         rm -rf "${VCPKG_DIR}"
@@ -45,7 +46,7 @@ else
     PKGS=( "$@" )
 fi
 for LIB in "${PKGS[@]}"; do
-    time ${VCPKG_DIR}/${EXE} --clean-after-build install ${LIB}
+    time ${VCPKG_DIR}/${EXE} ${VCPKG_EXTRA_ARGS} --clean-after-build install ${LIB}
 done
 
 

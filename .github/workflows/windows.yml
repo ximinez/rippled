@@ -17,15 +17,16 @@ env:
   CCACHE_DIR: ${{ github.workspace }}/_cache/ccache
   # BOOST_TOOLSET: msvc-14.1
   CMAKE_ADD: |
-    -DCMAKE_PREFIX_PATH=${BOOST_ROOT_1_72_0}/_INSTALLED_
-    -DBOOST_ROOT=${BOOST_ROOT_1_72_0}/_INSTALLED_
-    -DBoost_ROOT=${BOOST_ROOT_1_72_0}/_INSTALLED_
-    -DBoost_DIR=${BOOST_ROOT_1_72_0}/_INSTALLED_/lib/cmake/Boost-1.72.0
+    -DCMAKE_PREFIX_PATH=${BOOST_ROOT_1_72_0}
+    -DBOOST_ROOT=${BOOST_ROOT_1_72_0}
+    -DBoost_ROOT=${BOOST_ROOT_1_72_0}
+    -DBoost_DIR=${BOOST_ROOT_1_72_0}/lib/cmake/Boost-1.72.0
     -DBoost_COMPILER=vc141
     -DCMAKE_VERBOSE_MAKEFILE=ON
     -DCMAKE_TOOLCHAIN_FILE=${VCPKG_DIR}/scripts/buildsystems/vcpkg.cmake
     -DVCPKG_TARGET_TRIPLET=x64-windows-static
   VCPKG_DIR: '/c/vcpkg'
+  VCPKG_EXTRA_ARGS: '--x-install-root=${{ github.workspace }}/_cache/vcpkg/installed'
   VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}/_cache/vcpkg/binary
   VCPKG_DOWNLOADS: ${{ github.workspace }}/_cache/vcpkg/download
   VCPKG_DEFAULT_TRIPLET: "x64-windows-static"
@@ -246,6 +247,7 @@ jobs:
             set -x
             export BOOST_ROOT=${BOOST_ROOT_1_72_0}
             df -h
+            bin/sh/install-vcpkg.sh
             cd rippled
             . ./bin/sh/setup-msvc.sh
             mkdir -p $builddir && cd $builddir
