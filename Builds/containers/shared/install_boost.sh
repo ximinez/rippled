@@ -39,8 +39,11 @@ fi
 cd $(dirname $BOOST_ROOT)
 rm -fr ${BOOST_ROOT}
 mkdir -pv ${BOOST_ROOT}
-tar xf ${BOOST_FILE} -C ${BOOST_ROOT} --strip-components 1
+cd ${BOOST_ROOT}
+pwd
+tar xf ${BOOST_FILE} --strip-components 1
 cd $BOOST_ROOT
+ls -l
 
 BLDARGS=()
 if [[ ${BOOST_BUILD_ALL:-false} == "true" ]]; then
