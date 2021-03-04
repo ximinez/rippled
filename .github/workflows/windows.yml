@@ -39,7 +39,7 @@ env:
   VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}\_cache\vcpkg\binary
   VCPKG_DOWNLOADS: ${{ github.workspace }}\_cache\vcpkg\download
   VCPKG_DEFAULT_TRIPLET: "x64-windows-static"
-  MSVC_DIR: '/c/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise'
+  # MSVC_DIR: '/c/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise'
   CC: cl.exe
   CXX: cl.exe
   srcdir: ${{ github.workspace }}\rippled
@@ -122,9 +122,11 @@ jobs:
 
             choco upgrade cmake.install
             choco install ninja -y
-            # choco install visualstudio2017buildtools visualstudio2017community visualstudio2017-workload-vctools -y
-            # choco install visualstudio2019buildtools visualstudio2019community visualstudio2019-workload-vctools -y
+            choco install visualstudio2017community -y
+            # choco install visualstudio2017-workload-vctools -y
+            choco install visualstudio2019buildtools visualstudio2019-workload-vctools -y
 
+            vswhere -all
       - name: Initialize vcpkg cache
         if: ${{ ! steps.cache.outputs.cache-hit }}
         shell: bash
@@ -168,6 +170,8 @@ jobs:
         env:
           BOOST_FILE: ${TEMP}\boost.tar.bz2
         run: |
+            set -x
+
             export BOOST_FILE="${TEMP}\boost.tar.bz2"
             ls -l "${BOOST_FILE}"
             ls -l "${CACHE_DIR}" || true
