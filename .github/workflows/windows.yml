@@ -15,7 +15,8 @@ env:
   CCACHE_BASEDIR: ${{ github.workspace }}
   CCACHE_NOHASHDIR: true
   CCACHE_DIR: ${{ github.workspace }}\_cache\ccache
-  BOOST_TOOLSET: msvc-14.2
+  VCVARS_VER: 14.1
+  BOOST_TOOLSET: msvc-14.1
   BOOST_URL: 'https://dl.bintray.com/boostorg/release/1.75.0/source/boost_1_75_0.tar.bz2'
   # BOOST_URL: 'https://dl.bintray.com/boostorg/release/1.75.0/binaries/boost_1_75_0-msvc-14.1-64.exe'
   # Alternate dowload location
@@ -30,7 +31,7 @@ env:
     -DBOOST_ROOT=${BOOST_ROOT}\_INSTALLED_
     -DBoost_ROOT=${BOOST_ROOT}\_INSTALLED_
     -DBoost_DIR=${BOOST_ROOT}\_INSTALLED_\lib\cmake\Boost-1.75.0
-    -DBoost_COMPILER=vc142
+    -DBoost_COMPILER=vc141
     -DCMAKE_VERBOSE_MAKEFILE=ON
     -DCMAKE_TOOLCHAIN_FILE=${VCPKG_DIR}\scripts\buildsystems\vcpkg.cmake
     -DVCPKG_TARGET_TRIPLET=x64-windows-static
@@ -157,13 +158,15 @@ jobs:
             type -a choco
 
             choco outdated
-            choco list
+            choco list | wc
             choco upgrade cmake.install
             choco install ninja -y
             # choco install visualstudio2017community -y
             # choco install visualstudio2017-workload-vctools -y
             # choco install visualstudio2019buildtools --package-parameters "--allWorkloads --includeRecommended --includeOptional"
             # choco install visualstudio2019-workload-vctools -y
+
+            type -a ninja
 
       - name: Initialize vcpkg cache
         if: ${{ ! steps.cache.outputs.cache-hit }}
@@ -210,13 +213,14 @@ jobs:
         run: |
             set -x
 
+            type -a ninja
             export BOOST_FILE="${TEMP}\boost.tar.bz2"
             ls -l "${BOOST_FILE}"
             ls -l "${CACHE_DIR}" || true
 
             cd rippled
 
-            # . ./bin/sh/setup-msvc.sh
+            . ./bin/sh/setup-msvc.sh
 
             # Pre-installed boost is going to be deprecated
             # https://github.com/actions/virtual-environments/issues/2667
@@ -227,6 +231,11 @@ jobs:
         env:
           NUM_PROCESSORS: ${{ steps.cachekeys.outputs.NUM_PROCESSORS }}
         run: |
+            set -x
+
+            type -a ninja || true
+            choco list | wc
+            type -a ninja
             cd rippled
             . ./bin/sh/setup-msvc.sh
 
