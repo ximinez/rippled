@@ -205,6 +205,42 @@ jobs:
         run: |
             $Url = "$env:BOOST_URL"
             (New-Object System.Net.WebClient).DownloadFile($Url, "$env:TEMP\boost.tar.bz2")
+      - name: Notes
+        if: false
+        run: |
+
+            warning: Did not find command for MSVC toolset. If you have Visual Studio 2017 installed you will need to specify the full path to the command, set VS150COMNTOOLS for your installation, or build from the 'Visual Studio Command Prompt for VS 2017'.
+
+
+2) open project-config.jam. Here is mine:
+
+import option ; 
+
+using msvc : 14.0 : "c:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Tools\MSVC\14.10.25017\bin\HostX64\x64\cl.exe"; 
+
+option.set keep-going : false ;
+
+            /c/Program Files (x86)/Microsoft Visual Studio/2017/Community/VC/Tools/MSVC/14.16.27023/bin/Hostx64/x64/cl.exe
+/c/Program Files (x86)/Microsoft Visual Studio/2017/Community/VC/Tools/MSVC/14.16.27023/bin/Hostx64/x86/cl.exe
+/c/Program Files (x86)/Microsoft Visual Studio/2017/Community/VC/Tools/MSVC/14.16.27023/bin/Hostx86/x64/cl.exe
+/c/Program Files (x86)/Microsoft Visual Studio/2017/Community/VC/Tools/MSVC/14.16.27023/bin/Hostx86/x86/cl.exe
+/c/Program Files (x86)/Microsoft Visual Studio/2019/Community/VC/Tools/MSVC/14.16.27023/bin/HostX64/arm64/cl.exe
+/c/Program Files (x86)/Microsoft Visual Studio/2019/Community/VC/Tools/MSVC/14.16.27023/bin/HostX64/x64/cl.exe
+/c/Program Files (x86)/Microsoft Visual Studio/2019/Community/VC/Tools/MSVC/14.16.27023/bin/HostX64/x86/cl.exe
+/c/Program Files (x86)/Microsoft Visual Studio/2019/Community/VC/Tools/MSVC/14.16.27023/bin/HostX86/arm64/cl.exe
+/c/Program Files (x86)/Microsoft Visual Studio/2019/Community/VC/Tools/MSVC/14.16.27023/bin/HostX86/x64/cl.exe
+/c/Program Files (x86)/Microsoft Visual Studio/2019/Community/VC/Tools/MSVC/14.16.27023/bin/HostX86/x86/cl.exe
+/c/Program Files (x86)/Microsoft Visual Studio/2019/Community/VC/Tools/MSVC/14.28.29910/bin/Hostx64/x64/cl.exe
+/c/Program Files (x86)/Microsoft Visual Studio/2019/Community/VC/Tools/MSVC/14.28.29910/bin/Hostx64/x86/cl.exe
+/c/Program Files (x86)/Microsoft Visual Studio/2019/Community/VC/Tools/MSVC/14.28.29910/bin/Hostx86/x64/cl.exe
+/c/Program Files (x86)/Microsoft Visual Studio/2019/Community/VC/Tools/MSVC/14.28.29910/bin/Hostx86/x86/cl.exe
+
+            cd ${BOOST_ROOT}/tools/build
+            ./bootstrap.bat
+            ./b2 --prefix=${BOOST_ROOT}
+            cd ${BOOST_ROOT}
+
+
       - name: Install Boost
         if: ${{ ! steps.cache.outputs.cache-hit }}
         shell: bash
@@ -218,10 +254,10 @@ jobs:
             ls -l "${BOOST_FILE}"
             ls -l "${CACHE_DIR}" || true
 
-            cd rippled
+            find "/c/Program Files (x86)/Microsoft Visual Studio/" -iname cl.exe
 
-            . ./bin/sh/setup-msvc.sh
 
+            cd ${srcdir}
             # Pre-installed boost is going to be deprecated
             # https://github.com/actions/virtual-environments/issues/2667
             ./Builds/containers/shared/install_boost.sh
