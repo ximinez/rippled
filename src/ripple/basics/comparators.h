@@ -24,6 +24,8 @@
 
 namespace ripple {
 
+#ifdef _MSC_VER
+
 /*
  * MSVC 2019 version 16.9.0 added [[nodiscard]] to the std comparison
  * operator() functions. boost::bimap checks that the comparitor is a
@@ -58,6 +60,13 @@ struct equal_to
         return std::equal_to<T>()(left, right);
     }
 };
+
+#else
+
+using less = std::less;
+using equal_to = std::equal_to;
+
+#endif
 
 }  // namespace ripple
 
