@@ -15,7 +15,7 @@ env:
   CCACHE_BASEDIR: ${{ github.workspace }}
   CCACHE_NOHASHDIR: true
   CCACHE_DIR: ${{ github.workspace }}\_cache\ccache
-  # BOOST_TOOLSET: msvc-14.1
+  BOOST_TOOLSET: msvc-14.2
   BOOST_URL: 'https://dl.bintray.com/boostorg/release/1.75.0/source/boost_1_75_0.tar.bz2'
   # BOOST_URL: 'https://dl.bintray.com/boostorg/release/1.75.0/binaries/boost_1_75_0-msvc-14.1-64.exe'
   # Alternate dowload location
@@ -30,7 +30,7 @@ env:
     -DBOOST_ROOT=${BOOST_ROOT}\_INSTALLED_
     -DBoost_ROOT=${BOOST_ROOT}\_INSTALLED_
     -DBoost_DIR=${BOOST_ROOT}\_INSTALLED_\lib\cmake\Boost-1.75.0
-    -DBoost_COMPILER=vc141
+    -DBoost_COMPILER=vc142
     -DCMAKE_VERBOSE_MAKEFILE=ON
     -DCMAKE_TOOLCHAIN_FILE=${VCPKG_DIR}\scripts\buildsystems\vcpkg.cmake
     -DVCPKG_TARGET_TRIPLET=x64-windows-static
@@ -71,11 +71,11 @@ jobs:
       headers: ${{ steps.cachekeys.outputs.headers }}
       source: ${{ steps.cachekeys.outputs.source }}
       NUM_PROCESSORS: ${{ steps.cachekeys.outputs.NUM_PROCESSORS }}
-    strategy:
-      fail-fast: false
-      matrix:
-        vsupdate: [ 'vs_installer.exe', 'vs_installershell.exe' ]
-        vsparam: [ '', '--updateFromVS' ]
+    #strategy:
+    #  fail-fast: false
+    #  matrix:
+    #    vsupdate: [ 'vs_installer.exe', 'vs_installershell.exe' ]
+    #    vsparam: [ '', '--updateFromVS' ]
     steps:
       - name: Cancel Previous Runs
         if: ${{ !contains(github.event.head_commit.message, 'ci_no_cancel') }}
@@ -123,33 +123,36 @@ jobs:
             mkdir -pv ${CACHE_DIR} ${CCACHE_DIR} ${NIH_CACHE_ROOT} \
               ${VCPKG_DIR} ${VCPKG_DEFAULT_BINARY_CACHE} ${VCPKG_DOWNLOADS}
 
-            vswhere -all
+            if false
+            then
+                vswhere -all
 
-            /c/Program\ Files\ \(x86\)/Microsoft\ Visual\ Studio/Installer/${{ matrix.vsupdate }} \
-               update --channelId  VisualStudio.16.Release \
-               --productID Microsoft.VisualStudio.Product.Community --quiet \
-               --force ${{ matrix.vsparam }}
+                /c/Program\ Files\ \(x86\)/Microsoft\ Visual\ Studio/Installer/${{ matrix.vsupdate }} \
+                   update --channelId  VisualStudio.16.Release \
+                   --productID Microsoft.VisualStudio.Product.Community --quiet \
+                   --force ${{ matrix.vsparam }}
 
-            /c/Program\ Files\ \(x86\)/Microsoft\ Visual\ Studio/Installer/${{ matrix.vsupdate }} \
-               export --channelId  VisualStudio.16.Release \
-               --productID Microsoft.VisualStudio.Product.Community --quiet
+                /c/Program\ Files\ \(x86\)/Microsoft\ Visual\ Studio/Installer/${{ matrix.vsupdate }} \
+                   export --channelId  VisualStudio.16.Release \
+                   --productID Microsoft.VisualStudio.Product.Community --quiet
 
-            find ~ -iname .vsconfig -ls -exec cat {} \; -exec mv -v {} {}.before \;
+                find ~ -iname .vsconfig -ls -exec cat {} \; -exec mv -v {} {}.before \;
 
-            /c/Program\ Files\ \(x86\)/Microsoft\ Visual\ Studio/Installer/${{ matrix.vsupdate }} \
-               modify --channelId VisualStudio.16.Release \
-               --productID Microsoft.VisualStudio.Product.Enterprise --quiet \
-               --includeRecommended \
-               --add "Microsoft.VisualStudio.Component.VC.v141.x86.x64" \
-               --add "Microsoft.VisualStudio.Component.VC.v141.ARM64" \
-               --add "Microsoft.Component.MSBuild" \
-               --add "Microsoft.VisualStudio.Component.VC.Tools.x86.x64"
+                /c/Program\ Files\ \(x86\)/Microsoft\ Visual\ Studio/Installer/${{ matrix.vsupdate }} \
+                   modify --channelId VisualStudio.16.Release \
+                   --productID Microsoft.VisualStudio.Product.Enterprise --quiet \
+                   --includeRecommended \
+                   --add "Microsoft.VisualStudio.Component.VC.v141.x86.x64" \
+                   --add "Microsoft.VisualStudio.Component.VC.v141.ARM64" \
+                   --add "Microsoft.Component.MSBuild" \
+                   --add "Microsoft.VisualStudio.Component.VC.Tools.x86.x64"
 
-            /c/Program\ Files\ \(x86\)/Microsoft\ Visual\ Studio/Installer/${{ matrix.vsupdate }} \
-               export --channelId  VisualStudio.16.Release \
-               --productID Microsoft.VisualStudio.Product.Community --quiet
+                /c/Program\ Files\ \(x86\)/Microsoft\ Visual\ Studio/Installer/${{ matrix.vsupdate }} \
+                   export --channelId  VisualStudio.16.Release \
+                   --productID Microsoft.VisualStudio.Product.Community --quiet
 
-            find ~ -iname .vsconfig -ls -exec cat {} \; -exec diff {}.before {} \;
+                find ~ -iname .vsconfig -ls -exec cat {} \; -exec diff {}.before {} \;
+            fi
 
             type -a choco
 
@@ -159,8 +162,8 @@ jobs:
             choco install ninja -y
             # choco install visualstudio2017community -y
             # choco install visualstudio2017-workload-vctools -y
-            choco install visualstudio2019buildtools --package-parameters "--allWorkloads --includeRecommended --includeOptional"
-            choco install visualstudio2019-workload-vctools -y
+            # choco install visualstudio2019buildtools --package-parameters "--allWorkloads --includeRecommended --includeOptional"
+            # choco install visualstudio2019-workload-vctools -y
 
       - name: Initialize vcpkg cache
         if: ${{ ! steps.cache.outputs.cache-hit }}
@@ -217,7 +220,6 @@ jobs:
 
             # Pre-installed boost is going to be deprecated
             # https://github.com/actions/virtual-environments/issues/2667
-            # but there are some tips there that might speed this up
             ./Builds/containers/shared/install_boost.sh
       - name: Initialize cmake cache
         if: ${{ ! steps.cache.outputs.cache-hit }}
@@ -225,6 +227,9 @@ jobs:
         env:
           NUM_PROCESSORS: ${{ steps.cachekeys.outputs.NUM_PROCESSORS }}
         run: |
+            cd rippled
+            . ./bin/sh/setup-msvc.sh
+
             # Download the NIH items
             mkdir -p $builddir && cd $builddir
             if [ "${CMAKE_ADD}" != "" ] ; then export CMAKE_EXTRA_ARGS="${CMAKE_EXTRA_ARGS} $( eval echo ${CMAKE_ADD} )"; fi
