@@ -19,6 +19,11 @@
 #ifndef RIPPLE_TEST_CSF_LEDGERS_H_INCLUDED
 #define RIPPLE_TEST_CSF_LEDGERS_H_INCLUDED
 
+// Workaround to suppress the boost nodiscard warning in MS compiler 19.28.29910
+#ifdef _MSC_VER
+#pragma warning(disable : 4834)
+#endif
+
 #include <ripple/basics/UnorderedContainers.h>
 #include <ripple/basics/chrono.h>
 #include <ripple/basics/tagged_integer.h>
