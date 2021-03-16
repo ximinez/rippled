@@ -21,7 +21,7 @@
 
 #include <ripple/basics/UnorderedContainers.h>
 #include <ripple/basics/chrono.h>
-#include <ripple/basics/comparitors.h>
+#include <ripple/basics/comparators.h>
 #include <ripple/basics/tagged_integer.h>
 #include <ripple/consensus/LedgerTiming.h>
 #include <ripple/json/json_value.h>
