@@ -63,8 +63,11 @@ struct equal_to
 
 #else
 
-using less = std::less;
-using equal_to = std::equal_to;
+template <class T = void>
+using less = std::less<T>;
+
+template <class T = void>
+using equal_to = std::equal_to<T>;
 
 #endif
 
