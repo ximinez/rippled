@@ -993,7 +993,7 @@ if (reporting)
     target_compile_definitions(rippled PRIVATE RIPPLED_REPORTING)
 endif ()
 
-if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.16)
+if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.16)
   # any files that don't play well with unity should be added here
   if (tests)
     set_source_files_properties(
@@ -1006,8 +1006,8 @@ if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.16)
       PROPERTIES SKIP_UNITY_BUILD_INCLUSION TRUE)
   endif () #tests
 endif ()
-if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.11 AND NOT MSVC)
-  if (tests)
+if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.11 AND NOT MSVC)
+  if(tests)
     # MSVC has no problem with self-assignment, but does have a
     # problem with this compile flag in some configs.
     set_source_files_properties(
