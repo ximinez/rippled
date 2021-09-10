@@ -993,6 +993,10 @@ if (reporting)
     target_compile_definitions(rippled PRIVATE RIPPLED_REPORTING)
 endif ()
 
+if (ci_tests)
+    target_compile_definitions(rippled PRIVATE RIPPLED_CI_TESTS)
+endif ()
+
 if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.16)
   # any files that don't play well with unity should be added here
   if (tests)

@@ -1662,12 +1662,14 @@ rpcClient(
     {
         jvOutput = rpcError(rpcINVALID_PARAMS);
         jvOutput["error_what"] = e.what();
+        jvOutput[jss::error_exception] = e.what();
         nRet = rpcINVALID_PARAMS;
     }
     catch (std::exception& e)
     {
         jvOutput = rpcError(rpcINTERNAL);
         jvOutput["error_what"] = e.what();
+        jvOutput[jss::error_exception] = e.what();
         nRet = rpcINTERNAL;
     }
 
