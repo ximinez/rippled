@@ -1585,6 +1585,7 @@ TxQ::accept(Application& app, OpenView& view)
     // Other methods included: create a new list and moving items over one at a
     // time, create a new list and merge the old list into it.
     byFee_.clear();
+    XRPL_ASSERT(byFee_.empty(), "ripple::TxQ::accept : byFee empty");
 
     MaybeTx::parentHashComp = parentHash;
 
