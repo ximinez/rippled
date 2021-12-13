@@ -1553,6 +1553,9 @@ TxQ::accept(Application& app, OpenView& view)
     LedgerHash const& parentHash = view.info().parentHash;
 #if !NDEBUG
     auto const startingSize = byFee_.size();
+    // std::cerr << "Changing parent hash for ledger " <<
+    // view.info().seq << " from " << parentHash_ <<
+    // " to " << parentHash << std::endl;
     assert(parentHash != parentHash_);
     parentHash_ = parentHash;
 #endif
@@ -1565,6 +1568,7 @@ TxQ::accept(Application& app, OpenView& view)
     // Other methods included: create a new list and moving items over one at a
     // time, create a new list and merge the old list into it.
     byFee_.clear();
+    assert(byFee_.empty());
 
     MaybeTx::parentHashComp = parentHash;
 
