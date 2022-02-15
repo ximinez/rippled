@@ -4844,6 +4844,14 @@ public:
         static ripple::uint256 parentHashComp;
     };
 
+    struct FakeTxOrdered : public FakeTxBase
+    {
+        boost::intrusive::set_member_hook<> byFeeListHook;
+        FakeTxOrdered(FakeTxBase const& src) : FakeTxBase(src)
+        {
+        }
+    };
+
     void
     testReorderingMethods()
     {
@@ -5061,6 +5069,21 @@ public:
                 }
             });
 
+            timeHashes("Copy & swap", [&](uint256 const& parentHash) {
+                auto const startingSize = mainQueue.size();
+                BEAST_EXPECT(startingSize == numTransactions);
+                mainQueue.clear();
+                BEAST_EXPECT(mainQueue.empty());
+
+                for (auto& candidate : transactions)
+                {
+                    candidate.updateTxSortKey(parentHash);
+                }
+
+                FeeMultiSet newQueue(transactions.begin(), transactions.end());
+                mainQueue.swap(newQueue);
+            });
+
             timeHashes(
                 "merge old list into new", [&](uint256 const& parentHash) {
                     auto const startingSize = mainQueue.size();
@@ -5233,6 +5256,17 @@ public:
                 }
             });
 
+            timeHashes("Copy & swap", [&](uint256 const& parentHash) {
+                auto const startingSize = mainQueue.size();
+                BEAST_EXPECT(startingSize == numTransactions);
+                mainQueue.clear();
+                BEAST_EXPECT(mainQueue.empty());
+
+                FakeTxStatic::parentHashComp = parentHash;
+
+                FeeMultiSet newQueue(transactions.begin(), transactions.end());
+                mainQueue.swap(newQueue);
+            });
             timeHashes(
                 "merge old list into new", [&](uint256 const& parentHash) {
                     auto const startingSize = mainQueue.size();
@@ -5241,6 +5275,197 @@ public:
                     FeeMultiSet nextQueue;
 
                     FakeTxStatic::parentHashComp = parentHash;
+
+                    nextQueue.merge(mainQueue);
+                    BEAST_EXPECT(mainQueue.empty());
+                    mainQueue = std::move(nextQueue);
+                    BEAST_EXPECT(mainQueue.size() == startingSize);
+                });
+        }
+        {
+            // Store the sort key in the OrderComparison. Do the ^
+            // operation on every comparison.
+
+            auto transactions = [&] {
+                std::vector<FakeTxOrdered> result;
+                result.reserve(baseTransactions.size());
+                for (auto const& tx : baseTransactions)
+                    result.emplace_back(tx);
+                return result;
+            }();
+
+            // TxQ::OrderCandidates is private, so just copy it
+            // In the real implementation, this would be a member of TxQ or
+            // OrderCandidates
+            class OrderCandidates
+            {
+            public:
+                /// Default constructor
+                explicit OrderCandidates() = default;
+                explicit OrderCandidates(LedgerHash parentHash)
+                    : parentHashComp_(parentHash)
+                {
+                }
+
+                /** Sort @ref MaybeTx by `feeLevel` descending, then by
+                 * transaction ID ascending
+                 *
+                 * The transaction queue is ordered such that transactions
+                 * paying a higher fee are in front of transactions paying
+                 * a lower fee, giving them an opportunity to be processed into
+                 * the open ledger first. Within transactions paying the same
+                 * fee, order by the arbitrary but consistent transaction ID.
+                 * This allows validators to build similar queues in the same
+                 * order, and thus have more similar initial proposals.
+                 *
+                 */
+                bool
+                operator()(const FakeTxOrdered& lhs, const FakeTxOrdered& rhs)
+                    const
+                {
+                    if (lhs.feeLevel == rhs.feeLevel)
+                        return (lhs.txid ^ parentHashComp_) <
+                            (rhs.txid ^ parentHashComp_);
+                    return lhs.feeLevel > rhs.feeLevel;
+                }
+
+                LedgerHash parentHashComp_;
+            };
+            using FeeHook = boost::intrusive::member_hook<
+                FakeTxOrdered,
+                boost::intrusive::set_member_hook<>,
+                &FakeTxOrdered::byFeeListHook>;
+
+            using FeeMultiSet = boost::intrusive::multiset<
+                FakeTxOrdered,
+                FeeHook,
+                boost::intrusive::compare<OrderCandidates>>;
+
+            FeeMultiSet mainQueue;
+            BEAST_EXPECT(mainQueue.key_comp().parentHashComp_ == 0);
+
+            // populate
+            time("Initialize OrderCandidates", [&]() {
+                // populate the ordered queue
+                for (auto& tx : transactions)
+                    mainQueue.insert(tx);
+            });
+
+            BEAST_EXPECT(mainQueue.size() == numTransactions);
+
+            auto timeHashes = [&](std::string name,
+                                  std::function<void(uint256)> callback) {
+                auto counter = 0;
+                time("New OrderCandidates: " + name, [&]() {
+                    for (auto const hash : hashes)
+                    {
+                        callback(hash);
+                    }
+                    if (++counter % 100 == 1)
+                    {
+                        // Check that the list is actually sorted
+                        for (auto iter = mainQueue.begin();
+                             iter != mainQueue.end();
+                             ++iter)
+                        {
+                            auto next = std::next(iter);
+                            if (next == mainQueue.end())
+                                continue;
+                            BEAST_EXPECT(
+                                iter->feeLevel > next->feeLevel ||
+                                (iter->feeLevel == next->feeLevel &&
+                                 (iter->txid ^
+                                  mainQueue.key_comp().parentHashComp_) <
+                                     (next->txid ^
+                                      mainQueue.key_comp().parentHashComp_)));
+                        }
+                    }
+                });
+            };
+
+            timeHashes(
+                "Move txs individually - move the old list first",
+                [&](uint256 const& parentHash) {
+                    auto const startingSize = mainQueue.size();
+                    BEAST_EXPECT(startingSize == numTransactions);
+                    FeeMultiSet oldQueue{std::move(mainQueue)};
+                    BEAST_EXPECT(mainQueue.empty());
+                    mainQueue.key_comp().parentHashComp_ = parentHash;
+                    for (auto candidateIter = oldQueue.begin();
+                         candidateIter != oldQueue.end();)
+                    {
+                        // FeeMultiSet doesn't "own" the candidate objects
+                        // inside it, so it's perfectly safe to take a reference
+                        // to the candidate before removing it and inserting it
+                        // into the nextQueue. (The objects are stored in the
+                        // transactions vector.)
+                        auto& candidate = *candidateIter;
+                        candidateIter = oldQueue.erase(candidateIter);
+                        mainQueue.insert(candidate);
+                    }
+                    BEAST_EXPECT(mainQueue.size() == startingSize);
+                });
+
+            timeHashes(
+                "Move txs individually - move the old list last",
+                [&](uint256 const& parentHash) {
+                    auto const startingSize = mainQueue.size();
+                    BEAST_EXPECT(startingSize == numTransactions);
+                    OrderCandidates key_comp(parentHash);
+                    FeeMultiSet nextQueue(key_comp);
+                    for (auto candidateIter = mainQueue.begin();
+                         candidateIter != mainQueue.end();)
+                    {
+                        // FeeMultiSet doesn't "own" the candidate objects
+                        // inside it, so it's perfectly safe to take a reference
+                        // to the candidate before removing it and inserting it
+                        // into the nextQueue. (The objects are stored in the
+                        // transactions vector.)
+                        auto& candidate = *candidateIter;
+                        candidateIter = mainQueue.erase(candidateIter);
+                        nextQueue.insert(candidate);
+                    }
+                    BEAST_EXPECT(mainQueue.empty());
+                    mainQueue = std::move(nextQueue);
+                    BEAST_EXPECT(mainQueue.size() == startingSize);
+                });
+
+            timeHashes("Wipe & rebuild", [&](uint256 const& parentHash) {
+                auto const startingSize = mainQueue.size();
+                BEAST_EXPECT(startingSize == numTransactions);
+                // FeeMultiSet doesn't "own" the candidate objects inside it, so
+                // it's perfectly safe to wipe it and start over, repopulating
+                // from transactions.
+                mainQueue.clear();
+                BEAST_EXPECT(mainQueue.empty());
+                mainQueue.key_comp().parentHashComp_ = parentHash;
+
+                for (auto& candidate : transactions)
+                {
+                    mainQueue.insert(candidate);
+                }
+            });
+
+            timeHashes("Copy & swap", [&](uint256 const& parentHash) {
+                auto const startingSize = mainQueue.size();
+                BEAST_EXPECT(startingSize == numTransactions);
+                mainQueue.clear();
+                BEAST_EXPECT(mainQueue.empty());
+
+                OrderCandidates key_comp(parentHash);
+
+                FeeMultiSet newQueue(
+                    transactions.begin(), transactions.end(), key_comp);
+                mainQueue.swap(newQueue);
+            });
+            timeHashes(
+                "merge old list into new", [&](uint256 const& parentHash) {
+                    auto const startingSize = mainQueue.size();
+                    BEAST_EXPECT(startingSize == numTransactions);
+
+                    OrderCandidates key_comp(parentHash);
+
+                    FeeMultiSet nextQueue(key_comp);
 
                     nextQueue.merge(mainQueue);
                     BEAST_EXPECT(mainQueue.empty());
