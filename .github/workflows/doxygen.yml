@@ -6,9 +6,9 @@ on:
 
 jobs:
   job:
-    runs-on: ubuntu-18.04
+    runs-on: self-built-ubuntu
     container:
-      image: docker://rippleci/rippled-ci-builder:2944b78d22db
+      image: registry.gitlab.com/shichengsg001/demo:ubuntu_rippled_build
     steps:
       - name: checkout
         uses: actions/checkout@v2
