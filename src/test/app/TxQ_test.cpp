@@ -5096,7 +5096,7 @@ public:
                     FeeMultiSet nextQueue;
                     nextQueue.merge(mainQueue);
                     BEAST_EXPECT(mainQueue.empty());
-                    mainQueue = std::move(nextQueue);
+                    mainQueue.swap(nextQueue);
                     BEAST_EXPECT(mainQueue.size() == startingSize);
                 });
         }
@@ -5278,7 +5278,7 @@ public:
 
                     nextQueue.merge(mainQueue);
                     BEAST_EXPECT(mainQueue.empty());
-                    mainQueue = std::move(nextQueue);
+                    mainQueue.swap(nextQueue);
                     BEAST_EXPECT(mainQueue.size() == startingSize);
                 });
         }
@@ -5469,7 +5469,7 @@ public:
 
                     nextQueue.merge(mainQueue);
                     BEAST_EXPECT(mainQueue.empty());
-                    mainQueue = std::move(nextQueue);
+                    mainQueue.swap(nextQueue);
                     BEAST_EXPECT(mainQueue.size() == startingSize);
                 });
         }
