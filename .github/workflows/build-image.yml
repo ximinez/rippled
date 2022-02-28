@@ -1,0 +1,33 @@
+name: builder-image
+
+on: [workflow_dispatch]
+
+jobs:
+  build-image:
+    runs-on: self-built-ubuntu
+    env:
+      CLANG_VERSION: 10
+    strategy:
+      matrix:
+        os:
+          - name: ubuntu
+          - name: centos
+    steps:
+    - uses: actions/checkout@v2
+#    - name: Install clang-format
+#      run: |
+#        sudo tee /etc/apt/sources.list.d/llvm.list >/dev/null <<EOF
+#        deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-${CLANG_VERSION} main
+#        deb-src http://apt.llvm.org/bionic/ llvm-toolchain-bionic-${CLANG_VERSION} main
+#        EOF
+#        wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add
+#        sudo apt-get update
+#        sudo apt-get install clang-format-${CLANG_VERSION}
+    - name: Build
+      run: |
+        cd Builds/containers/
+        docker build -t registry.gitlab.com/shichengsg001/demo:${{ matrix.os.name }}_rippled_build --build-arg CI_USE=true . -f ${{ matrix.os.name }}-builder/Dockerfile
+    - name: Push
+      run: |
+        docker login registry.gitlab.com/shichengsg001/demo -u="${{ secrets.DOCKER_USER }}" -p="${{ secrets.DOCKER_TOKEN }}"
+        docker push registry.gitlab.com/shichengsg001/demo:${{ matrix.os.name }}_rippled_build

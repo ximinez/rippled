@@ -253,6 +253,7 @@ fi
 set -e
 
 if [[ ${look_core} == true ]]; then
+    echo "current path: $(pwd), core dir: ${coredir}"
     after=$(ls -A1 ${coredir})
     oIFS="${IFS}"
     IFS=$'\n\r'
@@ -260,6 +261,7 @@ if [[ ${look_core} == true ]]; then
     for l in $(diff -w --suppress-common-lines <(echo "$before") <(echo "$after")) ; do
         if [[ "$l" =~ ^[[:space:]]*\>[[:space:]]*(.+)$ ]] ; then
             corefile="${BASH_REMATCH[1]}"
+            file "${coredir}/${corefile}"
             echo "FOUND core dump file at '${coredir}/${corefile}'"
             gdb_output=$(/bin/mktemp /tmp/gdb_output_XXXXXXXXXX.txt)
             found_core=true
