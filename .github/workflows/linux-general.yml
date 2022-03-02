@@ -326,7 +326,19 @@ jobs:
           find ${NIH_SRC_PATH} ${NIH_CACHE_ROOT} -maxdepth 2 \
             -type d -exec du -sh {} \; || true
 
-      - name: Build and test
+      - name: Build and Test
+        id: try1
+        continue-on-error: true
+        uses: ./.github/build-action
+
+      - name: Retry once
+        id: try2
+        continue-on-error: true
+        if: steps.try1.outcome == 'failure'
+        uses: ./.github/build-action
+
+      - name: Retry twice
+        if: steps.try2.outcome == 'failure'
         uses: ./.github/build-action
 
       - name: Unity files
