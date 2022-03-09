@@ -47,12 +47,12 @@ jobs:
             CXX: g++-9
 #            runner: self-built-runner
 
-#          - image_user: "rippleci"
-#            image_name: "rippled-ci-builder"
-#            image_tag: "2944b78d22db"
-#            CC: clang-10
-#            CXX: clang++-10
-#            CMAKE_ADD: " -DBoost_NO_BOOST_CMAKE=ON"
+          - image_user: "rippleci"
+            image_name: "rippled-ci-builder"
+            image_tag: "2944b78d22db"
+            CC: clang-10
+            CXX: clang++-10
+            CMAKE_ADD: " -DBoost_NO_BOOST_CMAKE=ON"
 ##            runner: self-built-runner-1
     container:
       image: "${{ matrix.compiler.image_user }}/${{ matrix.compiler.image_name }}:${{ matrix.compiler.image_tag }}"
@@ -225,13 +225,13 @@ jobs:
             image_name: "demo"
             image_tag: "rippled-ci-builder-2020-01-08"
 
-#          - # The 2020-01-08 image doesn't have clang-10
-#            CC: 'clang-10'
-#            CXX: 'clang++-10'
-#            image_user: "registry.gitlab.com/shichengsg001"
-#            image_name: "demo"
-#            image_tag: "ubuntu_rippled_build"
-#            CMAKE_ADD: " -DBoost_NO_BOOST_CMAKE=ON"
+          - # The 2020-01-08 image doesn't have clang-10
+            CC: 'clang-10'
+            CXX: 'clang++-10'
+            image_user: "rippleci"
+            image_name: "rippled-ci-builder"
+            image_tag: "2944b78d22db"
+            CMAKE_ADD: " -DBoost_NO_BOOST_CMAKE=ON"
 
         BUILD_TYPE: [ "Debug", "Release" ]
         unity: [ "OFF", "ON" ]
@@ -330,6 +330,11 @@ jobs:
         id: try1
         continue-on-error: true
         uses: ./.github/build-action
+
+      - name: debug
+        run: |
+          echo "===========build test result==========="
+          echo ${{ steps.try1.outcome }}
 
       - name: Retry once
         id: try2
