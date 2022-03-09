@@ -11,18 +11,17 @@ jobs:
       matrix:
         os:
           - name: ubuntu
-          - name: centos
+#          - name: centos
     steps:
+    - name: Remove prvious cloned repo
+      run: |
+        REPO_NAME=$(echo $GITHUB_REPOSITORY|awk -F '\/' '{print $2}')
+        CHECKOUT_PATH="${RUNNER_WORKDIR}/${REPO_NAME}/${REPO_NAME}"
+        if [ -d $CHECKOUT_PATH ]; then
+          sudo rm -rf "$CHECKOUT_PATH/*"
+        fi
     - uses: actions/checkout@v2
-#    - name: Install clang-format
-#      run: |
-#        sudo tee /etc/apt/sources.list.d/llvm.list >/dev/null <<EOF
-#        deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-${CLANG_VERSION} main
-#        deb-src http://apt.llvm.org/bionic/ llvm-toolchain-bionic-${CLANG_VERSION} main
-#        EOF
-#        wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add
-#        sudo apt-get update
-#        sudo apt-get install clang-format-${CLANG_VERSION}
+
     - name: Build
       run: |
         cd Builds/containers/

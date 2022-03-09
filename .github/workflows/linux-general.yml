@@ -331,11 +331,6 @@ jobs:
         continue-on-error: true
         uses: ./.github/build-action
 
-      - name: debug
-        run: |
-          echo "===========build test result==========="
-          echo ${{ steps.try1.outcome }}
-
       - name: Retry once
         id: try2
         continue-on-error: true
