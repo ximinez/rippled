@@ -205,25 +205,25 @@ jobs:
             CXX: 'g++-8'
             image_user: "registry.gitlab.com/shichengsg001"
             image_name: "demo"
-            image_tag: "rippled-ci-builder-2020-01-08"
+            image_tag: "ubuntu_rippled_build"
 
           - CC: 'gcc-9'
             CXX: 'g++-9'
             image_user: "registry.gitlab.com/shichengsg001"
             image_name: "demo"
-            image_tag: "rippled-ci-builder-2020-01-08"
+            image_tag: "ubuntu_rippled_build"
 
           - CC: 'clang-8'
             CXX: 'clang++-8'
             image_user: "registry.gitlab.com/shichengsg001"
             image_name: "demo"
-            image_tag: "rippled-ci-builder-2020-01-08"
+            image_tag: "ubuntu_rippled_build"
 
           - CC: 'clang-9'
             CXX: 'clang++-9'
             image_user: "registry.gitlab.com/shichengsg001"
             image_name: "demo"
-            image_tag: "rippled-ci-builder-2020-01-08"
+            image_tag: "ubuntu_rippled_build"
 
           - # The 2020-01-08 image doesn't have clang-10
             CC: 'clang-10'
