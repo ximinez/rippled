@@ -7,7 +7,7 @@ jobs:
     runs-on: self-built-ubuntu
     strategy:
       matrix:
-        clang_version: ["10-","10"]
+        clang-version: ["10-","10"]
         os:
           - name: ubuntu
 #          - name: centos
@@ -27,16 +27,18 @@ jobs:
     - name: Build
       run: |
         cd Builds/containers/
-        if [ "${{ matrix.clang_version }}" = "10" ]; then
-          docker build -t registry.gitlab.com/shichengsg001/demo:${{ matrix.os.name }}_rippled_build_c10 --build-arg CI_USE=true --build-arg GCC_VERSION=${{ matrix.clang_version }} . -f ${{ matrix.os.name }}-builder/Dockerfile
+        CLANG_VERSION=${{ matrix.clang-version }}
+        if [ "$CLANG_VERSION" = "10" ]; then
+          docker build -t registry.gitlab.com/shichengsg001/demo:${{ matrix.os.name }}_rippled_build_c10 --build-arg CI_USE=true --build-arg GCC_VERSION=$CLANG_VERSION . -f ${{ matrix.os.name }}-builder/Dockerfile
         else
           docker build -t registry.gitlab.com/shichengsg001/demo:${{ matrix.os.name }}_rippled_build --build-arg CI_USE=true . -f ${{ matrix.os.name }}-builder/Dockerfile.c10
         fi
     - name: Push
       run: |
         docker login registry.gitlab.com/shichengsg001/demo -u="${{ secrets.DOCKER_USER }}" -p="${{ secrets.DOCKER_TOKEN }}"
-        if [ "${{ matrix.clang_version }}" = "10" ]; then
-          docker push registry.gitlab.com/shichengsg001/demo:${{ matrix.os.name }}_rippled_build
-        else
+        CLANG_VERSION=${{ matrix.clang-version }}
+        if [ "$CLANG_VERSION" = "10" ]; then
           docker push registry.gitlab.com/shichengsg001/demo:${{ matrix.os.name }}_rippled_build_c10
+        else
+          docker push registry.gitlab.com/shichengsg001/demo:${{ matrix.os.name }}_rippled_build
         fi
