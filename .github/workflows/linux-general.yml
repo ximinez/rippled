@@ -47,9 +47,9 @@ jobs:
             CXX: g++-9
 #            runner: self-built-runner
 
-          - image_user: "rippleci"
-            image_name: "rippled-ci-builder"
-            image_tag: "2944b78d22db"
+          - image_user: "registry.gitlab.com/shichengsg001"
+            image_name: "demo"
+            image_tag: "ubuntu_rippled_build_c10"
             CC: clang-10
             CXX: clang++-10
             CMAKE_ADD: " -DBoost_NO_BOOST_CMAKE=ON"
@@ -228,9 +228,9 @@ jobs:
           - # The 2020-01-08 image doesn't have clang-10
             CC: 'clang-10'
             CXX: 'clang++-10'
-            image_user: "rippleci"
-            image_name: "rippled-ci-builder"
-            image_tag: "2944b78d22db"
+            image_user: "registry.gitlab.com/shichengsg001"
+            image_name: "demo"
+            image_tag: "ubuntu_rippled_build"
             CMAKE_ADD: " -DBoost_NO_BOOST_CMAKE=ON"
 
         BUILD_TYPE: [ "Debug", "Release" ]
