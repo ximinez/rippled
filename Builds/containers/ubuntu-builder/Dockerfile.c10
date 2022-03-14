@@ -2,6 +2,7 @@ ARG DIST_TAG=18.04
 FROM ubuntu:$DIST_TAG
 ARG GIT_COMMIT=unknown
 ARG CI_USE=false
+ARG GCC_VERSION="10"
 LABEL git-commit=$GIT_COMMIT
 
 # install/setup prerequisites:
@@ -22,10 +23,14 @@ ENV PATH="/opt/local/cmake/bin:$PATH"
 RUN if [ "${CI_USE}" = true ] ; then /tmp/install_cmake.sh 3.9.0 /opt/local/cmake-3.9; fi
 
 RUN /tmp/build_deps.sh
+
 ENV PLANTUML_JAR="/opt/plantuml/plantuml.jar"
 ENV BOOST_ROOT="/opt/local/boost/_INSTALLED_"
 ENV OPENSSL_ROOT="/opt/local/openssl"
-
+RUN cd /opt/local/boost_1_70_0/ \
+  && ./bootstrap.sh --prefix=/usr/ \
+  && ./b2 \
+  && ./b2 install
 # prep files for package building
 RUN mkdir -m 777 -p /opt/rippled_bld/pkg/debian
 

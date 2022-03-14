@@ -44,7 +44,7 @@ apt-get -y --fix-missing install \
     debmake git-buildpackage dh-make gitpkg debsums gnupg \
     dh-buildinfo dh-make dh-systemd \
     apt-transport-https
-if [ "$GCC_VERSION" != "10" ]; then
+if [ "${GCC_VERSION}" != "10" ]; then
   apt-get -y install gcc-7 g++-7
   update-alternatives --install \
       /usr/bin/gcc gcc /usr/bin/gcc-7 40 \
@@ -74,7 +74,7 @@ if [ "$GCC_VERSION" != "10" ]; then
 fi
 
 if [ "${CI_USE}" = true ] ; then
-  if [ "$GCC_VERSION" != "10" ]; then
+  if [ "${GCC_VERSION}" != "10" ]; then
     apt-get -y install gcc-6 g++-6
     update-alternatives --install \
         /usr/bin/gcc gcc /usr/bin/gcc-6 10 \
@@ -118,7 +118,7 @@ fi
 
 wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add -
 if [[ ${VERSION_ID} =~ ^18\. ]] ; then
-  if [ "$GCC_VERSION" != "10" ]; then
+  if [ "${GCC_VERSION}" != "10" ]; then
     cat << EOF > /etc/apt/sources.list.d/llvm.list
 deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic main
 deb-src http://apt.llvm.org/bionic/ llvm-toolchain-bionic main
@@ -149,7 +149,7 @@ EOF
 fi
 apt-get -y update
 
-if [ "$GCC_VERSION" != "10" ]; then
+if [ "${GCC_VERSION}" != "10" ]; then
   apt-get -y install \
       clang-7 libclang-common-7-dev libclang-7-dev libllvm7 llvm-7 \
       llvm-7-dev llvm-7-runtime clang-format-7 python-clang-7 \
@@ -182,7 +182,7 @@ if [ "$GCC_VERSION" != "10" ]; then
 fi
 
 if [ "${CI_USE}" = true ] ; then
-  if [ "$GCC_VERSION" != "10" ]; then
+  if [ "${GCC_VERSION}" != "10" ]; then
     apt-get -y install \
         clang-9 libclang-common-9-dev libclang-9-dev libllvm9 llvm-9 \
         llvm-9-dev llvm-9-runtime clang-format-9 python-clang-9 \
@@ -224,14 +224,18 @@ if [ "${CI_USE}" = true ] ; then
         --slave /usr/bin/llvm-cov llvm-cov /usr/bin/llvm-cov-10 \
         --slave /usr/bin/llvm-nm llvm-nm /usr/bin/llvm-nm-10
     # only install latest lldb
-      apt-get -y install lldb-10 python-lldb-10 liblldb-10-dev
-      update-alternatives --install \
-          /usr/bin/lldb lldb /usr/bin/lldb-10 50 \
-          --slave /usr/bin/lldb-server lldb-server /usr/bin/lldb-server-10 \
-          --slave /usr/bin/lldb-argdumper lldb-argdumper /usr/bin/lldb-argdumper-10 \
-          --slave /usr/bin/lldb-instr lldb-instr /usr/bin/lldb-instr-10 \
-          --slave /usr/bin/lldb-mi lldb-mi /usr/bin/lldb-mi-10
-      update-alternatives --auto clang
+#    wget --no-check-certificate -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
+#    add-apt-repository 'deb http://apt.llvm.org/bionic/   llvm-toolchain-bionic-10  main'
+#    sudo apt update
+#    apt-get -y install lldb-10 python-lldb-10 liblldb-10-dev
+    apt-get -y install lldb-10 liblldb-10-dev
+    update-alternatives --install \
+        /usr/bin/lldb lldb /usr/bin/lldb-10 50 \
+        --slave /usr/bin/lldb-server lldb-server /usr/bin/lldb-server-10 \
+        --slave /usr/bin/lldb-argdumper lldb-argdumper /usr/bin/lldb-argdumper-10 \
+        --slave /usr/bin/lldb-instr lldb-instr /usr/bin/lldb-instr-10 \
+        --slave /usr/bin/lldb-mi lldb-mi /usr/bin/lldb-mi-10
+    update-alternatives --auto clang
   fi
 
 fi

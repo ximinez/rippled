@@ -230,7 +230,7 @@ jobs:
             CXX: 'clang++-10'
             image_user: "registry.gitlab.com/shichengsg001"
             image_name: "demo"
-            image_tag: "ubuntu_rippled_build"
+            image_tag: "ubuntu_rippled_build_c10"
             CMAKE_ADD: " -DBoost_NO_BOOST_CMAKE=ON"
 
         BUILD_TYPE: [ "Debug", "Release" ]
