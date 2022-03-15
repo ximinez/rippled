@@ -29,7 +29,7 @@ env:
 jobs:
   macos_cache:
     name: Seed MacOS dependencies
-    runs-on: "macos-latest"
+    runs-on: "mac-runner"
     timeout-minutes: 720
     if: ${{ !contains(github.event.head_commit.message, 'ci_run_') || contains(github.event.head_commit.message, 'ci_run_mac') }}
     outputs:
@@ -240,7 +240,7 @@ jobs:
     # and the jobs appear to be pretty reliable so far.
     name: MacOS ${{ matrix.build.BLD_CONFIG }}
     needs: macos_cache
-    runs-on: "macos-latest"
+    runs-on: "mac-runner"
     timeout-minutes: 720
     strategy:
       fail-fast: false
@@ -399,7 +399,7 @@ jobs:
     # Can't access env in the name, so hard code
     name: MacOS IPv6 test runner Debug
     needs: [ macos_cache, macos ]
-    runs-on: "macos-latest"
+    runs-on: "mac-runner"
     timeout-minutes: 720
     strategy:
       fail-fast: false

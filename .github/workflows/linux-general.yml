@@ -32,7 +32,7 @@ jobs:
     #    though a failed build will not push a cache.
     # The one downside is different prerequisites are installed on different
     # docker images, so there will be one cache per image.
-    runs-on: self-built-ubuntu
+    runs-on: rippled-runner-dind
     timeout-minutes: 720
     if: ${{ !contains(github.event.head_commit.message, 'ci_run_') || contains(github.event.head_commit.message, 'ci_run_linux') }}
     strategy:
@@ -189,7 +189,7 @@ jobs:
   linux_everything_else:
     name: Linux ${{ matrix.compiler.CC }}, ${{ matrix.BUILD_TYPE }}, unity ${{ matrix.unity }}, ${{ matrix.name }}
     needs: linux_cache
-    runs-on: self-built-ubuntu
+    runs-on: rippled-runner-dind
     timeout-minutes: 720
     strategy:
       fail-fast: false
