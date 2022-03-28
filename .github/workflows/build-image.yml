@@ -1,0 +1,45 @@
+name: builder-image
+
+on: [workflow_dispatch]
+
+jobs:
+  build-image:
+    runs-on: self-built-ubuntu
+    strategy:
+      matrix:
+        clang-version: ["10-","10"]
+        os:
+          - name: ubuntu
+#          - name: centos
+    steps:
+    - name: Remove prvious cloned repo
+      run: |
+        REPO_NAME=$(echo $GITHUB_REPOSITORY|awk -F '\/' '{print $2}')
+        CHECKOUT_PATH="${RUNNER_WORKDIR}/${REPO_NAME}/${REPO_NAME}"
+        if [ -d $CHECKOUT_PATH ]; then
+          sudo rm -rf $CHECKOUT_PATH/*
+          sudo rm -rf $CHECKOUT_PATH/.git*
+          ls -al $CHECKOUT_PATH/
+          echo "CHECKOUT_PATH: $CHECKOUT_PATH"
+        fi
+    - uses: actions/checkout@v2
+
+    - name: Build
+      run: |
+        cd Builds/containers/
+        CLANG_VERSION=${{ matrix.clang-version }}
+        echo "CLANG_VERSION: $CLANG_VERSION"
+        if [ "$CLANG_VERSION" = "10" ]; then
+          docker build -t registry.gitlab.com/shichengsg001/demo:${{ matrix.os.name }}_rippled_build_c10 --build-arg CI_USE=true --build-arg GCC_VERSION=10 . -f ${{ matrix.os.name }}-builder/Dockerfile.c10
+        else
+          docker build -t registry.gitlab.com/shichengsg001/demo:${{ matrix.os.name }}_rippled_build --build-arg CI_USE=true . -f ${{ matrix.os.name }}-builder/Dockerfile
+        fi
+    - name: Push
+      run: |
+        docker login registry.gitlab.com/shichengsg001/demo -u="${{ secrets.DOCKER_USER }}" -p="${{ secrets.DOCKER_TOKEN }}"
+        CLANG_VERSION=${{ matrix.clang-version }}
+        if [ "$CLANG_VERSION" = "10" ]; then
+          docker push registry.gitlab.com/shichengsg001/demo:${{ matrix.os.name }}_rippled_build_c10
+        else
+          docker push registry.gitlab.com/shichengsg001/demo:${{ matrix.os.name }}_rippled_build
+        fi

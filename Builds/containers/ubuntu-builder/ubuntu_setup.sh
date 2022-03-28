@@ -44,35 +44,37 @@ apt-get -y --fix-missing install \
     debmake git-buildpackage dh-make gitpkg debsums gnupg \
     dh-buildinfo dh-make dh-systemd \
     apt-transport-https
+if [ "${GCC_VERSION}" != "10" ]; then
+  apt-get -y install gcc-7 g++-7
+  update-alternatives --install \
+      /usr/bin/gcc gcc /usr/bin/gcc-7 40 \
+      --slave /usr/bin/g++ g++ /usr/bin/g++-7 \
+      --slave /usr/bin/gcc-ar gcc-ar /usr/bin/gcc-ar-7 \
+      --slave /usr/bin/gcc-nm gcc-nm /usr/bin/gcc-nm-7 \
+      --slave /usr/bin/gcc-ranlib gcc-ranlib /usr/bin/gcc-ranlib-7 \
+      --slave /usr/bin/gcov gcov /usr/bin/gcov-7 \
+      --slave /usr/bin/gcov-tool gcov-tool /usr/bin/gcov-dump-7 \
+      --slave /usr/bin/gcov-dump gcov-dump /usr/bin/gcov-tool-7
 
-apt-get -y install gcc-7 g++-7
-update-alternatives --install \
-    /usr/bin/gcc gcc /usr/bin/gcc-7 40 \
-    --slave /usr/bin/g++ g++ /usr/bin/g++-7 \
-    --slave /usr/bin/gcc-ar gcc-ar /usr/bin/gcc-ar-7 \
-    --slave /usr/bin/gcc-nm gcc-nm /usr/bin/gcc-nm-7 \
-    --slave /usr/bin/gcc-ranlib gcc-ranlib /usr/bin/gcc-ranlib-7 \
-    --slave /usr/bin/gcov gcov /usr/bin/gcov-7 \
-    --slave /usr/bin/gcov-tool gcov-tool /usr/bin/gcov-dump-7 \
-    --slave /usr/bin/gcov-dump gcov-dump /usr/bin/gcov-tool-7
+  apt-get -y install gcc-8 g++-8
+  update-alternatives --install \
+      /usr/bin/gcc gcc /usr/bin/gcc-8 20 \
+      --slave /usr/bin/g++ g++ /usr/bin/g++-8 \
+      --slave /usr/bin/gcc-ar gcc-ar /usr/bin/gcc-ar-8 \
+      --slave /usr/bin/gcc-nm gcc-nm /usr/bin/gcc-nm-8 \
+      --slave /usr/bin/gcc-ranlib gcc-ranlib /usr/bin/gcc-ranlib-8 \
+      --slave /usr/bin/gcov gcov /usr/bin/gcov-8 \
+      --slave /usr/bin/gcov-tool gcov-tool /usr/bin/gcov-dump-8 \
+      --slave /usr/bin/gcov-dump gcov-dump /usr/bin/gcov-tool-8
+  update-alternatives --auto gcc
 
-apt-get -y install gcc-8 g++-8
-update-alternatives --install \
-    /usr/bin/gcc gcc /usr/bin/gcc-8 20 \
-    --slave /usr/bin/g++ g++ /usr/bin/g++-8 \
-    --slave /usr/bin/gcc-ar gcc-ar /usr/bin/gcc-ar-8 \
-    --slave /usr/bin/gcc-nm gcc-nm /usr/bin/gcc-nm-8 \
-    --slave /usr/bin/gcc-ranlib gcc-ranlib /usr/bin/gcc-ranlib-8 \
-    --slave /usr/bin/gcov gcov /usr/bin/gcov-8 \
-    --slave /usr/bin/gcov-tool gcov-tool /usr/bin/gcov-dump-8 \
-    --slave /usr/bin/gcov-dump gcov-dump /usr/bin/gcov-tool-8
-update-alternatives --auto gcc
-
-update-alternatives --install /usr/bin/cpp cpp /usr/bin/cpp-7 40
-update-alternatives --install /usr/bin/cpp cpp /usr/bin/cpp-8 20
-update-alternatives --auto cpp
+  update-alternatives --install /usr/bin/cpp cpp /usr/bin/cpp-7 40
+  update-alternatives --install /usr/bin/cpp cpp /usr/bin/cpp-8 20
+  update-alternatives --auto cpp
+fi
 
 if [ "${CI_USE}" = true ] ; then
+  if [ "${GCC_VERSION}" != "10" ]; then
     apt-get -y install gcc-6 g++-6
     update-alternatives --install \
         /usr/bin/gcc gcc /usr/bin/gcc-6 10 \
@@ -94,6 +96,18 @@ if [ "${CI_USE}" = true ] ; then
         --slave /usr/bin/gcov gcov /usr/bin/gcov-9 \
         --slave /usr/bin/gcov-tool gcov-tool /usr/bin/gcov-dump-9 \
         --slave /usr/bin/gcov-dump gcov-dump /usr/bin/gcov-tool-9
+  else
+    apt-get -y install gcc-10 g++-10
+    update-alternatives --install \
+            /usr/bin/gcc gcc /usr/bin/gcc-10 15 \
+            --slave /usr/bin/g++ g++ /usr/bin/g++-10 \
+            --slave /usr/bin/gcc-ar gcc-ar /usr/bin/gcc-ar-10 \
+            --slave /usr/bin/gcc-nm gcc-nm /usr/bin/gcc-nm-10 \
+            --slave /usr/bin/gcc-ranlib gcc-ranlib /usr/bin/gcc-ranlib-10 \
+            --slave /usr/bin/gcov gcov /usr/bin/gcov-10 \
+            --slave /usr/bin/gcov-tool gcov-tool /usr/bin/gcov-dump-10 \
+            --slave /usr/bin/gcov-dump gcov-dump /usr/bin/gcov-tool-10
+  fi
 fi
 
 if [[ ${VERSION_ID} =~ ^18\. ]] ; then
@@ -104,6 +118,7 @@ fi
 
 wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add -
 if [[ ${VERSION_ID} =~ ^18\. ]] ; then
+  if [ "${GCC_VERSION}" != "10" ]; then
     cat << EOF > /etc/apt/sources.list.d/llvm.list
 deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic main
 deb-src http://apt.llvm.org/bionic/ llvm-toolchain-bionic main
@@ -114,6 +129,12 @@ deb-src http://apt.llvm.org/bionic/ llvm-toolchain-bionic-8 main
 deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-9 main
 deb-src http://apt.llvm.org/bionic/ llvm-toolchain-bionic-9 main
 EOF
+  else
+    cat << EOF > /etc/apt/sources.list.d/llvm.list
+deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-10 main
+deb-src http://apt.llvm.org/bionic/ llvm-toolchain-bionic-10 main
+EOF
+  fi
 elif [[ ${VERSION_ID} =~ ^16\. ]] ; then
     cat << EOF > /etc/apt/sources.list.d/llvm.list
 deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial main
@@ -128,37 +149,40 @@ EOF
 fi
 apt-get -y update
 
-apt-get -y install \
-    clang-7 libclang-common-7-dev libclang-7-dev libllvm7 llvm-7 \
-    llvm-7-dev llvm-7-runtime clang-format-7 python-clang-7 \
-    lld-7 libfuzzer-7-dev libc++-7-dev
-update-alternatives --install \
-    /usr/bin/clang clang /usr/bin/clang-7 40 \
-    --slave /usr/bin/clang++ clang++ /usr/bin/clang++-7 \
-    --slave /usr/bin/llvm-profdata llvm-profdata /usr/bin/llvm-profdata-7 \
-    --slave /usr/bin/asan-symbolize asan-symbolize /usr/bin/asan_symbolize-7 \
-    --slave /usr/bin/llvm-symbolizer llvm-symbolizer /usr/bin/llvm-symbolizer-7 \
-    --slave /usr/bin/clang-format clang-format /usr/bin/clang-format-7 \
-    --slave /usr/bin/llvm-ar llvm-ar /usr/bin/llvm-ar-7 \
-    --slave /usr/bin/llvm-cov llvm-cov /usr/bin/llvm-cov-7 \
-    --slave /usr/bin/llvm-nm llvm-nm /usr/bin/llvm-nm-7
-apt-get -y install \
-    clang-8 libclang-common-8-dev libclang-8-dev libllvm8 llvm-8 \
-    llvm-8-dev llvm-8-runtime clang-format-8 python-clang-8 \
-    lld-8 libfuzzer-8-dev libc++-8-dev
-update-alternatives --install \
-    /usr/bin/clang clang /usr/bin/clang-8 20 \
-    --slave /usr/bin/clang++ clang++ /usr/bin/clang++-8 \
-    --slave /usr/bin/llvm-profdata llvm-profdata /usr/bin/llvm-profdata-8 \
-    --slave /usr/bin/asan-symbolize asan-symbolize /usr/bin/asan_symbolize-8 \
-    --slave /usr/bin/llvm-symbolizer llvm-symbolizer /usr/bin/llvm-symbolizer-8 \
-    --slave /usr/bin/clang-format clang-format /usr/bin/clang-format-8 \
-    --slave /usr/bin/llvm-ar llvm-ar /usr/bin/llvm-ar-8 \
-    --slave /usr/bin/llvm-cov llvm-cov /usr/bin/llvm-cov-8 \
-    --slave /usr/bin/llvm-nm llvm-nm /usr/bin/llvm-nm-8
-update-alternatives --auto clang
+if [ "${GCC_VERSION}" != "10" ]; then
+  apt-get -y install \
+      clang-7 libclang-common-7-dev libclang-7-dev libllvm7 llvm-7 \
+      llvm-7-dev llvm-7-runtime clang-format-7 python-clang-7 \
+      lld-7 libfuzzer-7-dev libc++-7-dev
+  update-alternatives --install \
+      /usr/bin/clang clang /usr/bin/clang-7 40 \
+      --slave /usr/bin/clang++ clang++ /usr/bin/clang++-7 \
+      --slave /usr/bin/llvm-profdata llvm-profdata /usr/bin/llvm-profdata-7 \
+      --slave /usr/bin/asan-symbolize asan-symbolize /usr/bin/asan_symbolize-7 \
+      --slave /usr/bin/llvm-symbolizer llvm-symbolizer /usr/bin/llvm-symbolizer-7 \
+      --slave /usr/bin/clang-format clang-format /usr/bin/clang-format-7 \
+      --slave /usr/bin/llvm-ar llvm-ar /usr/bin/llvm-ar-7 \
+      --slave /usr/bin/llvm-cov llvm-cov /usr/bin/llvm-cov-7 \
+      --slave /usr/bin/llvm-nm llvm-nm /usr/bin/llvm-nm-7
+  apt-get -y install \
+      clang-8 libclang-common-8-dev libclang-8-dev libllvm8 llvm-8 \
+      llvm-8-dev llvm-8-runtime clang-format-8 python-clang-8 \
+      lld-8 libfuzzer-8-dev libc++-8-dev
+  update-alternatives --install \
+      /usr/bin/clang clang /usr/bin/clang-8 20 \
+      --slave /usr/bin/clang++ clang++ /usr/bin/clang++-8 \
+      --slave /usr/bin/llvm-profdata llvm-profdata /usr/bin/llvm-profdata-8 \
+      --slave /usr/bin/asan-symbolize asan-symbolize /usr/bin/asan_symbolize-8 \
+      --slave /usr/bin/llvm-symbolizer llvm-symbolizer /usr/bin/llvm-symbolizer-8 \
+      --slave /usr/bin/clang-format clang-format /usr/bin/clang-format-8 \
+      --slave /usr/bin/llvm-ar llvm-ar /usr/bin/llvm-ar-8 \
+      --slave /usr/bin/llvm-cov llvm-cov /usr/bin/llvm-cov-8 \
+      --slave /usr/bin/llvm-nm llvm-nm /usr/bin/llvm-nm-8
+  update-alternatives --auto clang
+fi
 
 if [ "${CI_USE}" = true ] ; then
+  if [ "${GCC_VERSION}" != "10" ]; then
     apt-get -y install \
         clang-9 libclang-common-9-dev libclang-9-dev libllvm9 llvm-9 \
         llvm-9-dev llvm-9-runtime clang-format-9 python-clang-9 \
@@ -173,7 +197,6 @@ if [ "${CI_USE}" = true ] ; then
         --slave /usr/bin/llvm-ar llvm-ar /usr/bin/llvm-ar-9 \
         --slave /usr/bin/llvm-cov llvm-cov /usr/bin/llvm-cov-9 \
         --slave /usr/bin/llvm-nm llvm-nm /usr/bin/llvm-nm-9
-
     # only install latest lldb
     apt-get -y install lldb-9 python-lldb-9 liblldb-9-dev
     update-alternatives --install \
@@ -183,6 +206,38 @@ if [ "${CI_USE}" = true ] ; then
         --slave /usr/bin/lldb-instr lldb-instr /usr/bin/lldb-instr-9 \
         --slave /usr/bin/lldb-mi lldb-mi /usr/bin/lldb-mi-9
     update-alternatives --auto clang
+  else
+    add-apt-repository ppa:ubuntu-toolchain-r/test \
+        && apt-get -y update
+    apt-get -y install \
+        clang-10 libclang-common-10-dev libclang-10-dev libllvm10 llvm-10 \
+        llvm-10-dev llvm-10-runtime clang-format-10 \
+        lld-10 libfuzzer-10-dev libc++-10-dev
+    update-alternatives --install \
+        /usr/bin/clang clang /usr/bin/clang-10 18 \
+        --slave /usr/bin/clang++ clang++ /usr/bin/clang++-10 \
+        --slave /usr/bin/llvm-profdata llvm-profdata /usr/bin/llvm-profdata-10 \
+        --slave /usr/bin/asan-symbolize asan-symbolize /usr/bin/asan_symbolize-10 \
+        --slave /usr/bin/llvm-symbolizer llvm-symbolizer /usr/bin/llvm-symbolizer-10 \
+        --slave /usr/bin/clang-format clang-format /usr/bin/clang-format-10 \
+        --slave /usr/bin/llvm-ar llvm-ar /usr/bin/llvm-ar-10 \
+        --slave /usr/bin/llvm-cov llvm-cov /usr/bin/llvm-cov-10 \
+        --slave /usr/bin/llvm-nm llvm-nm /usr/bin/llvm-nm-10
+    # only install latest lldb
+#    wget --no-check-certificate -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
+#    add-apt-repository 'deb http://apt.llvm.org/bionic/   llvm-toolchain-bionic-10  main'
+#    sudo apt update
+#    apt-get -y install lldb-10 python-lldb-10 liblldb-10-dev
+    apt-get -y install lldb-10 liblldb-10-dev
+    update-alternatives --install \
+        /usr/bin/lldb lldb /usr/bin/lldb-10 50 \
+        --slave /usr/bin/lldb-server lldb-server /usr/bin/lldb-server-10 \
+        --slave /usr/bin/lldb-argdumper lldb-argdumper /usr/bin/lldb-argdumper-10 \
+        --slave /usr/bin/lldb-instr lldb-instr /usr/bin/lldb-instr-10 \
+        --slave /usr/bin/lldb-mi lldb-mi /usr/bin/lldb-mi-10
+    update-alternatives --auto clang
+  fi
+
 fi
 
 apt-get -y autoremove
