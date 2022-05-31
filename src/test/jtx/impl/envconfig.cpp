@@ -97,8 +97,8 @@ secure_gateway(std::unique_ptr<Config> cfg)
 std::unique_ptr<Config>
 admin_localnet(std::unique_ptr<Config> cfg)
 {
-    (*cfg)[PORT_RPC].set("admin", "127.0.0.0/8");
-    (*cfg)[PORT_WS].set("admin", "127.0.0.0/8");
+    (*cfg)[PORT_RPC].set("admin", "127.0.0.0/8,[::1]");
+    (*cfg)[PORT_WS].set("admin", "127.0.0.0/8,[::1]");
     return cfg;
 }
 
@@ -107,8 +107,8 @@ secure_gateway_localnet(std::unique_ptr<Config> cfg)
 {
     (*cfg)[PORT_RPC].set("admin", "");
     (*cfg)[PORT_WS].set("admin", "");
-    (*cfg)[PORT_RPC].set("secure_gateway", "127.0.0.0/8");
-    (*cfg)[PORT_WS].set("secure_gateway", "127.0.0.0/8");
+    (*cfg)[PORT_RPC].set("secure_gateway", "127.0.0.0/8,[::1]");
+    (*cfg)[PORT_WS].set("secure_gateway", "127.0.0.0/8,[::1]");
     return cfg;
 }
 
