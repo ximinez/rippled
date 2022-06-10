@@ -26,7 +26,7 @@ env:
   # Disable warnings as errors temporarily
   # CMAKE_ARGS: "-G Ninja -Dwerr=ON -Dwextra=ON -DBoost_ARCHITECTURE=-x64 -DBoost_NO_SYSTEM_PATHS=ON -DCMAKE_VERBOSE_MAKEFILE=ON"
   CMAKE_ARGS: "-G Ninja -DBoost_ARCHITECTURE=-x64 -DBoost_NO_SYSTEM_PATHS=ON -DCMAKE_VERBOSE_MAKEFILE=ON"
-  homebrew_packages: 'protobuf grpc pkg-config bash ninja cmake wget zstd libarchive openssl@1.1 ccache'
+  homebrew_packages: 'protobuf grpc pkg-config bash ninja cmake wget zstd libarchive openssl@1.1 ccache llvm'
   srcdir: ${{ github.workspace }}/rippled
   builddir: ${{ github.workspace }}/rippled/build/macos
   # This can't be used in the if: clauses
@@ -35,7 +35,7 @@ env:
 jobs:
   macos_cache:
     name: Seed MacOS dependencies
-    runs-on: "macos-latest"
+    runs-on: "big-sur"
     timeout-minutes: 720
     if: ${{ !contains(github.event.head_commit.message, 'ci_run_') || contains(github.event.head_commit.message, 'ci_run_mac') }}
     outputs:
@@ -246,7 +246,7 @@ jobs:
     # and the jobs appear to be pretty reliable so far.
     name: MacOS ${{ matrix.build.BLD_CONFIG }}
     needs: macos_cache
-    runs-on: "macos-latest"
+    runs-on: "big-sur"
     timeout-minutes: 720
     strategy:
       fail-fast: false
@@ -405,7 +405,7 @@ jobs:
     # Can't access env in the name, so hard code
     name: MacOS IPv6 test runner Debug
     needs: [ macos_cache, macos ]
-    runs-on: "macos-latest"
+    runs-on: "big-sur"
     timeout-minutes: 720
     strategy:
       fail-fast: false
