@@ -31,8 +31,8 @@
 #include <xrpl/protocol/jss.h>
 #include <xrpl/protocol/st.h>
 
-#include <beast/utility/rngfill.h>
-#include <beast/xor_shift_engine.h>
+#include <ripple/beast/utility/rngfill.h>
+#include <ripple/beast/xor_shift_engine.h>
 
 namespace ripple {
 
