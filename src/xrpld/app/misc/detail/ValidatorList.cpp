@@ -1046,10 +1046,17 @@ ValidatorList::updatePublisherList(
     {
         auto m = deserializeManifest(base64_decode(valManifest));
 
-        if (!m || !keyListings_.count(m->masterKey))
+        if (!m)
         {
             JLOG(j_.warn()) << "List for " << strHex(pubKey)
-                            << " contained untrusted validator manifest";
+                            << " contained malformed validator manifest";
+            continue;
+        }
+        if (!keyListings_.count(m->masterKey))
+        {
+            JLOG(j_.warn()) << "List for " << strHex(pubKey)
+                            << " contained untrusted validator manifest "
+                            << "with master key: " << strHex(m->masterKey);
             continue;
         }
 
