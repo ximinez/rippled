@@ -742,7 +742,8 @@ private:
     std::optional<TxQAccount::TxMap::iterator>
     removeFromByFee(
         std::optional<TxQAccount::TxMap::iterator> const& replacedTxIter,
-        std::shared_ptr<STTx const> const& tx);
+        std::shared_ptr<STTx const> const& tx,
+        std::lock_guard<std::mutex> const&);
 
     using FeeHook = boost::intrusive::member_hook<
         MaybeTx,
@@ -802,7 +803,7 @@ private:
     /// Is the queue at least `fillPercentage` full?
     template <size_t fillPercentage = 100>
     bool
-    isFull() const;
+    isFull(std::lock_guard<std::mutex> const&) const;
 
     /** Checks if the indicated transaction fits the conditions
         for being stored in the queue.
@@ -815,22 +816,26 @@ private:
         std::shared_ptr<SLE const> const& sleAccount,
         AccountMap::iterator const&,
         std::optional<TxQAccount::TxMap::iterator> const&,
-        std::lock_guard<std::mutex> const& lock);
+        std::lock_guard<std::mutex> const&);
 
     /// Erase and return the next entry in byFee_ (lower fee level)
-    FeeMultiSet::iterator_type erase(FeeMultiSet::const_iterator_type);
+    FeeMultiSet::iterator_type
+    erase(FeeMultiSet::const_iterator_type, std::lock_guard<std::mutex> const&);
     /** Erase and return the next entry for the account (if fee level
         is higher), or next entry in byFee_ (lower fee level).
         Used to get the next "applyable" MaybeTx for accept().
     */
-    FeeMultiSet::iterator_type eraseAndAdvance(
-        FeeMultiSet::const_iterator_type);
+    FeeMultiSet::iterator_type
+    eraseAndAdvance(
+        FeeMultiSet::const_iterator_type,
+        std::lock_guard<std::mutex> const&);
     /// Erase a range of items, based on TxQAccount::TxMap iterators
     TxQAccount::TxMap::iterator
     erase(
         TxQAccount& txQAccount,
         TxQAccount::TxMap::const_iterator begin,
-        TxQAccount::TxMap::const_iterator end);
+        TxQAccount::TxMap::const_iterator end,
+        std::lock_guard<std::mutex> const&);
 
     /**
         All-or-nothing attempt to try to apply the queued txs for
@@ -849,6 +854,7 @@ private:
         std::size_t const txExtraCount,
         ApplyFlags flags,
         FeeMetrics::Snapshot const& metricsSnapshot,
+        std::lock_guard<std::mutex> const&,
         beast::Journal j);
 };
 

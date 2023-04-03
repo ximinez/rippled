@@ -363,7 +363,7 @@ TxQ::~TxQ()
 
 template <size_t fillPercentage>
 bool
-TxQ::isFull() const
+TxQ::isFull(std::lock_guard<std::mutex> const&) const
 {
     static_assert(
         fillPercentage > 0 && fillPercentage <= 100, "Invalid fill percentage");
@@ -437,8 +437,9 @@ TxQ::canBeHeld(
 }
 
 auto
-TxQ::erase(TxQ::FeeMultiSet::const_iterator_type candidateIter)
-    -> FeeMultiSet::iterator_type
+TxQ::erase(
+    TxQ::FeeMultiSet::const_iterator_type candidateIter,
+    std::lock_guard<std::mutex> const&) -> FeeMultiSet::iterator_type
 {
     auto& txQAccount = byAccount_.at(candidateIter->account);
     auto const seqProx = candidateIter->seqProxy;
@@ -454,8 +455,9 @@ TxQ::erase(TxQ::FeeMultiSet::const_iterator_type candidateIter)
 }
 
 auto
-TxQ::eraseAndAdvance(TxQ::FeeMultiSet::const_iterator_type candidateIter)
-    -> FeeMultiSet::iterator_type
+TxQ::eraseAndAdvance(
+    TxQ::FeeMultiSet::const_iterator_type candidateIter,
+    std::lock_guard<std::mutex> const&) -> FeeMultiSet::iterator_type
 {
     auto& txQAccount = byAccount_.at(candidateIter->account);
     auto const accountIter =
@@ -491,7 +493,8 @@ auto
 TxQ::erase(
     TxQ::TxQAccount& txQAccount,
     TxQ::TxQAccount::TxMap::const_iterator begin,
-    TxQ::TxQAccount::TxMap::const_iterator end) -> TxQAccount::TxMap::iterator
+    TxQ::TxQAccount::TxMap::const_iterator end,
+    std::lock_guard<std::mutex> const&) -> TxQAccount::TxMap::iterator
 {
     for (auto it = begin; it != end; ++it)
     {
@@ -512,6 +515,7 @@ TxQ::tryClearAccountQueueUpThruTx(
     std::size_t const txExtraCount,
     ApplyFlags flags,
     FeeMetrics::Snapshot const& metricsSnapshot,
+    std::lock_guard<std::mutex> const& lock,
     beast::Journal j)
 {
     SeqProxy const tSeqProx{tx.getSeqProxy()};
@@ -587,11 +591,11 @@ TxQ::tryClearAccountQueueUpThruTx(
     {
         // All of the queued transactions applied, so remove them from the
         // queue.
-        endTxIter = erase(accountIter->second, beginTxIter, endTxIter);
+        endTxIter = erase(accountIter->second, beginTxIter, endTxIter, lock);
         // If `tx` is replacing a queued tx, delete that one, too.
         if (endTxIter != accountIter->second.transactions.end() &&
             endTxIter->first == tSeqProx)
-            erase(accountIter->second, endTxIter, std::next(endTxIter));
+            erase(accountIter->second, endTxIter, std::next(endTxIter), lock);
     }
 
     return txResult;
@@ -1194,6 +1198,7 @@ TxQ::apply(
             view.txCount(),
             flags,
             metricsSnapshot,
+            lock,
             j);
         if (result.second)
         {
@@ -1222,7 +1227,7 @@ TxQ::apply(
     // If the queue is full, decide whether to drop the current
     // transaction or the last transaction for the account with
     // the lowest fee.
-    if (!replacedTxIter && isFull())
+    if (!replacedTxIter && isFull(lock))
     {
         auto lastRIter = byFee_.rbegin();
         while (lastRIter != byFee_.rend() && lastRIter->account == account)
@@ -1283,7 +1288,7 @@ TxQ::apply(
                 << " from queue with average fee of " << endEffectiveFeeLevel
                 << " in favor of " << transactionID << " with fee of "
                 << feeLevelPaid;
-            erase(byFee_.iterator_to(dropRIter->second));
+            erase(byFee_.iterator_to(dropRIter->second), lock);
         }
         else
         {
@@ -1297,7 +1302,7 @@ TxQ::apply(
     // Hold the transaction in the queue.
     if (replacedTxIter)
     {
-        replacedTxIter = removeFromByFee(replacedTxIter, tx);
+        replacedTxIter = removeFromByFee(replacedTxIter, tx, lock);
     }
 
     if (!accountIsInQueue)
@@ -1363,7 +1368,7 @@ TxQ::processClosedLedger(Application& app, ReadView const& view, bool timeLeap)
         if (candidateIter->lastValid && *candidateIter->lastValid <= ledgerSeq)
         {
             byAccount_.at(candidateIter->account).dropPenalty = true;
-            candidateIter = erase(candidateIter);
+            candidateIter = erase(candidateIter, lock);
         }
         else
         {
@@ -1467,7 +1472,7 @@ TxQ::accept(Application& app, OpenView& view)
                     << " applied successfully with " << transToken(txnResult)
                     << ". Remove from queue.";
 
-                candidateIter = eraseAndAdvance(candidateIter);
+                candidateIter = eraseAndAdvance(candidateIter, lock);
                 ledgerChanged = true;
             }
             else if (
@@ -1481,7 +1486,7 @@ TxQ::accept(Application& app, OpenView& view)
                 JLOG(j_.debug()) << "Queued transaction " << candidateIter->txID
                                  << " failed with " << transToken(txnResult)
                                  << ". Remove from queue.";
-                candidateIter = eraseAndAdvance(candidateIter);
+                candidateIter = eraseAndAdvance(candidateIter, lock);
             }
             else
             {
@@ -1496,7 +1501,7 @@ TxQ::accept(Application& app, OpenView& view)
                     --candidateIter->retriesRemaining;
                 candidateIter->lastResult = txnResult;
                 if (account.dropPenalty && account.transactions.size() > 1 &&
-                    isFull<95>())
+                    isFull<95>(lock))
                 {
                     // The queue is close to full, this account has multiple
                     // txs queued, and this account has had a transaction
@@ -1511,7 +1516,7 @@ TxQ::accept(Application& app, OpenView& view)
                             << transToken(txnResult)
                             << ". Removing ticketed tx from account "
                             << account.account;
-                        candidateIter = eraseAndAdvance(candidateIter);
+                        candidateIter = eraseAndAdvance(candidateIter, lock);
                     }
                     else
                     {
@@ -1532,7 +1537,7 @@ TxQ::accept(Application& app, OpenView& view)
                             << account.account;
                         auto endIter = byFee_.iterator_to(dropRIter->second);
                         if (endIter != candidateIter)
-                            erase(endIter);
+                            erase(endIter, lock);
                         ++candidateIter;
                     }
                 }
@@ -1676,8 +1681,8 @@ TxQ::tryDirectApply(
     if (txSeqProx.isSeq() && txSeqProx != acctSeqProx)
         return {};
 
-    FeeLevel64 const requiredFeeLevel = [this, &view, flags]() {
-        std::lock_guard lock(mutex_);
+    std::lock_guard lock(mutex_);
+    FeeLevel64 const requiredFeeLevel = [this, &view, flags, &lock]() {
         return getRequiredFeeLevel(
             view, flags, feeMetrics_.getSnapshot(), lock);
     }();
@@ -1705,7 +1710,6 @@ TxQ::tryDirectApply(
         {
             // If the applied transaction replaced a transaction in the
             // queue then remove the replaced transaction.
-            std::lock_guard lock(mutex_);
 
             AccountMap::iterator accountIter = byAccount_.find(account);
             if (accountIter != byAccount_.end())
@@ -1715,7 +1719,7 @@ TxQ::tryDirectApply(
                         txQAcct.transactions.find(txSeqProx);
                     existingIter != txQAcct.transactions.end())
                 {
-                    removeFromByFee(existingIter, tx);
+                    removeFromByFee(existingIter, tx, lock);
                 }
             }
         }
@@ -1727,7 +1731,8 @@ TxQ::tryDirectApply(
 std::optional<TxQ::TxQAccount::TxMap::iterator>
 TxQ::removeFromByFee(
     std::optional<TxQAccount::TxMap::iterator> const& replacedTxIter,
-    std::shared_ptr<STTx const> const& tx)
+    std::shared_ptr<STTx const> const& tx,
+    std::lock_guard<std::mutex> const& lock)
 {
     if (replacedTxIter && tx)
     {
@@ -1739,7 +1744,7 @@ TxQ::removeFromByFee(
         assert(deleteIter->seqProxy == tx->getSeqProxy());
         assert(deleteIter->account == (*tx)[sfAccount]);
 
-        erase(deleteIter);
+        erase(deleteIter, lock);
     }
     return std::nullopt;
 }
@@ -1759,7 +1764,7 @@ TxQ::getMetrics(OpenView const& view) const
     result.txPerLedger = snapshot.txnsExpected;
     result.referenceFeeLevel = baseLevel;
     result.minProcessingFeeLevel =
-        isFull() ? byFee_.rbegin()->feeLevel + FeeLevel64{1} : baseLevel;
+        isFull(lock) ? byFee_.rbegin()->feeLevel + FeeLevel64{1} : baseLevel;
     result.medFeeLevel = snapshot.escalationMultiplier;
     result.openLedgerFeeLevel = FeeMetrics::scaleFeeLevel(snapshot, view);
 
