@@ -146,6 +146,9 @@ public:
                 1)};
     }
 
+    static std::atomic<int> counter;
+    int const myNumber;
+
     // TrustedPublisherServer must be accessed through a shared_ptr.
     // This constructor is only public so std::make_shared has access.
     // The function`make_TrustedPublisherServer` should be used to create
@@ -172,7 +175,10 @@ public:
         , useSSL_{useSSL}
         , publisherSecret_{randomSecretKey()}
         , publisherPublic_{derivePublicKey(KeyType::ed25519, publisherSecret_)}
+        , myNumber(++counter)
     {
+        std::cerr << "Creating TrustedPublisherServer #" << myNumber
+                  << std::endl;
         auto const keys = randomKeyPair(KeyType::secp256k1);
         auto const manifest = makeManifestString(
             publisherPublic_, publisherSecret_, keys.first, keys.second, 1);
@@ -289,6 +295,9 @@ public:
     ~TrustedPublisherServer()
     {
         stop();
+        std::cerr << "Destructing TrustedPublisherServer #" << myNumber
+                  << std::endl;
+        --counter;
     }
 
     endpoint_type
