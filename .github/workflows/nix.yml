@@ -155,6 +155,7 @@ jobs:
           # If there are any conflicts, leave them, so the build will
           # fail. However, Github will probably prevent the job from
           # running at all.
+          git config --global --add safe.directory "${GITHUB_WORKSPACE}"
           git log --oneline
           git merge --no-commit --no-edit -v \
             ${{ github.event.pull_request.base.sha }}
