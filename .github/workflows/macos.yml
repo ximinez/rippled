@@ -20,6 +20,19 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 50
+      - name: merge with base
+        if: github.base_ref != ''
+        shell: bash
+        run: |
+          # If there are any conflicts, leave them, so the build will
+          # fail. However, Github will probably prevent the job from
+          # running at all.
+          git log --oneline
+          git merge --no-commit --no-edit -v \
+            ${{ github.event.pull_request.base.sha }}
+          git diff || true
       - name: install Ninja
         if: matrix.generator == 'Ninja'
         run: brew install ninja
