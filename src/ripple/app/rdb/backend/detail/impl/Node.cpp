@@ -630,9 +630,7 @@ transactionFromSQL(
     SerialIter it(makeSlice(rawTxn));
 
     return std::make_shared<Transaction>(
-        std::make_shared<STTx const>(it),
-        sqlTransactionStatus(status),
-        inLedger);
+        std::make_shared<STTx const>(it), status, inLedger);
 }
 
 std::pair<std::vector<std::shared_ptr<Transaction>>, int>

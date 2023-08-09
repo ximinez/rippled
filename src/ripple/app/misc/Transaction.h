@@ -54,13 +54,6 @@ enum TransStatus {
     INCOMPLETE = 8   // needs more signatures
 };
 
-/** Convert the database status to a runtime code
-
-    The boost::optional parameter is used because the SOCI API requires it.
- */
-TransStatus
-sqlTransactionStatus(boost::optional<std::string> const& status);
-
 enum class TxSearched { all, some, unknown };
 
 // This class is for constructing and examining transactions.
@@ -71,6 +64,11 @@ class Transaction : public std::enable_shared_from_this<Transaction>,
 public:
     using pointer = std::shared_ptr<Transaction>;
     using ref = const pointer&;
+
+    Transaction(
+        std::shared_ptr<STTx const> const& tx,
+        boost::optional<std::string> const& status,
+        std::uint32_t ledgerSeq = 0);
 
     Transaction(
         std::shared_ptr<STTx const> const& tx,

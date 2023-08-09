@@ -35,10 +35,14 @@
 
 namespace ripple {
 
-TransStatus
+/** Convert the database status to a runtime code
+
+The boost::optional parameter is used because the SOCI API requires it.
+*/
+static TransStatus
 sqlTransactionStatus(boost::optional<std::string> const& status)
 {
-    char const c = (status) ? (*status)[0] : safe_cast<char>(txnSqlUnknown);
+    TxnSql const c = (status) ? safe_cast<TxnSql>((*status)[0]) : txnSqlUnknown;
 
     switch (c)
     {
@@ -56,6 +60,14 @@ sqlTransactionStatus(boost::optional<std::string> const& status)
 
     assert(c == txnSqlUnknown);
     return INVALID;
+}
+
+Transaction::Transaction(
+    std::shared_ptr<STTx const> const& tx,
+    boost::optional<std::string> const& status,
+    std::uint32_t ledgerSeq)
+    : Transaction(tx, sqlTransactionStatus(status), ledgerSeq)
+{
 }
 
 Transaction::Transaction(

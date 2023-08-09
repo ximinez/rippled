@@ -296,7 +296,7 @@ populateJsonResponse(
                 insertDeliveredAmount(
                     response[jss::meta], context, result.txn, *meta);
                 insertNFTSyntheticInJson(
-                    response, context, result.txn->getSTransaction(), *meta);
+                    response, context, result.txn->getSerializedTx(), *meta);
             }
         }
         response[jss::validated] = result.validated;
