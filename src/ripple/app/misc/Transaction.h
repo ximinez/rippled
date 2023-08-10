@@ -42,16 +42,17 @@ class Application;
 class Database;
 class Rules;
 
-enum TransStatus {
-    NEW = 0,         // just received / generated
-    INVALID = 1,     // no valid signature, insufficient funds
-    INCLUDED = 2,    // added to the current ledger
-    CONFLICTED = 3,  // losing to a conflicting transaction
-    COMMITTED = 4,   // known to be in a ledger
-    HELD = 5,        // not valid now, maybe later
-    REMOVED = 6,     // taken out of a ledger
-    OBSOLETE = 7,    // a compatible transaction has taken precedence
-    INCOMPLETE = 8   // needs more signatures
+enum TransStatus : char {
+    NEW = txnSqlNew,              // just received / generated
+    INVALID = txnSqlUnknown,      // no valid signature, insufficient funds
+    INCLUDED = txnSqlIncluded,    // added to the current ledger
+    CONFLICTED = txnSqlConflict,  // losing to a conflicting transaction
+    COMMITTED = txnSqlValidated,  // known to be in a ledger
+    HELD = txnSqlHeld,            // not valid now, maybe later
+    // Use lower case letters for these to guarantee no collision with TxnSql
+    // REMOVED = 'r',  // taken out of a ledger
+    OBSOLETE = 'o',  // a compatible transaction has taken precedence
+    // INCOMPLETE = 'i'  // needs more signatures
 };
 
 enum class TxSearched { all, some, unknown };

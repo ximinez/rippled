@@ -34,6 +34,7 @@
 namespace ripple {
 
 enum TxnSql : char {
+    // Only use upper-case values to prevent collisions with `TransStatus`
     txnSqlNew = 'N',
     txnSqlConflict = 'C',
     txnSqlHeld = 'H',
