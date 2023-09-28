@@ -380,7 +380,7 @@ var searchData=
   ['amendmentid_380',['amendmentId',['../classripple_1_1AmendmentTable__test.html#a27d2cba83ae465b28285542137b3c95a',1,'ripple::AmendmentTable_test']]],
   ['amendmentmap_5f_381',['amendmentMap_',['../classripple_1_1AmendmentTableImpl.html#a7cca5bba8dff04a84023969c1499160f',1,'ripple::AmendmentTableImpl']]],
   ['amendments_382',['amendments',['../namespaceripple_1_1keylet.html#a5660f18c64be5f8270fe66fcc25d0de8',1,'ripple::keylet::amendments()'],['../namespaceripple.html#a22768e0a41b646442c98d38f2f2a307bae30c13acc8c17bb7bec2f13412a03d7e',1,'ripple::AMENDMENTS()']]],
-  ['amendmentset_383',['AmendmentSet',['../classripple_1_1AmendmentSet.html',1,'ripple::AmendmentSet'],['../classripple_1_1AmendmentSet.html#a7331b983280faf8428744b1b566f6008',1,'ripple::AmendmentSet::AmendmentSet()']]],
+  ['amendmentset_383',['AmendmentSet',['../classripple_1_1AmendmentSet.html',1,'ripple::AmendmentSet'],['../classripple_1_1AmendmentSet.html#ab715d365e58e89818d1d45ec3354988d',1,'ripple::AmendmentSet::AmendmentSet()']]],
   ['amendmentstate_384',['AmendmentState',['../structripple_1_1AmendmentState.html',1,'ripple::AmendmentState'],['../structripple_1_1AmendmentState.html#ae51fd7660d8d88e63430777f10cae97e',1,'ripple::AmendmentState::AmendmentState()']]],
   ['amendmenttable_385',['AmendmentTable',['../classripple_1_1AmendmentTable.html',1,'ripple']]],
   ['amendmenttable_5ftest_386',['AmendmentTable_test',['../classripple_1_1AmendmentTable__test.html',1,'ripple::AmendmentTable_test'],['../classripple_1_1AmendmentTable__test.html#a5c3e6df34f12225704a4e082566ad04d',1,'ripple::AmendmentTable_test::AmendmentTable_test()']]],
