@@ -300,9 +300,18 @@ public:
         Any transactions for which the `LastLedgerSequence` has
         passed are removed from the queue, and any account objects
         that have no candidates under them are removed.
+
+        @param app Rippled Application object.
+        @param view View of the LCL that was just closed or received.
+        @param roundTime Time it took for the current consensus round to
+        complete. If unseated, indicates "unusual" processing, such as
+        startup or re-syncing.
     */
     void
-    processClosedLedger(Application& app, ReadView const& view, bool timeLeap);
+    processClosedLedger(
+        Application& app,
+        ReadView const& view,
+        std::optional<std::chrono::milliseconds> const& roundTime);
 
     /** Return the next sequence that would go in the TxQ for an account. */
     SeqProxy
@@ -388,11 +397,17 @@ private:
         /// Recent history of transaction counts that
         /// exceed the targetTxnCount_
         boost::circular_buffer<std::size_t> recentTxnCounts_;
+        /// Recent history of consensus round times
+        boost::circular_buffer<std::chrono::milliseconds> recentRoundTimes_;
         /// Based on the median fee of the LCL. Used
         /// when fee escalation kicks in.
         FeeLevel64 escalationMultiplier_;
         /// Journal
         beast::Journal const j_;
+
+        /// Any round time less than 5 seconds is considered good, regardless of
+        /// recent history.
+        static constexpr std::chrono::seconds timeLeapCutoff{5};
 
     public:
         /// Constructor
@@ -412,6 +427,7 @@ private:
                       : std::optional<std::size_t>(std::nullopt))
             , txnsExpected_(minimumTxnCount_)
             , recentTxnCounts_(setup.ledgersInQueue)
+            , recentRoundTimes_(setup.ledgersInQueue)
             , escalationMultiplier_(setup.minimumEscalationMultiplier)
             , j_(j)
         {
@@ -423,15 +439,19 @@ private:
 
             @param app Rippled Application object.
             @param view View of the LCL that was just closed or received.
-            @param timeLeap Indicates that rippled is under load so fees
-            should grow faster.
+            @param roundTime Time it took for the current consensus round to
+           complete. If unseated, indicates "unusual" processing, such as
+           startup or re-syncing.
             @param setup Customization params.
+
+            @return bool indicating whether the round time was unusually high,
+           i.e. a "time leap".
         */
-        std::size_t
+        [[nodiscard]] bool
         update(
             Application& app,
             ReadView const& view,
-            bool timeLeap,
+            std::optional<std::chrono::milliseconds> const& roundTime,
             TxQ::Setup const& setup);
 
         /// Snapshot of the externally relevant FeeMetrics
