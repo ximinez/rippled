@@ -1981,7 +1981,7 @@ NetworkOPsImp::switchLastClosedLedger(
     clearNeedNetworkLedger();
 
     // Update fee computations.
-    app_.getTxQ().processClosedLedger(app_, *newLCL, true);
+    app_.getTxQ().processClosedLedger(app_, *newLCL, std::nullopt);
 
     // Caller must own master lock
     {
