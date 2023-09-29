@@ -83,8 +83,6 @@ TxQ::FeeMetrics::update(
 
     using namespace std::chrono;
 
-    if (roundTime)
-        recentRoundTimes_.push_back(*roundTime);
     milliseconds const averageTime = recentRoundTimes_.empty()
         ? 0ms
         : milliseconds{
@@ -92,8 +90,9 @@ TxQ::FeeMetrics::update(
                   recentRoundTimes_.begin(), recentRoundTimes_.end(), 0ms) /
               recentRoundTimes_.size()};
     bool const timeLeap = !roundTime ||
-        (roundTime > timeLeapCutoff &&
-         roundTime > averageTime * timeLeapFactor);
+        (roundTime > timeLeapCutoff && roundTime > averageTime * 2);
+    if (roundTime)
+        recentRoundTimes_.push_back(*roundTime);
 
     JLOG((timeLeap ? j_.warn() : j_.debug()))
         << "Ledger " << view.info().seq << " has " << size << " transactions. "
