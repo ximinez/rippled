@@ -641,7 +641,8 @@ struct Peer
 
         if (netLgr != ledgerID)
         {
-            JLOG(j.trace()) << Json::Compact(validations.getJsonTrie());
+            JLOG(j.trace()) << "ValidationTrie "
+                            << Json::Compact(validations.getJsonTrie());
             issue(WrongPrevLedger{ledgerID, netLgr});
         }
 
