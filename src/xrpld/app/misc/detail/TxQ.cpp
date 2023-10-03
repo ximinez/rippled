@@ -106,7 +106,8 @@ TxQ::FeeMetrics::update(
                   recentRoundTimes_.begin(), recentRoundTimes_.end(), 0ms) /
               recentRoundTimes_.size()};
     bool const timeLeap = !roundTime ||
-        (roundTime > timeLeapCutoff && roundTime > averageTime * 2);
+        (roundTime > timeLeapCutoff &&
+         roundTime > averageTime * timeLeapFactor);
     if (roundTime)
         recentRoundTimes_.push_back(*roundTime);
 

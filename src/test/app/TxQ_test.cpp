@@ -816,9 +816,9 @@ public:
         env.fund(XRP(1000), noripple(alice, bob));
         env.close(env.now() + 5s, 10000ms);
         env.fund(XRP(1000), noripple(charlie, daria));
-        env.close(env.now() + 5s, 20001ms);
+        env.close(env.now() + 5s, 30001ms);
         env.fund(XRP(1000), noripple(edgar, felicia));
-        env.close(env.now() + 5s, 30002ms);
+        env.close(env.now() + 5s, 60002ms);
 
         checkMetrics(__LINE__, env, 0, std::nullopt, 0, 2, 256);
         env(noop(bob));
@@ -923,7 +923,7 @@ public:
         env.fund(XRP(1000), noripple(alice, bob));
         env.close(env.now() + 5s, 10000ms);
         env.fund(XRP(1000), noripple(carol));
-        env.close(env.now() + 5s, 20001ms);
+        env.close(env.now() + 5s, 30001ms);
 
         // Fill the ledger
         env(noop(alice));
@@ -4062,19 +4062,19 @@ public:
             checkMetrics(__LINE__, env, txCount, 56, 15, 14, 256);
 
             // Close the ledger with a delay.
-            env.close(env.now() + 5s, 20001ms);
+            env.close(env.now() + 5s, 30001ms);
             txCount -= 8;
             checkMetrics(__LINE__, env, txCount, 56, 8, 7, 256);
 
             // Close the ledger with a delay.
-            env.close(env.now() + 5s, 30002ms);
+            env.close(env.now() + 5s, 60002ms);
             txCount -= 4;
             checkMetrics(__LINE__, env, txCount, 56, 4, 3, 256);
 
             // From 28 expected back down to 3 in 3 "slow" ledgers.
 
             // Confirm the minimum sticks
-            env.close(env.now() + 5s, 60003ms);
+            env.close(env.now() + 5s, 150s);
             txCount -= 4;
             checkMetrics(__LINE__, env, txCount, 56, 4, 3, 256);
 

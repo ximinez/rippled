@@ -408,6 +408,7 @@ private:
         /// Any round time less than 5 seconds is considered good, regardless of
         /// recent history.
         static constexpr std::chrono::seconds timeLeapCutoff{5};
+        static constexpr std::uint32_t timeLeapFactor{3};
 
     public:
         /// Constructor
