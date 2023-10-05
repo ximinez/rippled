@@ -54,25 +54,53 @@
 #include <xrpld/app/tx/detail/XChainBridge.h>
 #include <xrpl/protocol/TxFormats.h>
 
-#include <stdexcept>
-
 namespace ripple {
 
 namespace {
 
-struct UnknownTxnType : std::exception
+struct UnknownTxn : Transactor
 {
-    TxType txnType;
-    UnknownTxnType(TxType t) : txnType{t}
+public:
+    static constexpr ConsequencesFactoryType ConsequencesFactory{Normal};
+
+    explicit UnknownTxn(ApplyContext& ctx) : Transactor(ctx)
     {
+    }
+
+    static NotTEC
+    preflight(PreflightContext const& ctx)
+    {
+        // Should never happen
+        return temUNKNOWN;
+    }
+
+    static TER
+    preclaim(PreclaimContext const& ctx)
+    {
+        // Should never happen
+        return temUNKNOWN;
+    }
+
+    static XRPAmount
+    calculateBaseFee(ReadView const& view, STTx const& tx)
+    {
+        // Should never happen
+        return XRPAmount{0};
+    }
+
+    TER
+    doApply() override
+    {
+        // Should never happen
+        return temUNKNOWN;
     }
 };
 
-// Call a lambda with the concrete transaction type as a template parameter
-// throw an "UnknownTxnType" exception on error
+// Call a lambda with the concrete transaction type as a template parameter.
+// Use the "UnknownTxn" class on error.
 template <class F>
 auto
-with_txn_type(TxType txnType, F&& f)
+with_txn_type(TxType txnType, std::optional<beast::Journal> j, F&& f)
 {
     switch (txnType)
     {
@@ -89,7 +117,13 @@ with_txn_type(TxType txnType, F&& f)
 #pragma pop_macro("TRANSACTION")
 
         default:
-            throw UnknownTxnType(txnType);
+            // Should never happen
+            if (j)
+                JLOG(j->fatal())
+                    << "Unknown transaction type in with_txn_type: " << txnType;
+            auto const result = f.template operator()<UnknownTxn>();
+            assert(false);
+            return result;
     }
 }
 }  // namespace
@@ -136,89 +170,59 @@ TxConsequences
 static std::pair<NotTEC, TxConsequences>
 invoke_preflight(PreflightContext const& ctx)
 {
-    try
-    {
-        return with_txn_type(ctx.tx.getTxnType(), [&]<typename T>() {
-            auto const tec = T::preflight(ctx);
-            return std::make_pair(
-                tec,
-                isTesSuccess(tec) ? consequences_helper<T>(ctx)
-                                  : TxConsequences{tec});
-        });
-    }
-    catch (UnknownTxnType const& e)
-    {
-        // Should never happen
-        JLOG(ctx.j.fatal())
-            << "Unknown transaction type in preflight: " << e.txnType;
-        assert(false);
-        return {temUNKNOWN, TxConsequences{temUNKNOWN}};
-    }
+    return with_txn_type(ctx.tx.getTxnType(), ctx.j, [&]<typename T>() {
+        auto const tec = T::preflight(ctx);
+        return std::make_pair(
+            tec,
+            isTesSuccess(tec) ? consequences_helper<T>(ctx)
+                              : TxConsequences{tec});
+    });
 }
 
 static TER
 invoke_preclaim(PreclaimContext const& ctx)
 {
-    try
-    {
-        // use name hiding to accomplish compile-time polymorphism of static
-        // class functions for Transactor and derived classes.
-        return with_txn_type(ctx.tx.getTxnType(), [&]<typename T>() {
-            // If the transactor requires a valid account and the transaction
-            // doesn't list one, preflight will have already a flagged a
-            // failure.
-            auto const id = ctx.tx.getAccountID(sfAccount);
+    // use name hiding to accomplish compile-time polymorphism of static
+    // class functions for Transactor and derived classes.
+    return with_txn_type(ctx.tx.getTxnType(), ctx.j, [&]<typename T>() {
+        // If the transactor requires a valid account and the transaction
+        // doesn't list one, preflight will have already a flagged a
+        // failure.
+        auto const id = ctx.tx.getAccountID(sfAccount);
 
-            if (id != beast::zero)
-            {
-                TER result = T::checkSeqProxy(ctx.view, ctx.tx, ctx.j);
+        if (id != beast::zero)
+        {
+            TER result = T::checkSeqProxy(ctx.view, ctx.tx, ctx.j);
 
-                if (result != tesSUCCESS)
-                    return result;
+            if (result != tesSUCCESS)
+                return result;
 
-                result = T::checkPriorTxAndLastLedger(ctx);
+            result = T::checkPriorTxAndLastLedger(ctx);
 
-                if (result != tesSUCCESS)
-                    return result;
+            if (result != tesSUCCESS)
+                return result;
 
-                result = T::checkFee(ctx, calculateBaseFee(ctx.view, ctx.tx));
+            result = T::checkFee(ctx, calculateBaseFee(ctx.view, ctx.tx));
 
-                if (result != tesSUCCESS)
-                    return result;
+            if (result != tesSUCCESS)
+                return result;
 
-                result = T::checkSign(ctx);
+            result = T::checkSign(ctx);
 
-                if (result != tesSUCCESS)
-                    return result;
-            }
+            if (result != tesSUCCESS)
+                return result;
+        }
 
-            return T::preclaim(ctx);
-        });
-    }
-    catch (UnknownTxnType const& e)
-    {
-        // Should never happen
-        JLOG(ctx.j.fatal())
-            << "Unknown transaction type in preclaim: " << e.txnType;
-        assert(false);
-        return temUNKNOWN;
-    }
+        return T::preclaim(ctx);
+    });
 }
 
 static XRPAmount
 invoke_calculateBaseFee(ReadView const& view, STTx const& tx)
 {
-    try
-    {
-        return with_txn_type(tx.getTxnType(), [&]<typename T>() {
-            return T::calculateBaseFee(view, tx);
-        });
-    }
-    catch (UnknownTxnType const& e)
-    {
-        assert(false);
-        return XRPAmount{0};
-    }
+    return with_txn_type(tx.getTxnType(), {}, [&]<typename T>() {
+        return T::calculateBaseFee(view, tx);
+    });
 }
 
 TxConsequences::TxConsequences(NotTEC pfresult)
@@ -263,21 +267,10 @@ TxConsequences::TxConsequences(STTx const& tx, std::uint32_t sequencesConsumed)
 static std::pair<TER, bool>
 invoke_apply(ApplyContext& ctx)
 {
-    try
-    {
-        return with_txn_type(ctx.tx.getTxnType(), [&]<typename T>() {
-            T p(ctx);
-            return p();
-        });
-    }
-    catch (UnknownTxnType const& e)
-    {
-        // Should never happen
-        JLOG(ctx.journal.fatal())
-            << "Unknown transaction type in apply: " << e.txnType;
-        assert(false);
-        return {temUNKNOWN, false};
-    }
+    return with_txn_type(ctx.tx.getTxnType(), ctx.journal, [&]<typename T>() {
+        T p(ctx);
+        return p();
+    });
 }
 
 PreflightResult
