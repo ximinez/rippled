@@ -19,6 +19,7 @@
 
 #include <ripple/app/ledger/LedgerMaster.h>
 #include <ripple/app/ledger/TransactionMaster.h>
+#include <ripple/app/misc/DeliverMax.h>
 #include <ripple/app/misc/NetworkOPs.h>
 #include <ripple/app/misc/Transaction.h>
 #include <ripple/basics/ToString.h>
@@ -310,6 +311,10 @@ populateJsonResponse(
     {
         response = result.txn->getJson(
             context.app, JsonOptions::include_date, args.binary);
+        auto const& sttx = result.txn->getSerializedTx();
+        if (!args.binary)
+            RPC::insertDeliverMax(
+                response, sttx->getTxnType(), context.apiVersion);
 
         // populate binary metadata
         if (auto blob = std::get_if<Blob>(&result.meta))
@@ -326,8 +331,7 @@ populateJsonResponse(
                 response[jss::meta] = meta->getJson(JsonOptions::none);
                 insertDeliveredAmount(
                     response[jss::meta], context, result.txn, *meta);
-                insertNFTSyntheticInJson(
-                    response, result.txn->getSerializedTx(), *meta);
+                insertNFTSyntheticInJson(response, sttx, *meta);
             }
         }
         response[jss::validated] = result.validated;

@@ -19,6 +19,7 @@
 
 #include <ripple/app/ledger/LedgerMaster.h>
 #include <ripple/app/main/Application.h>
+#include <ripple/app/misc/DeliverMax.h>
 #include <ripple/app/misc/NetworkOPs.h>
 #include <ripple/app/misc/Transaction.h>
 #include <ripple/app/rdb/backend/PostgresDatabase.h>
@@ -327,6 +328,9 @@ populateJsonResponse(
 
                     jvObj[jss::tx] =
                         txn->getJson(context.app, JsonOptions::include_date);
+                    auto const& sttx = txn->getSerializedTx();
+                    RPC::insertDeliverMax(
+                        jvObj[jss::tx], sttx->getTxnType(), context.apiVersion);
                     if (txnMeta)
                     {
                         jvObj[jss::meta] =
@@ -334,8 +338,7 @@ populateJsonResponse(
                         jvObj[jss::validated] = true;
                         insertDeliveredAmount(
                             jvObj[jss::meta], context, txn, *txnMeta);
-                        insertNFTSyntheticInJson(
-                            jvObj, txn->getSerializedTx(), *txnMeta);
+                        insertNFTSyntheticInJson(jvObj, sttx, *txnMeta);
                     }
                 }
             }

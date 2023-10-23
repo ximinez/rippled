@@ -19,6 +19,7 @@
 
 #include <ripple/app/ledger/LedgerMaster.h>
 #include <ripple/app/main/Application.h>
+#include <ripple/app/misc/DeliverMax.h>
 #include <ripple/app/misc/Transaction.h>
 #include <ripple/app/rdb/RelationalDatabase.h>
 #include <ripple/core/DatabaseCon.h>
@@ -63,7 +64,12 @@ doTxHistory(RPC::JsonContext& context)
         obj["used_postgres"] = true;
 
     for (auto const& t : trans)
-        txs.append(t->getJson(context.app, JsonOptions::none));
+    {
+        Json::Value tx_json = t->getJson(context.app, JsonOptions::none);
+        RPC::insertDeliverMax(
+            tx_json, t->getSerializedTx()->getTxnType(), context.apiVersion);
+        txs.append(tx_json);
+    }
 
     return obj;
 }
