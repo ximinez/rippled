@@ -65,7 +65,7 @@ getManifests(
                 continue;
             }
 
-            mCache.applyManifest(std::move(*mo));
+            mCache.applyManifest(std::move(*mo), true);
         }
         else
         {

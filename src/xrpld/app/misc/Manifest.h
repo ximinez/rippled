@@ -345,6 +345,10 @@ public:
 
         @param m Manifest to add
 
+        @param loading Indicate whether the manifest is being loaded from the
+               local database (at startup). Lowers the severity of some log
+               messages.
+
         @return `ManifestDisposition::accepted` if successful, or
                 `stale` or `invalid` otherwise
 
@@ -353,7 +357,7 @@ public:
         May be called concurrently
     */
     ManifestDisposition
-    applyManifest(Manifest m);
+    applyManifest(Manifest m, bool loading = false);
 
     /** Populate manifest cache with manifests in database and config.
 
