@@ -361,7 +361,7 @@ ManifestCache::revoked(PublicKey const& pk) const
 }
 
 ManifestDisposition
-ManifestCache::applyManifest(Manifest m)
+ManifestCache::applyManifest(Manifest m, bool loading)
 {
     // Check the manifest against the conditions that do not require a
     // `unique_lock` (write lock) on the `mutex_`. Since the signature can be
@@ -370,8 +370,10 @@ ManifestCache::applyManifest(Manifest m)
     // comment below), `checkSignature` only needs to be set to true on the
     // first run.
     auto prewriteCheck =
-        [this, &m](auto const& iter, bool checkSignature, auto const& lock)
-        -> std::optional<ManifestDisposition> {
+        [this, &m, &loading](
+            auto const& iter,
+            bool checkSignature,
+            auto const& lock) -> std::optional<ManifestDisposition> {
         XRPL_ASSERT(
             lock.owns_lock(),
             "ripple::ManifestCache::applyManifest::prewriteCheck : locked");
@@ -409,7 +411,7 @@ ManifestCache::applyManifest(Manifest m)
         // one.
         bool const revoked = m.revoked();
 
-        if (auto stream = j_.warn(); stream && revoked)
+        if (auto stream = loading ? j_.info() : j_.warn(); stream && revoked)
             logMftAct(stream, "Revoked", m.masterKey, m.sequence);
 
         // Sanity check: the master key of this manifest should not be used as
@@ -417,9 +419,10 @@ ManifestCache::applyManifest(Manifest m)
         if (auto const x = signingToMasterKeys_.find(m.masterKey);
             x != signingToMasterKeys_.end())
         {
-            JLOG(j_.warn()) << to_string(m)
-                            << ": Master key already used as ephemeral key for "
-                            << toBase58(TokenType::NodePublic, x->second);
+            JLOG((loading ? j_.info() : j_.warn()))
+                << to_string(m)
+                << ": Master key already used as ephemeral key for "
+                << toBase58(TokenType::NodePublic, x->second);
 
             return ManifestDisposition::badMasterKey;
         }
@@ -440,7 +443,7 @@ ManifestCache::applyManifest(Manifest m)
             if (auto const x = signingToMasterKeys_.find(*m.signingKey);
                 x != signingToMasterKeys_.end())
             {
-                JLOG(j_.warn())
+                JLOG((loading ? j_.info() : j_.warn()))
                     << to_string(m)
                     << ": Ephemeral key already used as ephemeral key for "
                     << toBase58(TokenType::NodePublic, x->second);
@@ -450,7 +453,7 @@ ManifestCache::applyManifest(Manifest m)
 
             if (auto const x = map_.find(*m.signingKey); x != map_.end())
             {
-                JLOG(j_.warn())
+                JLOG((loading ? j_.info() : j_.warn()))
                     << to_string(m) << ": Ephemeral key used as master key for "
                     << to_string(x->second);
 
