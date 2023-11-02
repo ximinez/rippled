@@ -172,7 +172,7 @@ signerCountBasedOwnerCountDelta(std::size_t entryCount, Rules const& rules)
     // be in the range from 1 to 8 (or 32 if ExpandedSignerList is enabled).
     // We've got a lot of room to grow.
     assert(entryCount >= STTx::minMultiSigners);
-    assert(entryCount <= STTx::maxMultiSigners(&rules));
+    assert(entryCount <= STTx::maxMultiSigners(STTx::getSigningRules(rules)));
     return 2 + static_cast<int>(entryCount);
 }
 
@@ -252,7 +252,7 @@ SetSignerList::validateQuorumAndSignerEntries(
     {
         std::size_t const signerCount = signers.size();
         if ((signerCount < STTx::minMultiSigners) ||
-            (signerCount > STTx::maxMultiSigners(&rules)))
+            (signerCount > STTx::maxMultiSigners(STTx::getSigningRules(rules))))
         {
             JLOG(j.trace()) << "Too many or too few signers in signer list.";
             return temMALFORMED;

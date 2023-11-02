@@ -51,14 +51,36 @@ class STTx final : public STObject, public CountedObject<STTx>
 public:
     static std::size_t const minMultiSigners = 1;
 
+    // Bit flag enum to avoid callers to maxMultiSigners, including
+    // checkSign, to need to know about or construct Rules. Expandable
+    // for future use cases. Since this is only used internally, the
+    // number of bits can be expanded as necessary.
+    enum SigningRules : std::uint8_t {
+        none = 0x0,
+        // featureExpandedSignerList
+        expandedSignerList = 0x01,
+
+        // return the max value
+        maximum = 0x80,
+    };
+
+    static SigningRules
+    getSigningRules(Rules const& rules)
+    {
+        if (rules.enabled(featureExpandedSignerList))
+            return expandedSignerList;
+        return none;
+    }
+
     // if rules are not supplied then the largest possible value is returned
     static std::size_t
-    maxMultiSigners(Rules const* rules = 0)
+    maxMultiSigners(SigningRules rules = maximum)
     {
-        if (rules && !rules->enabled(featureExpandedSignerList))
-            return 8;
+        // Skip flag checks if returning the max
+        if ((rules & maximum) || (rules & expandedSignerList))
+            return 32;
 
-        return 32;
+        return 8;
     }
 
     STTx() = delete;
@@ -116,13 +138,22 @@ public:
     void
     sign(PublicKey const& publicKey, SecretKey const& secretKey);
 
+    enum class RequireFullyCanonicalSig : bool { no, yes };
+
     /** Check the signature.
         @return `true` if valid signature. If invalid, the error message string.
     */
-    enum class RequireFullyCanonicalSig : bool { no, yes };
     Expected<void, std::string>
     checkSign(RequireFullyCanonicalSig requireCanonicalSig, Rules const& rules)
         const;
+
+    Expected<void, std::string>
+    /** Check the signature.
+        @return `true` if valid signature. If invalid, the error message string.
+    */
+    checkSign(
+        RequireFullyCanonicalSig requireCanonicalSig,
+        SigningRules const& rules) const;
 
     // SQL Functions with metadata.
     static std::string const&
@@ -146,7 +177,7 @@ private:
     Expected<void, std::string>
     checkMultiSign(
         RequireFullyCanonicalSig requireCanonicalSig,
-        Rules const& rules) const;
+        SigningRules const& rules) const;
 
     STBase*
     copy(std::size_t n, void* buf) const override;

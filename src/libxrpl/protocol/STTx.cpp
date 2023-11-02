@@ -211,6 +211,14 @@ STTx::checkSign(
     RequireFullyCanonicalSig requireCanonicalSig,
     Rules const& rules) const
 {
+    return checkSign(requireCanonicalSig, getSigningRules(rules));
+}
+
+Expected<void, std::string>
+STTx::checkSign(
+    RequireFullyCanonicalSig requireCanonicalSig,
+    SigningRules const& rules) const
+{
     try
     {
         // Determine whether we're single- or multi-signing by looking
@@ -349,7 +357,7 @@ STTx::checkSingleSign(RequireFullyCanonicalSig requireCanonicalSig) const
 Expected<void, std::string>
 STTx::checkMultiSign(
     RequireFullyCanonicalSig requireCanonicalSig,
-    Rules const& rules) const
+    SigningRules const& rules) const
 {
     // Make sure the MultiSigners are present.  Otherwise they are not
     // attempting multi-signing and we just have a bad SigningPubKey.
@@ -365,7 +373,7 @@ STTx::checkMultiSign(
 
     // There are well known bounds that the number of signers must be within.
     if (signers.size() < minMultiSigners ||
-        signers.size() > maxMultiSigners(&rules))
+        signers.size() > maxMultiSigners(rules))
         return Unexpected("Invalid Signers array size.");
 
     // We can ease the computational load inside the loop a bit by
