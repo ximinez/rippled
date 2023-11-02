@@ -187,7 +187,7 @@ signerCountBasedOwnerCountDelta(std::size_t entryCount, Rules const& rules)
         entryCount >= STTx::minMultiSigners,
         "ripple::signerCountBasedOwnerCountDelta : minimum signers");
     XRPL_ASSERT(
-        entryCount <= STTx::maxMultiSigners(&rules),
+        entryCount <= STTx::maxMultiSigners(STTx::getSigningRules(rules)),
         "ripple::signerCountBasedOwnerCountDelta : maximum signers");
     return 2 + static_cast<int>(entryCount);
 }
@@ -270,7 +270,7 @@ SetSignerList::validateQuorumAndSignerEntries(
     {
         std::size_t const signerCount = signers.size();
         if ((signerCount < STTx::minMultiSigners) ||
-            (signerCount > STTx::maxMultiSigners(&rules)))
+            (signerCount > STTx::maxMultiSigners(STTx::getSigningRules(rules))))
         {
             JLOG(j.trace()) << "Too many or too few signers in signer list.";
             return temMALFORMED;

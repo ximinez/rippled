@@ -249,6 +249,14 @@ STTx::checkSign(
     RequireFullyCanonicalSig requireCanonicalSig,
     Rules const& rules) const
 {
+    return checkSign(requireCanonicalSig, getSigningRules(rules));
+}
+
+Expected<void, std::string>
+STTx::checkSign(
+    RequireFullyCanonicalSig requireCanonicalSig,
+    SigningRules const& rules) const
+{
     try
     {
         // Determine whether we're single- or multi-signing by looking
@@ -443,7 +451,7 @@ multiSignHelper(
     STObject const& signerObj,
     bool const fullyCanonical,
     std::function<Serializer(AccountID const&)> makeMsg,
-    Rules const& rules)
+    SigningRules const& rules)
 {
     // Make sure the MultiSigners are present.  Otherwise they are not
     // attempting multi-signing and we just have a bad SigningPubKey.
@@ -458,8 +466,8 @@ multiSignHelper(
     STArray const& signers{signerObj.getFieldArray(sfSigners)};
 
     // There are well known bounds that the number of signers must be within.
-    if (signers.size() < STTx::minMultiSigners ||
-        signers.size() > STTx::maxMultiSigners(&rules))
+    if (signers.size() < minMultiSigners ||
+        signers.size() > maxMultiSigners(rules))
         return Unexpected("Invalid Signers array size.");
 
     // We also use the sfAccount field inside the loop.  Get it once.
