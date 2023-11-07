@@ -1154,7 +1154,13 @@ accountSend(
     }
     else
     {
-        assert(saAmount >= beast::zero);
+        // assert(saAmount >= beast::zero);
+        if (saAmount < beast::zero)
+        {
+            JLOG(j.fatal()) << "Skipping assert: saAmount < 0" << saAmount;
+            // Note that since there's no amendment, this will cause a desync
+            return tecINTERNAL;
+        }
     }
 
     /* If we aren't sending anything or if the sender is the same as the
