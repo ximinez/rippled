@@ -278,6 +278,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a9264df26c2f14a094de53a21055cdb1c"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classripple_1_1test_1_1jtx_1_1Env.html#a9264df26c2f14a094de53a21055cdb1c">fund</a> (<a class="el" href="classripple_1_1STAmount.html">STAmount</a> const &amp;amount, Arg const &amp;arg, Args const &amp;... args)</td></tr>
 <tr class="memdesc:a9264df26c2f14a094de53a21055cdb1c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a new account with some XRP.  <a href="classripple_1_1test_1_1jtx_1_1Env.html#a9264df26c2f14a094de53a21055cdb1c">More...</a><br /></td></tr>
 <tr class="separator:a9264df26c2f14a094de53a21055cdb1c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acc124fc731f2071c6bc0ef7177a6f319"><td class="memItemLeft" align="right" valign="top"><a class="elRef" href="http://en.cppreference.com/w/cpp/memory/shared_ptr.html">std::shared_ptr</a>&lt; <a class="el" href="classripple_1_1STTx.html">STTx</a> const &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classripple_1_1test_1_1jtx_1_1Env.html#acc124fc731f2071c6bc0ef7177a6f319">ust</a> (<a class="el" href="structripple_1_1test_1_1jtx_1_1JTx.html">JTx</a> const &amp;<a class="el" href="classripple_1_1test_1_1jtx_1_1Env.html#ac97544537f03e62be698194aabe47a32">jt</a>)</td></tr>
+<tr class="memdesc:acc124fc731f2071c6bc0ef7177a6f319"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a <a class="el" href="classripple_1_1STTx.html">STTx</a> from a <a class="el" href="structripple_1_1test_1_1jtx_1_1JTx.html" title="Execution context for applying a JSON transaction.">JTx</a> without sanitizing Use to inject bogus values into test transactions by first editing the JSON.  <a href="classripple_1_1test_1_1jtx_1_1Env.html#acc124fc731f2071c6bc0ef7177a6f319">More...</a><br /></td></tr>
+<tr class="separator:acc124fc731f2071c6bc0ef7177a6f319"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr><td colspan="2"><div class="groupHeader"></div></td></tr>
 <tr class="memitem:ac1a551e3dcdb027c8830afeebc9fcc80"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classripple_1_1test_1_1jtx_1_1Account.html">Account</a> const &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classripple_1_1test_1_1jtx_1_1Env.html#ac1a551e3dcdb027c8830afeebc9fcc80">lookup</a> (<a class="el" href="namespaceripple.html#a00ae0d729cb3e35b6bcac9a27ebb5284">AccountID</a> const &amp;id) const</td></tr>
 <tr class="memdesc:ac1a551e3dcdb027c8830afeebc9fcc80"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the <a class="el" href="classripple_1_1test_1_1jtx_1_1Account.html" title="Immutable cryptographic account descriptor.">Account</a> given the AccountID.  <a href="classripple_1_1test_1_1jtx_1_1Env.html#ac1a551e3dcdb027c8830afeebc9fcc80">More...</a><br /></td></tr>
@@ -285,13 +288,13 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a062c22ba14d38fefd731f59c718b7c74"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classripple_1_1test_1_1jtx_1_1Account.html">Account</a> const &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classripple_1_1test_1_1jtx_1_1Env.html#a062c22ba14d38fefd731f59c718b7c74">lookup</a> (<a class="elRef" href="http://en.cppreference.com/w/cpp/string/basic_string.html">std::string</a> const &amp;base58ID) const</td></tr>
 <tr class="separator:a062c22ba14d38fefd731f59c718b7c74"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr><td colspan="2"><div class="groupHeader"></div></td></tr>
-<tr class="memitem:ad616cde8ac5f2281c4db2f4a14b98a26"><td class="memTemplParams" colspan="2">template&lt;class JsonValue , class... FN&gt; </td></tr>
-<tr class="memitem:ad616cde8ac5f2281c4db2f4a14b98a26"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classripple_1_1test_1_1jtx_1_1Env.html#ad616cde8ac5f2281c4db2f4a14b98a26">apply</a> (JsonValue &amp;&amp;jv, FN const &amp;... fN)</td></tr>
-<tr class="memdesc:ad616cde8ac5f2281c4db2f4a14b98a26"><td class="mdescLeft">&#160;</td><td class="mdescRight">Apply funclets and submit.  <a href="classripple_1_1test_1_1jtx_1_1Env.html#ad616cde8ac5f2281c4db2f4a14b98a26">More...</a><br /></td></tr>
-<tr class="separator:ad616cde8ac5f2281c4db2f4a14b98a26"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5700d851fb7d32a336598097a55ef26c"><td class="memTemplParams" colspan="2">template&lt;class JsonValue , class... FN&gt; </td></tr>
-<tr class="memitem:a5700d851fb7d32a336598097a55ef26c"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classripple_1_1test_1_1jtx_1_1Env.html#a5700d851fb7d32a336598097a55ef26c">operator()</a> (JsonValue &amp;&amp;jv, FN const &amp;... fN)</td></tr>
-<tr class="separator:a5700d851fb7d32a336598097a55ef26c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad829b507ce6a9044610448cbbc35bd97"><td class="memTemplParams" colspan="2">template&lt;class JsonValue , class... FN&gt; </td></tr>
+<tr class="memitem:ad829b507ce6a9044610448cbbc35bd97"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="classripple_1_1test_1_1jtx_1_1Env.html">Env</a> &amp;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classripple_1_1test_1_1jtx_1_1Env.html#ad829b507ce6a9044610448cbbc35bd97">apply</a> (JsonValue &amp;&amp;jv, FN const &amp;... fN)</td></tr>
+<tr class="memdesc:ad829b507ce6a9044610448cbbc35bd97"><td class="mdescLeft">&#160;</td><td class="mdescRight">Apply funclets and submit.  <a href="classripple_1_1test_1_1jtx_1_1Env.html#ad829b507ce6a9044610448cbbc35bd97">More...</a><br /></td></tr>
+<tr class="separator:ad829b507ce6a9044610448cbbc35bd97"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5bed2efff0313fdaa5261c7e5ea27ce6"><td class="memTemplParams" colspan="2">template&lt;class JsonValue , class... FN&gt; </td></tr>
+<tr class="memitem:a5bed2efff0313fdaa5261c7e5ea27ce6"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="classripple_1_1test_1_1jtx_1_1Env.html">Env</a> &amp;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classripple_1_1test_1_1jtx_1_1Env.html#a5bed2efff0313fdaa5261c7e5ea27ce6">operator()</a> (JsonValue &amp;&amp;jv, FN const &amp;... fN)</td></tr>
+<tr class="separator:a5bed2efff0313fdaa5261c7e5ea27ce6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr><td colspan="2"><div class="groupHeader"></div></td></tr>
 <tr class="memitem:a90fecf3c0f6cdc1c40761e19917bf65a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classripple_1_1test_1_1jtx_1_1Env.html#a90fecf3c0f6cdc1c40761e19917bf65a">trust</a> (<a class="el" href="classripple_1_1STAmount.html">STAmount</a> const &amp;amount, <a class="el" href="classripple_1_1test_1_1jtx_1_1Account.html">Account</a> const &amp;account)</td></tr>
 <tr class="memdesc:a90fecf3c0f6cdc1c40761e19917bf65a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Establish trust lines.  <a href="classripple_1_1test_1_1jtx_1_1Env.html#a90fecf3c0f6cdc1c40761e19917bf65a">More...</a><br /></td></tr>
@@ -792,7 +795,7 @@ template&lt;class... Args&gt; </div>
 <p>Execute an <a class="el" href="namespaceripple_1_1RPC.html" title="API version numbers used in later API versions.">RPC</a> command. </p>
 <p >The command is examined and used to build the correct JSON as per the arguments. </p>
 
-<p class="definition">Definition at line <a class="el" href="Env_8h_source.html#l00715">715</a> of file <a class="el" href="Env_8h_source.html">Env.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Env_8h_source.html#l00723">723</a> of file <a class="el" href="Env_8h_source.html">Env.h</a>.</p>
 
 </div>
 </div>
@@ -830,7 +833,7 @@ template&lt;class... Args&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Env_8h_source.html#l00729">729</a> of file <a class="el" href="Env_8h_source.html">Env.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Env_8h_source.html#l00737">737</a> of file <a class="el" href="Env_8h_source.html">Env.h</a>.</p>
 
 </div>
 </div>
@@ -868,7 +871,7 @@ template&lt;class... Args&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Env_8h_source.html#l00740">740</a> of file <a class="el" href="Env_8h_source.html">Env.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Env_8h_source.html#l00748">748</a> of file <a class="el" href="Env_8h_source.html">Env.h</a>.</p>
 
 </div>
 </div>
@@ -900,7 +903,7 @@ template&lt;class... Args&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Env_8h_source.html#l00753">753</a> of file <a class="el" href="Env_8h_source.html">Env.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Env_8h_source.html#l00761">761</a> of file <a class="el" href="Env_8h_source.html">Env.h</a>.</p>
 
 </div>
 </div>
@@ -1559,8 +1562,8 @@ template&lt;class... Args&gt; </div>
 
 </div>
 </div>
-<a id="ad616cde8ac5f2281c4db2f4a14b98a26" name="ad616cde8ac5f2281c4db2f4a14b98a26"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad616cde8ac5f2281c4db2f4a14b98a26">&#9670;&#160;</a></span>apply()</h2>
+<a id="ad829b507ce6a9044610448cbbc35bd97" name="ad829b507ce6a9044610448cbbc35bd97"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad829b507ce6a9044610448cbbc35bd97">&#9670;&#160;</a></span>apply()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1568,7 +1571,7 @@ template&lt;class... Args&gt; </div>
 template&lt;class JsonValue , class... FN&gt; </div>
       <table class="memname">
         <tr>
-          <td class="memname">void ripple::test::jtx::Env::apply </td>
+          <td class="memname"><a class="el" href="classripple_1_1test_1_1jtx_1_1Env.html">Env</a> &amp; ripple::test::jtx::Env::apply </td>
           <td>(</td>
           <td class="paramtype">JsonValue &amp;&amp;&#160;</td>
           <td class="paramname"><em>jv</em>, </td>
@@ -1593,8 +1596,8 @@ template&lt;class JsonValue , class... FN&gt; </div>
 
 </div>
 </div>
-<a id="a5700d851fb7d32a336598097a55ef26c" name="a5700d851fb7d32a336598097a55ef26c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a5700d851fb7d32a336598097a55ef26c">&#9670;&#160;</a></span>operator()()</h2>
+<a id="a5bed2efff0313fdaa5261c7e5ea27ce6" name="a5bed2efff0313fdaa5261c7e5ea27ce6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5bed2efff0313fdaa5261c7e5ea27ce6">&#9670;&#160;</a></span>operator()()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1602,7 +1605,7 @@ template&lt;class JsonValue , class... FN&gt; </div>
 template&lt;class JsonValue , class... FN&gt; </div>
       <table class="memname">
         <tr>
-          <td class="memname">void ripple::test::jtx::Env::operator() </td>
+          <td class="memname"><a class="el" href="classripple_1_1test_1_1jtx_1_1Env.html">Env</a> &amp; ripple::test::jtx::Env::operator() </td>
           <td>(</td>
           <td class="paramtype">JsonValue &amp;&amp;&#160;</td>
           <td class="paramname"><em>jv</em>, </td>
@@ -1621,7 +1624,7 @@ template&lt;class JsonValue , class... FN&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Env_8h_source.html#l00532">532</a> of file <a class="el" href="Env_8h_source.html">Env.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Env_8h_source.html#l00533">533</a> of file <a class="el" href="Env_8h_source.html">Env.h</a>.</p>
 
 </div>
 </div>
@@ -1642,7 +1645,7 @@ template&lt;class JsonValue , class... FN&gt; </div>
 
 <p>Return the TER for the last <a class="el" href="structripple_1_1test_1_1jtx_1_1JTx.html" title="Execution context for applying a JSON transaction.">JTx</a>. </p>
 
-<p class="definition">Definition at line <a class="el" href="Env_8h_source.html#l00540">540</a> of file <a class="el" href="Env_8h_source.html">Env.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Env_8h_source.html#l00541">541</a> of file <a class="el" href="Env_8h_source.html">Env.h</a>.</p>
 
 </div>
 </div>
@@ -1711,7 +1714,7 @@ effects.
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Env_8cpp_source.html#l00486">486</a> of file <a class="el" href="Env_8cpp_source.html">Env.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Env_8cpp_source.html#l00512">512</a> of file <a class="el" href="Env_8cpp_source.html">Env.cpp</a>.</p>
 
 </div>
 </div>
@@ -1731,7 +1734,7 @@ effects.
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Env_8cpp_source.html#l00494">494</a> of file <a class="el" href="Env_8cpp_source.html">Env.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Env_8cpp_source.html#l00520">520</a> of file <a class="el" href="Env_8cpp_source.html">Env.cpp</a>.</p>
 
 </div>
 </div>
@@ -1813,7 +1816,7 @@ effects.
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Env_8h_source.html#l00581">581</a> of file <a class="el" href="Env_8h_source.html">Env.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Env_8h_source.html#l00582">582</a> of file <a class="el" href="Env_8h_source.html">Env.h</a>.</p>
 
 </div>
 </div>
@@ -1853,7 +1856,7 @@ template&lt;<a class="elRef" href="http://en.cppreference.com/w/cpp/types/size_t
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Env_8h_source.html#l00588">588</a> of file <a class="el" href="Env_8h_source.html">Env.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Env_8h_source.html#l00589">589</a> of file <a class="el" href="Env_8h_source.html">Env.h</a>.</p>
 
 </div>
 </div>
@@ -1905,7 +1908,7 @@ template&lt;class Arg , class... Args&gt; </div>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="Env_8h_source.html#l00623">623</a> of file <a class="el" href="Env_8h_source.html">Env.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Env_8h_source.html#l00624">624</a> of file <a class="el" href="Env_8h_source.html">Env.h</a>.</p>
 
 </div>
 </div>
@@ -1985,7 +1988,29 @@ template&lt;class... Accounts&gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Env_8h_source.html#l00653">653</a> of file <a class="el" href="Env_8h_source.html">Env.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Env_8h_source.html#l00654">654</a> of file <a class="el" href="Env_8h_source.html">Env.h</a>.</p>
+
+</div>
+</div>
+<a id="acc124fc731f2071c6bc0ef7177a6f319" name="acc124fc731f2071c6bc0ef7177a6f319"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#acc124fc731f2071c6bc0ef7177a6f319">&#9670;&#160;</a></span>ust()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="elRef" href="http://en.cppreference.com/w/cpp/memory/shared_ptr.html">std::shared_ptr</a>&lt; <a class="el" href="classripple_1_1STTx.html">STTx</a> const &gt; ripple::test::jtx::Env::ust </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="structripple_1_1test_1_1jtx_1_1JTx.html">JTx</a> const &amp;&#160;</td>
+          <td class="paramname"><em>jt</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Create a <a class="el" href="classripple_1_1STTx.html">STTx</a> from a <a class="el" href="structripple_1_1test_1_1jtx_1_1JTx.html" title="Execution context for applying a JSON transaction.">JTx</a> without sanitizing Use to inject bogus values into test transactions by first editing the JSON. </p>
+
+<p class="definition">Definition at line <a class="el" href="Env_8cpp_source.html#l00476">476</a> of file <a class="el" href="Env_8cpp_source.html">Env.cpp</a>.</p>
 
 </div>
 </div>
@@ -2029,7 +2054,7 @@ template&lt;class... Accounts&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Env_8cpp_source.html#l00476">476</a> of file <a class="el" href="Env_8cpp_source.html">Env.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Env_8cpp_source.html#l00502">502</a> of file <a class="el" href="Env_8cpp_source.html">Env.cpp</a>.</p>
 
 </div>
 </div>
@@ -2156,7 +2181,7 @@ template&lt;class... FN&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Env_8h_source.html#l00696">696</a> of file <a class="el" href="Env_8h_source.html">Env.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Env_8h_source.html#l00704">704</a> of file <a class="el" href="Env_8h_source.html">Env.h</a>.</p>
 
 </div>
 </div>
@@ -2196,7 +2221,7 @@ template&lt;class... FN&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Env_8h_source.html#l00704">704</a> of file <a class="el" href="Env_8h_source.html">Env.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Env_8h_source.html#l00712">712</a> of file <a class="el" href="Env_8h_source.html">Env.h</a>.</p>
 
 </div>
 </div>
@@ -2293,7 +2318,7 @@ template&lt;class... FN&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Env_8h_source.html#l00665">665</a> of file <a class="el" href="Env_8h_source.html">Env.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Env_8h_source.html#l00673">673</a> of file <a class="el" href="Env_8h_source.html">Env.h</a>.</p>
 
 </div>
 </div>
@@ -2317,7 +2342,7 @@ template&lt;class... FN&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Env_8h_source.html#l00666">666</a> of file <a class="el" href="Env_8h_source.html">Env.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Env_8h_source.html#l00674">674</a> of file <a class="el" href="Env_8h_source.html">Env.h</a>.</p>
 
 </div>
 </div>
@@ -2341,7 +2366,7 @@ template&lt;class... FN&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Env_8h_source.html#l00667">667</a> of file <a class="el" href="Env_8h_source.html">Env.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Env_8h_source.html#l00675">675</a> of file <a class="el" href="Env_8h_source.html">Env.h</a>.</p>
 
 </div>
 </div>
@@ -2365,7 +2390,7 @@ template&lt;class... FN&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Env_8h_source.html#l00668">668</a> of file <a class="el" href="Env_8h_source.html">Env.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Env_8h_source.html#l00676">676</a> of file <a class="el" href="Env_8h_source.html">Env.h</a>.</p>
 
 </div>
 </div>
@@ -2389,7 +2414,7 @@ template&lt;class... FN&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="Env_8h_source.html#l00710">710</a> of file <a class="el" href="Env_8h_source.html">Env.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="Env_8h_source.html#l00718">718</a> of file <a class="el" href="Env_8h_source.html">Env.h</a>.</p>
 
 </div>
 </div>
