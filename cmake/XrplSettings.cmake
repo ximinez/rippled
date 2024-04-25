@@ -36,6 +36,9 @@ endif()
 option (ci_tests "Mark certain tests as manual when running on \
     low-resource CI hosts" OFF)
 
+option (ci_tests "Mark certain tests as manual when running on \
+    low-resource CI hosts" OFF)
+
 option(unity "Creates a build using UNITY support in cmake." OFF)
 if(unity)
   if(NOT is_ci)
