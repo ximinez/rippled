@@ -1737,7 +1737,7 @@ class reduce_relay_simulate_test : public reduce_relay_test
 };
 
 BEAST_DEFINE_TESTSUITE(reduce_relay, overlay, ripple);
-BEAST_DEFINE_TESTSUITE_MANUAL(reduce_relay_simulate, overlay, ripple);
+BEAST_DEFINE_TESTSUITE_MANUAL_PRIO(reduce_relay_simulate, overlay, ripple, 75);
 
 }  // namespace test
 

@@ -42,7 +42,7 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE_MANUAL_PRIO(PlumpBook, app, ripple, 5);
+BEAST_DEFINE_TESTSUITE_MANUAL_PRIO(PlumpBook, app, ripple, 65);
 
 //------------------------------------------------------------------------------
 
@@ -166,7 +166,7 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE_MANUAL_PRIO(FindOversizeCross, app, ripple, 50);
+BEAST_DEFINE_TESTSUITE_MANUAL_PRIO(FindOversizeCross, app, ripple, 75);
 
 }  // namespace test
 }  // namespace ripple
