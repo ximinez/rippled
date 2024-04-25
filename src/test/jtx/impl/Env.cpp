@@ -117,6 +117,25 @@ Env::closed()
     return app().getLedgerMaster().getClosedLedger();
 }
 
+std::string
+errorMessage(Json::Value const& resp)
+{
+    if (resp.isMember("error_what") && !resp["error_what"].isNull())
+        return resp["error_what"].asString();
+    else if (
+        resp.isMember(jss::error_exception) &&
+        !resp[jss::error_exception].isNull())
+        return resp[jss::error_exception].asString();
+    else if (
+        resp.isMember(jss::error_message) && !resp[jss::error_message].isNull())
+        return resp[jss::error_message].asString();
+    else if (resp.isMember(jss::error) && !resp[jss::error].isNull())
+        return resp[jss::error].asString();
+    else if (resp.isMember(jss::result) && resp[jss::result].isObject())
+        return errorMessage(resp[jss::result]);
+    return "internal error";
+}
+
 bool
 Env::close(
     NetClock::time_point closeTime,
@@ -136,15 +155,8 @@ Env::close(
         auto resp = rpc("ledger_accept");
         if (resp["result"]["status"] != std::string("success"))
         {
-            std::string reason = "internal error";
-            if (resp.isMember("error_what"))
-                reason = resp["error_what"].asString();
-            else if (resp.isMember("error_message"))
-                reason = resp["error_message"].asString();
-            else if (resp.isMember("error"))
-                reason = resp["error"].asString();
-
-            JLOG(journal.error()) << "Env::close() failed: " << reason;
+            JLOG(journal.error())
+                << "Env::close() failed: " << errorMessage(resp);
             res = false;
         }
     }
