@@ -1724,7 +1724,7 @@ NetworkOPsImp::checkLastClosedLedger(
 
     JLOG(m_journal.warn()) << "We are not running on the consensus ledger";
     JLOG(m_journal.info()) << "Our LCL: " << ourClosed->info().hash
-                           << getJson({*ourClosed, {}});
+                           << to_string(getJson({*ourClosed, {}}));
     JLOG(m_journal.info()) << "Net LCL " << closedLedger;
 
     if ((mMode == OperatingMode::TRACKING) || (mMode == OperatingMode::FULL))
@@ -2890,7 +2890,8 @@ NetworkOPsImp::pubLedger(std::shared_ptr<ReadView const> const& lpAccepted)
     // Don't lock since pubAcceptedTransaction is locking.
     for (auto const& accTx : *alpAccepted)
     {
-        JLOG(m_journal.trace()) << "pubAccepted: " << accTx->getJson();
+        JLOG(m_journal.trace())
+            << "pubAccepted: " << to_string(accTx->getJson());
         pubValidatedTransaction(
             lpAccepted, *accTx, accTx == *(--alpAccepted->end()));
     }

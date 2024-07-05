@@ -332,14 +332,15 @@ ServerHandler::onWSMessage(
             sb.commit(boost::asio::buffer_copy(
                 sb.prepare(n), boost::asio::buffer(p, n)));
         });
-        JLOG(m_journal.trace()) << "Websocket sending '" << jvResult << "'";
+        JLOG(m_journal.trace())
+            << "Websocket sending '" << to_string(jvResult) << "'";
         session->send(
             std::make_shared<StreambufWSMsg<decltype(sb)>>(std::move(sb)));
         session->complete();
         return;
     }
 
-    JLOG(m_journal.trace()) << "Websocket received '" << jv << "'";
+    JLOG(m_journal.trace()) << "Websocket received '" << to_string(jv) << "'";
 
     auto const postResult = m_jobQueue.postCoro(
         jtCLIENT_WEBSOCKET,
@@ -396,7 +397,7 @@ logDuration(
                 << std::chrono::duration_cast<std::chrono::microseconds>(
                        duration)
                        .count()
-                << " microseconds. request = " << request;
+                << " microseconds. request = " << to_string(request);
 }
 
 Json::Value
@@ -853,12 +854,12 @@ ServerHandler::processRequest(
             user.remove_suffix(user.size());
         }
 
-        JLOG(m_journal.debug()) << "Query: " << strMethod << params;
+        JLOG(m_journal.debug()) << "Query: " << strMethod << to_string(params);
 
         // Provide the JSON-RPC method as the field "command" in the request.
         params[jss::command] = strMethod;
         JLOG(m_journal.trace())
-            << "doRpcCommand:" << strMethod << ":" << params;
+            << "doRpcCommand:" << strMethod << ":" << to_string(params);
 
         Resource::Charge loadType = Resource::feeReferenceRPC;
 
@@ -908,8 +909,9 @@ ServerHandler::processRequest(
                 result["code"] = result[jss::error_code];
                 result["message"] = result[jss::error_message];
                 result.removeMember(jss::error_message);
-                JLOG(m_journal.debug()) << "rpcError: " << result[jss::error]
-                                        << ": " << result[jss::error_message];
+                JLOG(m_journal.debug())
+                    << "rpcError: " << to_string(result[jss::error]) << ": "
+                    << to_string(result[jss::error_message]);
                 r[jss::error] = std::move(result);
             }
             else
@@ -941,8 +943,9 @@ ServerHandler::processRequest(
                 result[jss::status] = jss::error;
                 result[jss::request] = rq;
 
-                JLOG(m_journal.debug()) << "rpcError: " << result[jss::error]
-                                        << ": " << result[jss::error_message];
+                JLOG(m_journal.debug())
+                    << "rpcError: " << to_string(result[jss::error]) << ": "
+                    << to_string(result[jss::error_message]);
             }
             else
             {

@@ -141,7 +141,8 @@ LoadManager::run()
                         << " seconds.";
                     if (app_.getJobQueue().isOverloaded())
                     {
-                        JLOG(journal_.warn()) << app_.getJobQueue().getJson(0);
+                        JLOG(journal_.warn())
+                            << to_string(app_.getJobQueue().getJson(0));
                     }
                 }
                 else
@@ -150,7 +151,8 @@ LoadManager::run()
                         << "Deadlock detected. Deadlocked time: "
                         << timeSpentDeadlocked.count() << "s";
                     JLOG(journal_.fatal())
-                        << "JobQueue: " << app_.getJobQueue().getJson(0);
+                        << "JobQueue: "
+                        << to_string(app_.getJobQueue().getJson(0));
                 }
             }
 
@@ -164,7 +166,7 @@ LoadManager::run()
                     << "LogicError: Deadlock detected. Deadlocked time: "
                     << timeSpentDeadlocked.count() << "s";
                 JLOG(journal_.fatal())
-                    << "JobQueue: " << app_.getJobQueue().getJson(0);
+                    << "JobQueue: " << to_string(app_.getJobQueue().getJson(0));
                 LogicError("Deadlock detected");
             }
         }
@@ -175,7 +177,7 @@ LoadManager::run()
     if (app_.getJobQueue().isOverloaded())
     {
         JLOG(journal_.info()) << "Raising local fee (JQ overload): "
-                              << app_.getJobQueue().getJson(0);
+                              << to_string(app_.getJobQueue().getJson(0));
         change = app_.getFeeTrack().raiseLocalFee();
     }
     else

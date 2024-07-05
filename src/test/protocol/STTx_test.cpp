@@ -1608,8 +1608,9 @@ public:
 
         if (copy != j)
         {
-            log << "j=" << j.getJson(JsonOptions::none) << '\n'
-                << "copy=" << copy.getJson(JsonOptions::none) << std::endl;
+            log << "j=" << to_string(j.getJson(JsonOptions::none)) << '\n'
+                << "copy=" << to_string(copy.getJson(JsonOptions::none))
+                << std::endl;
             fail("Transaction fails serialize/deserialize test");
         }
         else
@@ -1623,8 +1624,9 @@ public:
 
         if (STObject(j) != parsed.object)
         {
-            log << "ORIG: " << j.getJson(JsonOptions::none) << '\n'
-                << "BUILT " << parsed.object->getJson(JsonOptions::none)
+            log << "ORIG: " << to_string(j.getJson(JsonOptions::none)) << '\n'
+                << "BUILT "
+                << to_string(parsed.object->getJson(JsonOptions::none))
                 << std::endl;
             fail("Built a different transaction");
         }

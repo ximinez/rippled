@@ -856,7 +856,7 @@ Transactor::operator()()
         {
             JLOG(j_.fatal()) << "Transaction serdes mismatch";
             JLOG(j_.info()) << to_string(ctx_.tx.getJson(JsonOptions::none));
-            JLOG(j_.fatal()) << s2.getJson(JsonOptions::none);
+            JLOG(j_.fatal()) << to_string(s2.getJson(JsonOptions::none));
             assert(false);
         }
     }
