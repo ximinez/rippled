@@ -1,7 +1,10 @@
-#include <set>
-#include <string>
 #ifndef HOOKENUM_INCLUDED
 #define HOOKENUM_INCLUDED 1
+
+#include <cstdint>
+#include <set>
+#include <string>
+
 namespace ripple {
 enum HookSetOperation : int8_t {
     hsoINVALID = -1,
@@ -364,4 +367,5 @@ static const std::set<std::string> import_whitelist{
     "hook_namespace",
     "meta_slot"};
 };  // namespace hook_api
+
 #endif

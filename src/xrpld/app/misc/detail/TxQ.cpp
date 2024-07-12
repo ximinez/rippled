@@ -2021,7 +2021,7 @@ TxQ::doRPC(Application& app, std::optional<XRPAmount> hookFee) const
                 return XRPAmount{1};
             return baseFee;
         }() +
-        (hookFee ? *hookFee : XRPAmount{0});
+        (hookFee.value_or(beast::zero));
 
     auto& drops = ret[jss::drops] = Json::Value();
 

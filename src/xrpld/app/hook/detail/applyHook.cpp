@@ -1353,7 +1353,7 @@ hook::finalizeHookResult(
     // directory) if we are allowed to
     if (doEmit)
     {
-        DBG_PRINTF("emitted txn count: %d\n", hookResult.emittedTxn.size());
+        DBG_PRINTF("emitted txn count: %llu\n", hookResult.emittedTxn.size());
         for (; hookResult.emittedTxn.size() > 0; hookResult.emittedTxn.pop())
         {
             auto& tpTrans = hookResult.emittedTxn.front();
@@ -3446,7 +3446,7 @@ get_stobject_length(
                 payload_length_,
                 recursion_depth + 1);
             DBG_PRINTF(
-                "%d get_stobject_length i %d %d-%d, upto %d sublength %d\n",
+                "%d get_stobject_length i %d %d-%d, upto %lld sublength %d\n",
                 recursion_depth,
                 i,
                 subtype,
@@ -4874,7 +4874,8 @@ DEFINE_HOOK_FUNCTION(int64_t, float_log, int64_t float1)
         return 0;
 
     int32_t exp_out = 0;
-    while (result * 10 < maxMantissa)
+    // Avoid overflows by dividing
+    while (result < maxMantissa / 10)
     {
         result *= 10;
         exp_out--;
@@ -4906,7 +4907,8 @@ DEFINE_HOOK_FUNCTION(int64_t, float_root, int64_t float1, uint32_t n)
         return 0;
 
     int32_t exp_out = 0;
-    while (result * 10 < maxMantissa)
+    // Avoid overflows by dividing
+    while (result < maxMantissa / 10)
     {
         result *= 10;
         exp_out--;

@@ -244,14 +244,6 @@ DeleteAccount::preclaim(PreclaimContext const& ctx)
     if ((*sleAccount)[sfSequence] + seqDelta > ctx.view.seq())
         return tecTOO_SOON;
 
-    // do not allow the account to be removed if there are hooks installed or
-    // one or more hook states when these fields are completely empty the field
-    // is made absent so this test is sufficient these fields cannot be
-    // populated unless hooks is enabled so the rules do not need to be checked
-    if (sleAccount->isFieldPresent(sfHookNamespaces) ||
-        sleAccount->isFieldPresent(sfHooks))
-        return tecHAS_OBLIGATIONS;
-
     // When fixNFTokenRemint is enabled, we don't allow an account to be
     // deleted if <FirstNFTokenSequence + MintedNFTokens> is within 256 of the
     // current ledger. This is to prevent having duplicate NFTokenIDs after
@@ -268,6 +260,14 @@ DeleteAccount::preclaim(PreclaimContext const& ctx)
              (*sleAccount)[~sfMintedNFTokens].value_or(0) + seqDelta >
          ctx.view.seq()))
         return tecTOO_SOON;
+
+    // do not allow the account to be removed if there are hooks installed or
+    // one or more hook states when these fields are completely empty the field
+    // is made absent so this test is sufficient these fields cannot be
+    // populated unless hooks is enabled so the rules do not need to be checked
+    if (sleAccount->isFieldPresent(sfHookNamespaces) ||
+        sleAccount->isFieldPresent(sfHooks))
+        return tecHAS_OBLIGATIONS;
 
     // Verify that the account does not own any objects that would prevent
     // the account from being deleted.

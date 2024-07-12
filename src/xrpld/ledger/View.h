@@ -547,7 +547,7 @@ trustAdjustLockedBalance(
     // the account which is modifying the LockedBalance is always
     // the side that isn't the issuer, so if the low side is the
     // issuer then the high side is the account.
-    bool high = lowLimit.getIssuer() == issuer;
+    bool const high = lowLimit.getIssuer() == issuer;
 
     std::vector<AccountID> parties{
         high ? sleLine->getFieldAmount(sfHighLimit).getIssuer()
@@ -822,7 +822,7 @@ trustTransferLockedBalance(
 
     auto peek = [&](Keylet& k) {
         if constexpr (std::is_same<V, ApplyView>::value && !dryRun)
-            return const_cast<ApplyView&>(view).peek(k);
+            return view.peek(k);
         else
             return view.read(k);
     };
@@ -1054,7 +1054,8 @@ trustTransferLockedBalance(
         if (isTrustDefault(sleSrcAcc, sleSrcLine))
         {
             uint32_t flags = sleSrcLine->getFieldU32(sfFlags);
-            uint32_t fReserve{srcHigh ? lsfHighReserve : lsfLowReserve};
+            LedgerSpecificFlags fReserve{
+                srcHigh ? lsfHighReserve : lsfLowReserve};
             if (flags & fReserve)
             {
                 sleSrcLine->setFieldU32(sfFlags, flags & ~fReserve);
