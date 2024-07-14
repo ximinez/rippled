@@ -17,19 +17,19 @@
 */
 //==============================================================================
 
-#include <ripple/app/rdb/ShardArchive.h>
-#include <ripple/beast/utility/temp_dir.h>
-#include <ripple/core/ConfigSections.h>
-#include <ripple/nodestore/DummyScheduler.h>
-#include <ripple/nodestore/Manager.h>
-#include <ripple/nodestore/impl/DecodedBlob.h>
-#include <ripple/protocol/jss.h>
-#include <ripple/rpc/ShardArchiveHandler.h>
 #include <test/jtx/CaptureLogs.h>
 #include <test/jtx/Env.h>
 #include <test/jtx/TrustedPublisherServer.h>
 #include <test/jtx/envconfig.h>
 #include <test/nodestore/TestBase.h>
+#include <xrpld/app/rdb/ShardArchive.h>
+#include <xrpld/core/ConfigSections.h>
+#include <xrpld/nodestore/DummyScheduler.h>
+#include <xrpld/nodestore/Manager.h>
+#include <xrpld/nodestore/detail/DecodedBlob.h>
+#include <xrpld/rpc/ShardArchiveHandler.h>
+#include <xrpl/beast/utility/temp_dir.h>
+#include <xrpl/protocol/jss.h>
 
 namespace ripple {
 namespace test {
@@ -173,7 +173,8 @@ public:
         }
         c->setupControl(true, true, true);
 
-        jtx::Env env(*this, std::move(c));
+        jtx::Env env(
+            *this, std::move(c), nullptr, beast::severities::kDisabled);
 
         std::uint8_t const numberOfDownloads = 10;
 
@@ -276,7 +277,8 @@ public:
             }
             c->setupControl(true, true, true);
 
-            jtx::Env env(*this, std::move(c));
+            jtx::Env env(
+                *this, std::move(c), nullptr, beast::severities::kDisabled);
 
             std::uint8_t const numberOfDownloads = 10;
 
@@ -380,7 +382,8 @@ public:
         }
         c->setupControl(true, true, true);
 
-        jtx::Env env(*this, std::move(c));
+        jtx::Env env(
+            *this, std::move(c), nullptr, beast::severities::kDisabled);
         std::uint8_t const numberOfDownloads = 10;
 
         // Create some ledgers so that the ShardArchiveHandler

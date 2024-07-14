@@ -17,13 +17,13 @@
 */
 //==============================================================================
 
-#include <ripple/net/DatabaseDownloader.h>
-#include <boost/filesystem/operations.hpp>
-#include <condition_variable>
-#include <mutex>
 #include <test/jtx.h>
 #include <test/jtx/TrustedPublisherServer.h>
 #include <test/unit_test/FileDirGuard.h>
+#include <xrpld/net/DatabaseDownloader.h>
+#include <boost/filesystem/operations.hpp>
+#include <condition_variable>
+#include <mutex>
 
 namespace ripple {
 namespace test {
@@ -147,6 +147,7 @@ class DatabaseDownloader_test : public beast::unit_test::suite
         // server to request from. Use the /textfile endpoint
         // to get a simple text file sent as response.
         auto server = createServer(env);
+        log << "Downloading DB from " << server->local_endpoint() << std::endl;
 
         ripple::test::detail::FileDirGuard const data{
             *this, "downloads", "data", "", false, false};
@@ -225,6 +226,8 @@ class DatabaseDownloader_test : public beast::unit_test::suite
             auto server = createServer(env);
             auto host = server->local_endpoint().address().to_string();
             auto port = std::to_string(server->local_endpoint().port());
+            log << "Downloading DB from " << server->local_endpoint()
+                << std::endl;
             server->stop();
             BEAST_EXPECT(dl->download(
                 host,
@@ -249,6 +252,8 @@ class DatabaseDownloader_test : public beast::unit_test::suite
             ripple::test::detail::FileDirGuard const datafile{
                 *this, "downloads", "data", "", false, false};
             auto server = createServer(env, false);
+            log << "Downloading DB from " << server->local_endpoint()
+                << std::endl;
             BEAST_EXPECT(dl->download(
                 server->local_endpoint().address().to_string(),
                 std::to_string(server->local_endpoint().port()),
@@ -272,6 +277,8 @@ class DatabaseDownloader_test : public beast::unit_test::suite
             ripple::test::detail::FileDirGuard const datafile{
                 *this, "downloads", "data", "", false, false};
             auto server = createServer(env);
+            log << "Downloading DB from " << server->local_endpoint()
+                << std::endl;
             BEAST_EXPECT(dl->download(
                 server->local_endpoint().address().to_string(),
                 std::to_string(server->local_endpoint().port()),

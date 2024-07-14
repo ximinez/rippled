@@ -22,11 +22,11 @@
 
 // Convenience header that includes everything
 
-#include <ripple/json/to_string.h>
 #include <test/jtx/Account.h>
 #include <test/jtx/Env.h>
 #include <test/jtx/Env_ss.h>
 #include <test/jtx/JTx.h>
+#include <test/jtx/TestHelpers.h>
 #include <test/jtx/account_txn_id.h>
 #include <test/jtx/acctdelete.h>
 #include <test/jtx/amount.h>
@@ -34,6 +34,7 @@
 #include <test/jtx/check.h>
 #include <test/jtx/delivermin.h>
 #include <test/jtx/deposit.h>
+#include <test/jtx/did.h>
 #include <test/jtx/fee.h>
 #include <test/jtx/flags.h>
 #include <test/jtx/invoice_id.h>
@@ -52,6 +53,7 @@
 #include <test/jtx/regkey.h>
 #include <test/jtx/require.h>
 #include <test/jtx/requires.h>
+#include <test/jtx/rpc.h>
 #include <test/jtx/sendmax.h>
 #include <test/jtx/seq.h>
 #include <test/jtx/sig.h>
@@ -63,5 +65,6 @@
 #include <test/jtx/trust.h>
 #include <test/jtx/txflags.h>
 #include <test/jtx/utility.h>
+#include <xrpl/json/to_string.h>
 
 #endif

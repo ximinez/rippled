@@ -17,9 +17,9 @@
 */
 //==============================================================================
 
-#include <ripple/beast/unit_test.h>
-#include <ripple/protocol/jss.h>
 #include <test/jtx.h>
+#include <xrpl/beast/unit_test.h>
+#include <xrpl/protocol/jss.h>
 
 namespace ripple {
 
@@ -56,11 +56,22 @@ class AccountCurrencies_test : public beast::unit_test::suite
                 result[jss::error_message] == "Missing field 'account'.");
         }
 
-        {  // strict mode, invalid bitcoin token
+        {
             Json::Value params;
             params[jss::account] =
                 "llIIOO";  // these are invalid in bitcoin alphabet
-            params[jss::strict] = true;
+            auto const result = env.rpc(
+                "json",
+                "account_currencies",
+                boost::lexical_cast<std::string>(params))[jss::result];
+            BEAST_EXPECT(result[jss::error] == "actMalformed");
+            BEAST_EXPECT(result[jss::error_message] == "Account malformed.");
+        }
+
+        {
+            // Cannot use a seed as account
+            Json::Value params;
+            params[jss::account] = "Bob";
             auto const result = env.rpc(
                 "json",
                 "account_currencies",

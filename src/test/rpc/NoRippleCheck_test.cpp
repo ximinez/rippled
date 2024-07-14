@@ -17,17 +17,17 @@
 */
 //==============================================================================
 
-#include <ripple/app/misc/TxQ.h>
-#include <ripple/beast/utility/temp_dir.h>
-#include <ripple/protocol/Feature.h>
-#include <ripple/protocol/jss.h>
-#include <ripple/resource/ResourceManager.h>
-#include <ripple/resource/impl/Entry.h>
-#include <ripple/resource/impl/Tuning.h>
-#include <ripple/rpc/impl/Tuning.h>
-#include <boost/algorithm/string/predicate.hpp>
 #include <test/jtx.h>
 #include <test/jtx/envconfig.h>
+#include <xrpld/app/misc/TxQ.h>
+#include <xrpld/rpc/detail/Tuning.h>
+#include <xrpl/beast/utility/temp_dir.h>
+#include <xrpl/protocol/Feature.h>
+#include <xrpl/protocol/jss.h>
+#include <xrpl/resource/ResourceManager.h>
+#include <xrpl/resource/detail/Entry.h>
+#include <xrpl/resource/detail/Tuning.h>
+#include <boost/algorithm/string/predicate.hpp>
 
 namespace ripple {
 
@@ -127,8 +127,8 @@ class NoRippleCheck_test : public beast::unit_test::suite
                 "json",
                 "noripple_check",
                 boost::lexical_cast<std::string>(params))[jss::result];
-            BEAST_EXPECT(result[jss::error] == "badSeed");
-            BEAST_EXPECT(result[jss::error_message] == "Disallowed seed.");
+            BEAST_EXPECT(result[jss::error] == "actMalformed");
+            BEAST_EXPECT(result[jss::error_message] == "Account malformed.");
         }
     }
 

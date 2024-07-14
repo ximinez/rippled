@@ -17,11 +17,15 @@
 */
 //==============================================================================
 
-#include <ripple/json/json_reader.h>
-#include <ripple/json/json_value.h>
-#include <ripple/json/to_string.h>
-#include <ripple/protocol/jss.h>
 #include <test/jtx.h>
+#include <test/jtx/AMM.h>
+#include <test/jtx/xchain_bridge.h>
+#include <xrpld/app/tx/detail/NFTokenMint.h>
+#include <xrpl/json/json_reader.h>
+#include <xrpl/json/json_value.h>
+#include <xrpl/json/to_string.h>
+#include <xrpl/protocol/jss.h>
+#include <xrpl/protocol/nft.h>
 
 #include <boost/utility/string_ref.hpp>
 
@@ -131,7 +135,7 @@ public:
                 "n94JNrQYkDrpt62bbSR7nVEhdyAvcJXRAsjEkFYyqRkh9SUTYEqV";
             auto resp = env.rpc("json", "account_objects", to_string(params));
             BEAST_EXPECT(
-                resp[jss::result][jss::error_message] == "Disallowed seed.");
+                resp[jss::result][jss::error_message] == "Account malformed.");
         }
         // test error on account that's not in the ledger.
         {
@@ -294,7 +298,7 @@ public:
         {
             Json::Value params;
             params[jss::account] = bob.human();
-            params[jss::type] = "state";
+            params[jss::type] = jss::state;
             auto resp = env.rpc("json", "account_objects", to_string(params));
             BEAST_EXPECT(!resp.isMember(jss::marker));
 
@@ -321,14 +325,217 @@ public:
                 auto& aobj = aobjs[0U];
                 if (i < 3)
                     BEAST_EXPECT(resp[jss::result][jss::limit] == 1);
+                else
+                    BEAST_EXPECT(!resp[jss::result].isMember(jss::limit));
 
                 aobj.removeMember("PreviousTxnID");
                 aobj.removeMember("PreviousTxnLgrSeq");
 
                 BEAST_EXPECT(aobj == bobj[i]);
 
-                auto resume_marker = resp[jss::result][jss::marker];
-                params[jss::marker] = resume_marker;
+                params[jss::marker] = resp[jss::result][jss::marker];
+            }
+        }
+    }
+
+    void
+    testUnsteppedThenSteppedWithNFTs()
+    {
+        // The preceding test case, unsteppedThenStepped(), found a bug in the
+        // support for NFToken Pages.  So we're leaving that test alone when
+        // adding tests to exercise NFTokenPages.
+        testcase("unsteppedThenSteppedWithNFTs");
+
+        using namespace jtx;
+        Env env(*this);
+
+        Account const gw1{"G1"};
+        Account const gw2{"G2"};
+        Account const bob{"bob"};
+
+        auto const USD1 = gw1["USD"];
+        auto const USD2 = gw2["USD"];
+
+        env.fund(XRP(1000), gw1, gw2, bob);
+        env.close();
+
+        // Check behavior if there are no account objects.
+        {
+            // Unpaged
+            Json::Value params;
+            params[jss::account] = bob.human();
+            auto resp = env.rpc("json", "account_objects", to_string(params));
+            BEAST_EXPECT(!resp.isMember(jss::marker));
+            BEAST_EXPECT(resp[jss::result][jss::account_objects].size() == 0);
+
+            // Limit == 1
+            params[jss::limit] = 1;
+            resp = env.rpc("json", "account_objects", to_string(params));
+            BEAST_EXPECT(!resp.isMember(jss::marker));
+            BEAST_EXPECT(resp[jss::result][jss::account_objects].size() == 0);
+        }
+
+        // Check behavior if there are only NFTokens.
+        env(token::mint(bob, 0u), txflags(tfTransferable));
+        env.close();
+
+        // test 'unstepped'
+        // i.e. request account objects without explicit limit/marker paging
+        Json::Value unpaged;
+        {
+            Json::Value params;
+            params[jss::account] = bob.human();
+            auto resp = env.rpc("json", "account_objects", to_string(params));
+            BEAST_EXPECT(!resp.isMember(jss::marker));
+
+            unpaged = resp[jss::result][jss::account_objects];
+            BEAST_EXPECT(unpaged.size() == 1);
+        }
+        // test request with type parameter as filter, unstepped
+        {
+            Json::Value params;
+            params[jss::account] = bob.human();
+            params[jss::type] = jss::nft_page;
+            auto resp = env.rpc("json", "account_objects", to_string(params));
+            BEAST_EXPECT(!resp.isMember(jss::marker));
+            Json::Value& aobjs = resp[jss::result][jss::account_objects];
+            BEAST_EXPECT(aobjs.size() == 1);
+            BEAST_EXPECT(
+                aobjs[0u][sfLedgerEntryType.jsonName] == jss::NFTokenPage);
+            BEAST_EXPECT(aobjs[0u][sfNFTokens.jsonName].size() == 1);
+        }
+        // test stepped one-at-a-time with limit=1, resume from prev marker
+        {
+            Json::Value params;
+            params[jss::account] = bob.human();
+            params[jss::limit] = 1;
+
+            Json::Value resp =
+                env.rpc("json", "account_objects", to_string(params));
+            Json::Value& aobjs = resp[jss::result][jss::account_objects];
+            BEAST_EXPECT(aobjs.size() == 1);
+            auto& aobj = aobjs[0U];
+            BEAST_EXPECT(!resp[jss::result].isMember(jss::limit));
+            BEAST_EXPECT(!resp[jss::result].isMember(jss::marker));
+
+            BEAST_EXPECT(aobj == unpaged[0u]);
+        }
+
+        // Add more objects in addition to the NFToken Page.
+        env.trust(USD1(1000), bob);
+        env.trust(USD2(1000), bob);
+
+        env(pay(gw1, bob, USD1(1000)));
+        env(pay(gw2, bob, USD2(1000)));
+
+        env(offer(bob, XRP(100), bob["USD"](1)), txflags(tfPassive));
+        env(offer(bob, XRP(100), USD1(1)), txflags(tfPassive));
+        env.close();
+
+        // test 'unstepped'
+        {
+            Json::Value params;
+            params[jss::account] = bob.human();
+            auto resp = env.rpc("json", "account_objects", to_string(params));
+            BEAST_EXPECT(!resp.isMember(jss::marker));
+
+            unpaged = resp[jss::result][jss::account_objects];
+            BEAST_EXPECT(unpaged.size() == 5);
+        }
+        // test request with type parameter as filter, unstepped
+        {
+            Json::Value params;
+            params[jss::account] = bob.human();
+            params[jss::type] = jss::nft_page;
+            auto resp = env.rpc("json", "account_objects", to_string(params));
+            BEAST_EXPECT(!resp.isMember(jss::marker));
+            Json::Value& aobjs = resp[jss::result][jss::account_objects];
+            BEAST_EXPECT(aobjs.size() == 1);
+            BEAST_EXPECT(
+                aobjs[0u][sfLedgerEntryType.jsonName] == jss::NFTokenPage);
+            BEAST_EXPECT(aobjs[0u][sfNFTokens.jsonName].size() == 1);
+        }
+        // test stepped one-at-a-time with limit=1, resume from prev marker
+        {
+            Json::Value params;
+            params[jss::account] = bob.human();
+            params[jss::limit] = 1;
+            for (int i = 0; i < 5; ++i)
+            {
+                Json::Value resp =
+                    env.rpc("json", "account_objects", to_string(params));
+                Json::Value& aobjs = resp[jss::result][jss::account_objects];
+                BEAST_EXPECT(aobjs.size() == 1);
+                auto& aobj = aobjs[0U];
+                if (i < 4)
+                {
+                    BEAST_EXPECT(resp[jss::result][jss::limit] == 1);
+                    BEAST_EXPECT(resp[jss::result].isMember(jss::marker));
+                }
+                else
+                {
+                    BEAST_EXPECT(!resp[jss::result].isMember(jss::limit));
+                    BEAST_EXPECT(!resp[jss::result].isMember(jss::marker));
+                }
+
+                BEAST_EXPECT(aobj == unpaged[i]);
+
+                params[jss::marker] = resp[jss::result][jss::marker];
+            }
+        }
+
+        // Make sure things still work if there is more than 1 NFT Page.
+        for (int i = 0; i < 32; ++i)
+        {
+            env(token::mint(bob, 0u), txflags(tfTransferable));
+            env.close();
+        }
+        // test 'unstepped'
+        {
+            Json::Value params;
+            params[jss::account] = bob.human();
+            auto resp = env.rpc("json", "account_objects", to_string(params));
+            BEAST_EXPECT(!resp.isMember(jss::marker));
+
+            unpaged = resp[jss::result][jss::account_objects];
+            BEAST_EXPECT(unpaged.size() == 6);
+        }
+        // test request with type parameter as filter, unstepped
+        {
+            Json::Value params;
+            params[jss::account] = bob.human();
+            params[jss::type] = jss::nft_page;
+            auto resp = env.rpc("json", "account_objects", to_string(params));
+            BEAST_EXPECT(!resp.isMember(jss::marker));
+            Json::Value& aobjs = resp[jss::result][jss::account_objects];
+            BEAST_EXPECT(aobjs.size() == 2);
+        }
+        // test stepped one-at-a-time with limit=1, resume from prev marker
+        {
+            Json::Value params;
+            params[jss::account] = bob.human();
+            params[jss::limit] = 1;
+            for (int i = 0; i < 6; ++i)
+            {
+                Json::Value resp =
+                    env.rpc("json", "account_objects", to_string(params));
+                Json::Value& aobjs = resp[jss::result][jss::account_objects];
+                BEAST_EXPECT(aobjs.size() == 1);
+                auto& aobj = aobjs[0U];
+                if (i < 5)
+                {
+                    BEAST_EXPECT(resp[jss::result][jss::limit] == 1);
+                    BEAST_EXPECT(resp[jss::result].isMember(jss::marker));
+                }
+                else
+                {
+                    BEAST_EXPECT(!resp[jss::result].isMember(jss::limit));
+                    BEAST_EXPECT(!resp[jss::result].isMember(jss::marker));
+                }
+
+                BEAST_EXPECT(aobj == unpaged[i]);
+
+                params[jss::marker] = resp[jss::result][jss::marker];
             }
         }
     }
@@ -346,13 +553,24 @@ public:
         Account const gw{"gateway"};
         auto const USD = gw["USD"];
 
-        Env env(*this);
+        auto const features =
+            supported_amendments() | FeatureBitset{featureXChainBridge};
+        Env env(*this, features);
 
         // Make a lambda we can use to get "account_objects" easily.
-        auto acct_objs = [&env](Account const& acct, char const* type) {
+        auto acct_objs = [&env](
+                             AccountID const& acct,
+                             std::optional<Json::StaticString> const& type,
+                             std::optional<std::uint16_t> limit = std::nullopt,
+                             std::optional<std::string> marker = std::nullopt) {
             Json::Value params;
-            params[jss::account] = acct.human();
-            params[jss::type] = type;
+            params[jss::account] = to_string(acct);
+            if (type)
+                params[jss::type] = *type;
+            if (limit)
+                params[jss::limit] = *limit;
+            if (marker)
+                params[jss::marker] = *marker;
             params[jss::ledger_index] = "validated";
             return env.rpc("json", "account_objects", to_string(params));
         };
@@ -376,11 +594,30 @@ public:
         BEAST_EXPECT(acct_objs_is_size(acct_objs(gw, jss::escrow), 0));
         BEAST_EXPECT(acct_objs_is_size(acct_objs(gw, jss::fee), 0));
         BEAST_EXPECT(acct_objs_is_size(acct_objs(gw, jss::hashes), 0));
+        BEAST_EXPECT(acct_objs_is_size(acct_objs(gw, jss::nft_page), 0));
         BEAST_EXPECT(acct_objs_is_size(acct_objs(gw, jss::offer), 0));
         BEAST_EXPECT(acct_objs_is_size(acct_objs(gw, jss::payment_channel), 0));
         BEAST_EXPECT(acct_objs_is_size(acct_objs(gw, jss::signer_list), 0));
         BEAST_EXPECT(acct_objs_is_size(acct_objs(gw, jss::state), 0));
         BEAST_EXPECT(acct_objs_is_size(acct_objs(gw, jss::ticket), 0));
+        BEAST_EXPECT(acct_objs_is_size(acct_objs(gw, jss::amm), 0));
+        BEAST_EXPECT(acct_objs_is_size(acct_objs(gw, jss::did), 0));
+
+        // gw mints an NFT so we can find it.
+        uint256 const nftID{token::getNextID(env, gw, 0u, tfTransferable)};
+        env(token::mint(gw, 0u), txflags(tfTransferable));
+        env.close();
+        {
+            // Find the NFToken page and make sure it's the right one.
+            Json::Value const resp = acct_objs(gw, jss::nft_page);
+            BEAST_EXPECT(acct_objs_is_size(resp, 1));
+
+            auto const& nftPage = resp[jss::result][jss::account_objects][0u];
+            BEAST_EXPECT(nftPage[sfNFTokens.jsonName].size() == 1);
+            BEAST_EXPECT(
+                nftPage[sfNFTokens.jsonName][0u][sfNFToken.jsonName]
+                       [sfNFTokenID.jsonName] == to_string(nftID));
+        }
 
         // Set up a trust line so we can find it.
         env.trust(USD(1000), alice);
@@ -445,6 +682,142 @@ public:
             BEAST_EXPECT(escrow[sfDestination.jsonName] == gw.human());
             BEAST_EXPECT(escrow[sfAmount.jsonName].asUInt() == 100'000'000);
         }
+        {
+            // Create a bridge
+            test::jtx::XChainBridgeObjects x;
+            Env scEnv(*this, envconfig(port_increment, 3), features);
+            x.createScBridgeObjects(scEnv);
+
+            auto scenv_acct_objs = [&](Account const& acct, char const* type) {
+                Json::Value params;
+                params[jss::account] = acct.human();
+                params[jss::type] = type;
+                params[jss::ledger_index] = "validated";
+                return scEnv.rpc("json", "account_objects", to_string(params));
+            };
+
+            Json::Value const resp =
+                scenv_acct_objs(Account::master, jss::bridge);
+
+            BEAST_EXPECT(acct_objs_is_size(resp, 1));
+            auto const& acct_bridge =
+                resp[jss::result][jss::account_objects][0u];
+            BEAST_EXPECT(
+                acct_bridge[sfAccount.jsonName] == Account::master.human());
+            BEAST_EXPECT(
+                acct_bridge[sfLedgerEntryType.getJsonName()] == "Bridge");
+            BEAST_EXPECT(
+                acct_bridge[sfXChainClaimID.getJsonName()].asUInt() == 0);
+            BEAST_EXPECT(
+                acct_bridge[sfXChainAccountClaimCount.getJsonName()].asUInt() ==
+                0);
+            BEAST_EXPECT(
+                acct_bridge[sfXChainAccountCreateCount.getJsonName()]
+                    .asUInt() == 0);
+            BEAST_EXPECT(
+                acct_bridge[sfMinAccountCreateAmount.getJsonName()].asUInt() ==
+                20000000);
+            BEAST_EXPECT(
+                acct_bridge[sfSignatureReward.getJsonName()].asUInt() ==
+                1000000);
+            BEAST_EXPECT(acct_bridge[sfXChainBridge.getJsonName()] == x.jvb);
+        }
+        {
+            // Alice and Bob create a xchain sequence number that we can look
+            // for in the ledger.
+            test::jtx::XChainBridgeObjects x;
+            Env scEnv(*this, envconfig(port_increment, 3), features);
+            x.createScBridgeObjects(scEnv);
+
+            scEnv(
+                xchain_create_claim_id(x.scAlice, x.jvb, x.reward, x.mcAlice));
+            scEnv.close();
+            scEnv(xchain_create_claim_id(x.scBob, x.jvb, x.reward, x.mcBob));
+            scEnv.close();
+
+            auto scenv_acct_objs = [&](Account const& acct, char const* type) {
+                Json::Value params;
+                params[jss::account] = acct.human();
+                params[jss::type] = type;
+                params[jss::ledger_index] = "validated";
+                return scEnv.rpc("json", "account_objects", to_string(params));
+            };
+
+            {
+                // Find the xchain sequence number for Andrea.
+                Json::Value const resp =
+                    scenv_acct_objs(x.scAlice, jss::xchain_owned_claim_id);
+                BEAST_EXPECT(acct_objs_is_size(resp, 1));
+
+                auto const& xchain_seq =
+                    resp[jss::result][jss::account_objects][0u];
+                BEAST_EXPECT(
+                    xchain_seq[sfAccount.jsonName] == x.scAlice.human());
+                BEAST_EXPECT(
+                    xchain_seq[sfXChainClaimID.getJsonName()].asUInt() == 1);
+            }
+            {
+                // and the one for Bob
+                Json::Value const resp =
+                    scenv_acct_objs(x.scBob, jss::xchain_owned_claim_id);
+                BEAST_EXPECT(acct_objs_is_size(resp, 1));
+
+                auto const& xchain_seq =
+                    resp[jss::result][jss::account_objects][0u];
+                BEAST_EXPECT(xchain_seq[sfAccount.jsonName] == x.scBob.human());
+                BEAST_EXPECT(
+                    xchain_seq[sfXChainClaimID.getJsonName()].asUInt() == 2);
+            }
+        }
+        {
+            test::jtx::XChainBridgeObjects x;
+            Env scEnv(*this, envconfig(port_increment, 3), features);
+            x.createScBridgeObjects(scEnv);
+            auto const amt = XRP(1000);
+
+            // send first batch of account create attestations, so the
+            // xchain_create_account_claim_id should be present on the door
+            // account (Account::master) to collect the signatures until a
+            // quorum is reached
+            scEnv(test::jtx::create_account_attestation(
+                x.scAttester,
+                x.jvb,
+                x.mcCarol,
+                amt,
+                x.reward,
+                x.payees[0],
+                true,
+                1,
+                x.scuAlice,
+                x.signers[0]));
+            scEnv.close();
+
+            auto scenv_acct_objs = [&](Account const& acct, char const* type) {
+                Json::Value params;
+                params[jss::account] = acct.human();
+                params[jss::type] = type;
+                params[jss::ledger_index] = "validated";
+                return scEnv.rpc("json", "account_objects", to_string(params));
+            };
+
+            {
+                // Find the xchain_create_account_claim_id
+                Json::Value const resp = scenv_acct_objs(
+                    Account::master, jss::xchain_owned_create_account_claim_id);
+                BEAST_EXPECT(acct_objs_is_size(resp, 1));
+
+                auto const& xchain_create_account_claim_id =
+                    resp[jss::result][jss::account_objects][0u];
+                BEAST_EXPECT(
+                    xchain_create_account_claim_id[sfAccount.jsonName] ==
+                    Account::master.human());
+                BEAST_EXPECT(
+                    xchain_create_account_claim_id[sfXChainAccountCreateCount
+                                                       .getJsonName()]
+                        .asUInt() == 1);
+            }
+        }
+
         // gw creates an offer that we can look for in the ledger.
         env(offer(gw, USD(7), XRP(14)));
         env.close();
@@ -459,7 +832,8 @@ public:
             BEAST_EXPECT(offer[sfTakerPays.jsonName][jss::value].asUInt() == 7);
         }
         {
-            // Create a payment channel from qw to alice that we can look for.
+            // Create a payment channel from qw to alice that we can look
+            // for.
             Json::Value jvPayChan;
             jvPayChan[jss::TransactionType] = jss::PaymentChannelCreate;
             jvPayChan[jss::Flags] = tfUniversal;
@@ -483,8 +857,28 @@ public:
             BEAST_EXPECT(
                 payChan[sfSettleDelay.jsonName].asUInt() == 24 * 60 * 60);
         }
+
+        {
+            // gw creates a DID that we can look for in the ledger.
+            Json::Value jvDID;
+            jvDID[jss::TransactionType] = jss::DIDSet;
+            jvDID[jss::Flags] = tfUniversal;
+            jvDID[jss::Account] = gw.human();
+            jvDID[sfURI.jsonName] = strHex(std::string{"uri"});
+            env(jvDID);
+            env.close();
+        }
+        {
+            // Find the DID.
+            Json::Value const resp = acct_objs(gw, jss::did);
+            BEAST_EXPECT(acct_objs_is_size(resp, 1));
+
+            auto const& did = resp[jss::result][jss::account_objects][0u];
+            BEAST_EXPECT(did[sfAccount.jsonName] == gw.human());
+            BEAST_EXPECT(did[sfURI.jsonName] == strHex(std::string{"uri"}));
+        }
         // Make gw multisigning by adding a signerList.
-        env(signers(gw, 6, {{alice, 7}}));
+        env(jtx::signers(gw, 6, {{alice, 7}}));
         env.close();
         {
             // Find the signer list.
@@ -510,7 +904,7 @@ public:
             auto const& ticket = resp[jss::result][jss::account_objects][0u];
             BEAST_EXPECT(ticket[sfAccount.jsonName] == gw.human());
             BEAST_EXPECT(ticket[sfLedgerEntryType.jsonName] == jss::Ticket);
-            BEAST_EXPECT(ticket[sfTicketSequence.jsonName].asUInt() == 12);
+            BEAST_EXPECT(ticket[sfTicketSequence.jsonName].asUInt() == 14);
         }
         {
             // See how "deletion_blockers_only" handles gw's directory.
@@ -523,6 +917,7 @@ public:
                 std::vector<std::string> v{
                     jss::Escrow.c_str(),
                     jss::Check.c_str(),
+                    jss::NFTokenPage.c_str(),
                     jss::RippleState.c_str(),
                     jss::PayChannel.c_str()};
                 std::sort(v.begin(), v.end());
@@ -561,6 +956,67 @@ public:
                 BEAST_EXPECT(aobjs[0u]["LedgerEntryType"] == jss::Escrow);
             }
         }
+        {
+            // Make a lambda to get the types
+            auto getTypes = [&](Json::Value const& resp,
+                                std::vector<std::string>& typesOut) {
+                auto const objs = resp[jss::result][jss::account_objects];
+                for (auto const& obj : resp[jss::result][jss::account_objects])
+                    typesOut.push_back(
+                        obj[sfLedgerEntryType.fieldName].asString());
+                std::sort(typesOut.begin(), typesOut.end());
+            };
+            // Make a lambda we can use to check the number of fetched
+            // account objects and their ledger type
+            auto expectObjects =
+                [&](Json::Value const& resp,
+                    std::vector<std::string> const& types) -> bool {
+                if (!acct_objs_is_size(resp, types.size()))
+                    return false;
+                std::vector<std::string> typesOut;
+                getTypes(resp, typesOut);
+                return types == typesOut;
+            };
+            // Find AMM objects
+            AMM amm(env, gw, XRP(1'000), USD(1'000));
+            amm.deposit(alice, USD(1));
+            // AMM account has 4 objects: AMM object and 3 trustlines
+            auto const lines = getAccountLines(env, amm.ammAccount());
+            BEAST_EXPECT(lines[jss::lines].size() == 3);
+            // request AMM only, doesn't depend on the limit
+            BEAST_EXPECT(
+                acct_objs_is_size(acct_objs(amm.ammAccount(), jss::amm), 1));
+            // request first two objects
+            auto resp = acct_objs(amm.ammAccount(), std::nullopt, 2);
+            std::vector<std::string> typesOut;
+            getTypes(resp, typesOut);
+            // request next two objects
+            resp = acct_objs(
+                amm.ammAccount(),
+                std::nullopt,
+                10,
+                resp[jss::result][jss::marker].asString());
+            getTypes(resp, typesOut);
+            BEAST_EXPECT(
+                (typesOut ==
+                 std::vector<std::string>{
+                     jss::AMM.c_str(),
+                     jss::RippleState.c_str(),
+                     jss::RippleState.c_str(),
+                     jss::RippleState.c_str()}));
+            // filter by state: there are three trustlines
+            resp = acct_objs(amm.ammAccount(), jss::state, 10);
+            BEAST_EXPECT(expectObjects(
+                resp,
+                {jss::RippleState.c_str(),
+                 jss::RippleState.c_str(),
+                 jss::RippleState.c_str()}));
+            // AMM account doesn't own offers
+            BEAST_EXPECT(
+                acct_objs_is_size(acct_objs(amm.ammAccount(), jss::offer), 0));
+            // gw account doesn't own AMM object
+            BEAST_EXPECT(acct_objs_is_size(acct_objs(gw, jss::amm), 0));
+        }
 
         // Run up the number of directory entries so gw has two
         // directory nodes.
@@ -579,11 +1035,135 @@ public:
     }
 
     void
+    testNFTsMarker()
+    {
+        // there's some bug found in account_nfts method that it did not
+        // return invalid params when providing unassociated nft marker.
+        // this test tests both situations when providing valid nft marker
+        // and unassociated nft marker.
+        testcase("NFTsMarker");
+
+        using namespace jtx;
+        Env env(*this);
+
+        Account const bob{"bob"};
+        env.fund(XRP(10000), bob);
+
+        static constexpr unsigned nftsSize = 10;
+        for (unsigned i = 0; i < nftsSize; i++)
+        {
+            env(token::mint(bob, 0));
+        }
+
+        env.close();
+
+        // save the NFTokenIDs to use later
+        std::vector<Json::Value> tokenIDs;
+        {
+            Json::Value params;
+            params[jss::account] = bob.human();
+            params[jss::ledger_index] = "validated";
+            Json::Value const resp =
+                env.rpc("json", "account_nfts", to_string(params));
+            Json::Value const& nfts = resp[jss::result][jss::account_nfts];
+            for (Json::Value const& nft : nfts)
+                tokenIDs.push_back(nft["NFTokenID"]);
+        }
+
+        // this lambda function is used to check if the account_nfts method
+        // returns the correct token information. lastIndex is used to query the
+        // last marker.
+        auto compareNFTs = [&tokenIDs, &env, &bob](
+                               unsigned const limit, unsigned const lastIndex) {
+            Json::Value params;
+            params[jss::account] = bob.human();
+            params[jss::limit] = limit;
+            params[jss::marker] = tokenIDs[lastIndex];
+            params[jss::ledger_index] = "validated";
+            Json::Value const resp =
+                env.rpc("json", "account_nfts", to_string(params));
+
+            if (resp[jss::result].isMember(jss::error))
+                return false;
+
+            Json::Value const& nfts = resp[jss::result][jss::account_nfts];
+            unsigned const nftsCount = tokenIDs.size() - lastIndex - 1 < limit
+                ? tokenIDs.size() - lastIndex - 1
+                : limit;
+
+            if (nfts.size() != nftsCount)
+                return false;
+
+            for (unsigned i = 0; i < nftsCount; i++)
+            {
+                if (nfts[i]["NFTokenID"] != tokenIDs[lastIndex + 1 + i])
+                    return false;
+            }
+
+            return true;
+        };
+
+        // test a valid marker which is equal to the third tokenID
+        BEAST_EXPECT(compareNFTs(4, 2));
+
+        // test a valid marker which is equal to the 8th tokenID
+        BEAST_EXPECT(compareNFTs(4, 7));
+
+        // lambda that holds common code for invalid cases.
+        auto testInvalidMarker = [&env, &bob](
+                                     auto marker, char const* errorMessage) {
+            Json::Value params;
+            params[jss::account] = bob.human();
+            params[jss::limit] = 4;
+            params[jss::ledger_index] = jss::validated;
+            params[jss::marker] = marker;
+            Json::Value const resp =
+                env.rpc("json", "account_nfts", to_string(params));
+            return resp[jss::result][jss::error_message] == errorMessage;
+        };
+
+        // test an invalid marker that is not a string
+        BEAST_EXPECT(
+            testInvalidMarker(17, "Invalid field \'marker\', not string."));
+
+        // test an invalid marker that has a non-hex character
+        BEAST_EXPECT(testInvalidMarker(
+            "00000000F51DFC2A09D62CBBA1DFBDD4691DAC96AD98B900000000000000000G",
+            "Invalid field \'marker\'."));
+
+        // this lambda function is used to create some fake marker using given
+        // taxon and sequence because we want to test some unassociated markers
+        // later
+        auto createFakeNFTMarker = [](AccountID const& issuer,
+                                      std::uint32_t taxon,
+                                      std::uint32_t tokenSeq,
+                                      std::uint16_t flags = 0,
+                                      std::uint16_t fee = 0) {
+            // the marker has the exact same format as an NFTokenID
+            return to_string(NFTokenMint::createNFTokenID(
+                flags, fee, issuer, nft::toTaxon(taxon), tokenSeq));
+        };
+
+        // test an unassociated marker which does not exist in the NFTokenIDs
+        BEAST_EXPECT(testInvalidMarker(
+            createFakeNFTMarker(bob.id(), 0x000000000, 0x00000000),
+            "Invalid field \'marker\'."));
+
+        // test an unassociated marker which exceeds the maximum value of the
+        // existing NFTokenID
+        BEAST_EXPECT(testInvalidMarker(
+            createFakeNFTMarker(bob.id(), 0xFFFFFFFF, 0xFFFFFFFF),
+            "Invalid field \'marker\'."));
+    }
+
+    void
     run() override
     {
         testErrors();
         testUnsteppedThenStepped();
+        testUnsteppedThenSteppedWithNFTs();
         testObjectTypes();
+        testNFTsMarker();
     }
 };
 
