@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['license_0',['LICENSE',['../md____w_rippled_rippled_LICENSE.html',1,'']]]
+  ['json_0',['JSON',['../md____w_rippled_rippled_include_xrpl_json_README.html',1,'']]]
 ];

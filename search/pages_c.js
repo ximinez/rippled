@@ -1,5 +1,6 @@
 var searchData=
 [
-  ['shard_20downloader_0',['Shard Downloader',['../md_xrpld_net_ShardDownloader.html',1,'']]],
-  ['shard_20size_20tuning_1',['Shard size Tuning',['../md_xrpld_nodestore_ShardSizeTuning.html',1,'']]]
+  ['open_20shard_20management_0',['Open Shard Management',['../md_xrpld_nodestore_ShardPool.html',1,'']]],
+  ['operating_20an_20xrp_20ledger_20server_20securely_1',['Operating an XRP Ledger server securely',['../md____w_rippled_rippled_SECURITY.html',1,'']]],
+  ['overlay_2',['Overlay',['../md_xrpld_overlay_README.html',1,'']]]
 ];
