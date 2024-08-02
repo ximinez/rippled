@@ -1,5 +1,4 @@
 var searchData=
 [
-  ['json_0',['JSON',['../md_ripple_json_README.html',1,'']]],
-  ['json_20todo_1',['JSON TODO',['../md_ripple_json_TODO.html',1,'']]]
+  ['open_20shard_20management_0',['Open Shard Management',['../md_xrpld_nodestore_ShardPool.html',1,'']]]
 ];

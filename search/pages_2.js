@@ -1,5 +1,6 @@
 var searchData=
 [
-  ['basics_0',['Basics',['../md_ripple_basics_README.html',1,'']]],
-  ['building_20documentation_1',['Building documentation',['../md____w_rippled_rippled_docs_README.html',1,'']]]
+  ['code_20style_20cheat_20sheet_0',['Code Style Cheat Sheet',['../md____w_rippled_rippled_docs_CheatSheet.html',1,'']]],
+  ['coding_20standards_1',['Coding Standards',['../md____w_rippled_rippled_docs_CodingStyle.html',1,'']]],
+  ['consensus_20and_20validation_2',['Consensus and Validation',['../md____w_rippled_rippled_docs_consensus.html',1,'']]]
 ];

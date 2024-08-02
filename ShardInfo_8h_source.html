@@ -69,7 +69,7 @@ $(function() {
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="dir_df9c78dcf3f59a33b12284f95992a64b.html">ripple</a></li><li class="navelem"><a class="el" href="dir_ceb6d1bc218d15504336f945ff1322da.html">nodestore</a></li>  </ul>
+<li class="navelem"><a class="el" href="dir_a62226f9e3a6c7c5a3be455e2f87ae01.html">xrpld</a></li><li class="navelem"><a class="el" href="dir_7ce8509406ee125b7d32b7e664ae4e18.html">nodestore</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
@@ -98,9 +98,9 @@ $(function() {
 <div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span><span class="preprocessor">#ifndef RIPPLE_NODESTORE_SHARDINFO_H_INCLUDED</span></div>
 <div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span><span class="preprocessor">#define RIPPLE_NODESTORE_SHARDINFO_H_INCLUDED</span></div>
 <div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span> </div>
-<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span><span class="preprocessor">#include &lt;ripple/basics/RangeSet.h&gt;</span></div>
-<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span><span class="preprocessor">#include &lt;ripple/nodestore/Types.h&gt;</span></div>
-<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span><span class="preprocessor">#include &lt;ripple/protocol/messages.h&gt;</span></div>
+<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span><span class="preprocessor">#include &lt;xrpld/nodestore/Types.h&gt;</span></div>
+<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span><span class="preprocessor">#include &lt;xrpl/basics/RangeSet.h&gt;</span></div>
+<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span><span class="preprocessor">#include &lt;xrpl/protocol/messages.h&gt;</span></div>
 <div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span> </div>
 <div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespaceripple.html">ripple</a> {</div>
 <div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span><span class="keyword">namespace </span>NodeStore {</div>
@@ -222,8 +222,8 @@ $(function() {
 <div class="ttc" id="aclassripple_1_1NodeStore_1_1ShardInfo_html_aff2aac103e06a0cce0d69280da5e6a30"><div class="ttname"><a href="classripple_1_1NodeStore_1_1ShardInfo.html#aff2aac103e06a0cce0d69280da5e6a30">ripple::NodeStore::ShardInfo::finalized_</a></div><div class="ttdeci">RangeSet&lt; std::uint32_t &gt; finalized_</div><div class="ttdef"><b>Definition:</b> <a href="ShardInfo_8h_source.html#l00110">ShardInfo.h:110</a></div></div>
 <div class="ttc" id="ainteger_html"><div class="ttname"><a href="http://en.cppreference.com/w/cpp/types/integer.html">std::uint32_t</a></div></div>
 <div class="ttc" id="amap_html"><div class="ttname"><a href="http://en.cppreference.com/w/cpp/container/map.html">std::map</a></div></div>
-<div class="ttc" id="anamespaceripple_html"><div class="ttname"><a href="namespaceripple.html">ripple</a></div><div class="ttdoc">Use hash_* containers for keys that do not need a cryptographically secure hashing algorithm.</div><div class="ttdef"><b>Definition:</b> <a href="RCLCensorshipDetector_8h_source.html#l00029">RCLCensorshipDetector.h:29</a></div></div>
-<div class="ttc" id="anamespaceripple_html_a63a883cebf81b764433e67d90d4470d9"><div class="ttname"><a href="namespaceripple.html#a63a883cebf81b764433e67d90d4470d9">ripple::ShardState</a></div><div class="ttdeci">ShardState</div><div class="ttdoc">Shard states.</div><div class="ttdef"><b>Definition:</b> <a href="nodestore_2Types_8h_source.html#l00060">nodestore/Types.h:60</a></div></div>
+<div class="ttc" id="anamespaceripple_html"><div class="ttname"><a href="namespaceripple.html">ripple</a></div><div class="ttdoc">Use hash_* containers for keys that do not need a cryptographically secure hashing algorithm.</div><div class="ttdef"><b>Definition:</b> <a href="algorithm_8h_source.html#l00026">algorithm.h:26</a></div></div>
+<div class="ttc" id="anamespaceripple_html_a63a883cebf81b764433e67d90d4470d9"><div class="ttname"><a href="namespaceripple.html#a63a883cebf81b764433e67d90d4470d9">ripple::ShardState</a></div><div class="ttdeci">ShardState</div><div class="ttdoc">Shard states.</div><div class="ttdef"><b>Definition:</b> <a href="src_2xrpld_2nodestore_2Types_8h_source.html#l00060">src/xrpld/nodestore/Types.h:60</a></div></div>
 <div class="ttc" id="anamespaceripple_html_a84ef8b46b58f794955c6b2b108aa5dba"><div class="ttname"><a href="namespaceripple.html#a84ef8b46b58f794955c6b2b108aa5dba">ripple::from_string</a></div><div class="ttdeci">bool from_string(RangeSet&lt; T &gt; &amp;rs, std::string const &amp;s)</div><div class="ttdoc">Convert the given styled string to a RangeSet.</div><div class="ttdef"><b>Definition:</b> <a href="RangeSet_8h_source.html#l00124">RangeSet.h:124</a></div></div>
 <div class="ttc" id="anamespaceripple_html_a8c2adee26b605bf80bdd122435bc40bb"><div class="ttname"><a href="namespaceripple.html#a8c2adee26b605bf80bdd122435bc40bb">ripple::RangeSet</a></div><div class="ttdeci">boost::icl::interval_set&lt; T, std::less, ClosedInterval&lt; T &gt; &gt; RangeSet</div><div class="ttdoc">A set of closed intervals over the domain T.</div><div class="ttdef"><b>Definition:</b> <a href="RangeSet_8h_source.html#l00070">RangeSet.h:70</a></div></div>
 <div class="ttc" id="atime_point_html"><div class="ttname"><a href="http://en.cppreference.com/w/cpp/chrono/time_point.html">std::chrono::time_point</a></div></div>
