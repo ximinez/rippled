@@ -140,18 +140,17 @@ if(xrpld)
 
   # any files that don't play well with unity should be added here
   if(tests)
-  set_source_files_properties(
-    # these two seem to produce conflicts in beast teardown template methods
-    src/test/rpc/ValidatorRPC_test.cpp
-    src/test/rpc/ShardArchiveHandler_test.cpp
-    src/test/ledger/Invariants_test.cpp
-    # These depend on wasmedge.h, which has some duplicate declarations
-    src/ripple/app/hook/impl/applyHook.cpp
-    src/ripple/app/misc/NetworkOPs.cpp
-    src/ripple/app/tx/impl/applySteps.cpp
-    src/ripple/app/tx/impl/SetHook.cpp
-    src/ripple/app/tx/impl/Transactor.cpp
-    src/ripple/rpc/handlers/Fee1.cpp
-    PROPERTIES SKIP_UNITY_BUILD_INCLUSION TRUE)
+    set_source_files_properties(
+      # these two seem to produce conflicts in beast teardown template methods
+      src/test/rpc/ValidatorRPC_test.cpp
+      src/test/ledger/Invariants_test.cpp
+      # These depend on wasmedge.h, which has some duplicate declarations
+      src/ripple/app/hook/impl/applyHook.cpp
+      src/ripple/app/misc/NetworkOPs.cpp
+      src/ripple/app/tx/impl/applySteps.cpp
+      src/ripple/app/tx/impl/SetHook.cpp
+      src/ripple/app/tx/impl/Transactor.cpp
+      src/ripple/rpc/handlers/Fee1.cpp
+      PROPERTIES SKIP_UNITY_BUILD_INCLUSION TRUE)
   endif()
 endif()
