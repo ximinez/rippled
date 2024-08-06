@@ -158,8 +158,8 @@ class Xrpl(ConanFile):
             'secp256k1',
         ]
         # TODO: Fix the protobufs to include each other relative to
-        # `include/`, not `include/ripple/proto/`.
-        libxrpl.includedirs = ['include', 'include/ripple/proto']
+        # `include/`, not `include/xrpl/proto/`.
+        libxrpl.includedirs = ['include', 'include/xrpl/proto']
         libxrpl.requires = [
             'boost::boost',
             'date::date',
