@@ -27,15 +27,12 @@ if(NOT WIN32)
       \${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}/ripple SYMBOLIC)"
   )
 else()
-  # This is a hack to get basic Windows support. It is fragile, and it
-  # does not include the generated *.pb.h files.
-  file(GLOB include_subdirs ${CMAKE_CURRENT_SOURCE_DIR}/include/xrpl/*)
-  foreach(subdir ${include_subdirs})
-    install(
-      DIRECTORY "${subdir}"
-      DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/ripple"
-    )
-  endforeach()
+  # Installing this way for Windows support.
+  # It does not include the generated *.pb.h files.
+  install(
+    DIRECTORY include/xrpl/
+    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/ripple"
+  )
 endif()
 
 install (EXPORT RippleExports
