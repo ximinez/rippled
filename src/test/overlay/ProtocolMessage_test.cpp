@@ -17,16 +17,17 @@
 */
 //==============================================================================
 
-#include <xrpld/overlay/detail/ProtocolMessage.h>
-#include <xrpl/protocol/messages.h>
 #include <xrpl/beast/unit_test.h>
+#include <xrpl/protocol/messages.h>
+#include <xrpld/overlay/detail/ProtocolMessage.h>
 
 namespace ripple {
 
 class ProtocolMessage_test : public beast::unit_test::suite
 {
 public:
-    void testSuccessfulHashGeneration()
+    void
+    testSuccessfulHashGeneration()
     {
         protocol::TMLedgerData msg;
         msg.set_ledgerhash("test_hash");
@@ -39,18 +40,20 @@ public:
         BEAST_EXPECT(error.empty());
     }
 
-    void testPartialInitilisationHandling()
+    void
+    testPartialInitilisationHandling()
     {
         protocol::TMLedgerData msg;
         msg.set_ledgerhash("test_hash");
-        
+
         auto const [hash, error] = hashProtoBufMessage(msg);
 
         BEAST_EXPECT(!hash.has_value());
         BEAST_EXPECT(!error.empty());
     }
 
-    void testEmptyMessageHandling()
+    void
+    testEmptyMessageHandling()
     {
         protocol::TMLedgerData msg;
 
@@ -60,7 +63,8 @@ public:
         BEAST_EXPECT(!error.empty());
     }
 
-    void run() override
+    void
+    run() override
     {
         testSuccessfulHashGeneration();
         testPartialInitilisationHandling();
