@@ -1892,22 +1892,30 @@ PeerImp::onMessage(std::shared_ptr<protocol::TMLedgerData> const& m)
     }
 
     auto const peerId = shared_from_this()->id();
-    auto const [hash, error] = hashProtoBufMessage<protocol::TMLedgerData>(*m);
-    if (hash)
-    {
-        if (!app_.getHashRouter().addSuppressionPeer(*hash, peerId))
+    auto const messageHash = [&]() {
+        sha512_half_hasher h;
+        using beast::hash_append;
+        hash_append(h, safe_cast<int>(protocolMessageType(*m)));
+        hash_append(h, m->ledgerhash());
+        hash_append(h, m->ledgerseq());
+        hash_append(h, safe_cast<int>(m->type()));
+        for (auto const& node : m->nodes())
         {
-            // TODO: switch to debug before merge
-            JLOG(p_journal_.info())
-                << "Received duplicate TMLedgerData message from peer: "
-                << peerId << ", message hash: " << *hash;
-            return;
+            hash_append(h, node.nodedata());
+            if (node.has_nodeid())
+                hash_append(h, node.nodeid());
         }
-    }
-    else
+        hash_append(h, m->nodes_size());
+        if (m->has_requestcookie())
+            hash_append(h, m->requestcookie());
+        if (m->has_error())
+            hash_append(h, safe_cast<int>(m->error()));
+        return static_cast<typename sha512_half_hasher::result_type>(h);
+    }();
+    if (!app_.getHashRouter().addSuppressionPeer(messageHash, peerId))
     {
-        JLOG(p_journal_.error())
-            << "Failed to hash TMLedgerData message: " << error;
+        auto const shortHash = to_string(messageHash).substr(0, 6);
+        return badData("Duplicate message: " + shortHash);
     }
 
     uint256 const ledgerHash{m->ledgerhash()};

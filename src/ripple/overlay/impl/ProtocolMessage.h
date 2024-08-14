@@ -24,14 +24,12 @@
 #include <ripple/overlay/Compression.h>
 #include <ripple/overlay/Message.h>
 #include <ripple/overlay/impl/ZeroCopyStream.h>
-#include <ripple/protocol/digest.h>
 #include <ripple/protocol/messages.h>
 #include <boost/asio/buffer.hpp>
 #include <boost/asio/buffers_iterator.hpp>
 #include <boost/system/error_code.hpp>
 #include <cassert>
 #include <cstdint>
-#include <google/protobuf/util/json_util.h>
 #include <memory>
 #include <optional>
 #include <type_traits>
@@ -43,6 +41,12 @@ inline protocol::MessageType
 protocolMessageType(protocol::TMGetLedger const&)
 {
     return protocol::mtGET_LEDGER;
+}
+
+inline protocol::MessageType
+protocolMessageType(protocol::TMLedgerData const&)
+{
+    return protocol::mtLEDGER_DATA;
 }
 
 inline protocol::MessageType
@@ -506,36 +510,6 @@ invokeProtocolMessage(
         result.second = make_error_code(boost::system::errc::bad_message);
 
     return result;
-}
-
-using HashProtoBufResult =
-    std::pair<std::optional<sha512_half_hasher::result_type>, std::string>;
-
-template <
-    typename T,
-    class = std::enable_if_t<
-        std::is_base_of<::google::protobuf::Message, T>::value>>
-HashProtoBufResult
-hashProtoBufMessage(const T& message)
-{
-    if (!message.IsInitialized())
-    {
-        return {std::nullopt, "Message is not initialized"};
-    }
-
-    google::protobuf::util::JsonOptions opts;
-    opts.always_print_enums_as_ints = true;
-    opts.always_print_primitive_fields = true;
-    opts.preserve_proto_field_names = true;
-    std::string json;
-    if (auto status =
-            google::protobuf::util::MessageToJsonString(message, &json, opts);
-        !status.ok())
-    {
-        return {std::nullopt, status.ToString()};
-    }
-
-    return {sha512Half(json), ""};
 }
 
 }  // namespace ripple
