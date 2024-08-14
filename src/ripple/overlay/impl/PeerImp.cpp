@@ -36,8 +36,8 @@
 #include <ripple/beast/core/SemanticVersion.h>
 #include <ripple/nodestore/DatabaseShard.h>
 #include <ripple/overlay/Cluster.h>
-#include <ripple/overlay/impl/ProtocolMessage.h>
 #include <ripple/overlay/impl/PeerImp.h>
+#include <ripple/overlay/impl/ProtocolMessage.h>
 #include <ripple/overlay/impl/Tuning.h>
 #include <ripple/overlay/predicates.h>
 #include <ripple/protocol/digest.h>
@@ -1893,16 +1893,21 @@ PeerImp::onMessage(std::shared_ptr<protocol::TMLedgerData> const& m)
 
     auto const peerId = shared_from_this()->id();
     auto const [hash, error] = hashProtoBufMessage<protocol::TMLedgerData>(*m);
-    if (hash) {
-        if (!app_.getHashRouter().addSuppressionPeer(*hash, peerId)) {
+    if (hash)
+    {
+        if (!app_.getHashRouter().addSuppressionPeer(*hash, peerId))
+        {
             // TODO: switch to debug before merge
-            JLOG(p_journal_.info()) 
-                << "Received duplicate TMLedgerData message from peer: " << peerId 
-                << ", message hash: " << *hash;
+            JLOG(p_journal_.info())
+                << "Received duplicate TMLedgerData message from peer: "
+                << peerId << ", message hash: " << *hash;
             return;
         }
-    } else {
-        JLOG(p_journal_.error()) << "Failed to hash TMLedgerData message: " << error;
+    }
+    else
+    {
+        JLOG(p_journal_.error())
+            << "Failed to hash TMLedgerData message: " << error;
     }
 
     uint256 const ledgerHash{m->ledgerhash()};
