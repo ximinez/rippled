@@ -69,16 +69,43 @@ public:
         std::uint32_t seq,
         InboundLedger::Reason reason) override
     {
+        std::stringstream ss;
+        ss << "InboundLedger::acquire: "
+           << "Request: " << to_string(hash) << ", " << seq
+           << " NeedNetworkLedger: "
+           << (app_.getOPs().isNeedNetworkLedger() ? "yes" : "no")
+           << " Reason: " << to_string(reason) << " Old rule: ";
+        if (app_.getOPs().isNeedNetworkLedger() &&
+            (reason != InboundLedger::Reason::GENERIC) &&
+            (reason != InboundLedger::Reason::CONSENSUS))
+            ss << "false";
+        else
+            ss << "true";
+
         assert(hash.isNonZero());
         assert(
             reason != InboundLedger::Reason::SHARD ||
             (seq != 0 && app_.getShardStore()));
 
-        // probably not the right rule
-        if (app_.getOPs().isNeedNetworkLedger() &&
-            (reason != InboundLedger::Reason::GENERIC) &&
-            (reason != InboundLedger::Reason::CONSENSUS))
-            return {};
+        bool const isFull = app_.getOPs().isFull();
+        bool const fallingBehind = app_.getOPs().isFallingBehind();
+        LedgerIndex const validSeq =
+            app_.getLedgerMaster().getValidLedgerIndex();
+        constexpr std::size_t lagLeeway = 20;
+        bool const nearFuture =
+            (seq > validSeq) && (seq < validSeq + lagLeeway);
+        bool const consensus = reason == InboundLedger::Reason::CONSENSUS;
+        bool const shouldAcquire =
+            !(isFull && !fallingBehind && (nearFuture || consensus));
+        ss << " Evaluating whether to acquire ledger " << hash
+           << ". full: " << (isFull ? "true" : "false")
+           << ". falling behind: " << (fallingBehind ? "true" : "false")
+           << ". ledger sequence " << seq << ". Valid sequence: " << validSeq
+           << ". Lag leeway: " << lagLeeway
+           << ". request for near future ledger: "
+           << (nearFuture ? "true" : "false")
+           << ". Consensus: " << (consensus ? "true" : "false")
+           << ". Acquiring ledger? " << (shouldAcquire ? "true" : "false");
 
         bool isNew = true;
         std::shared_ptr<InboundLedger> inbound;
@@ -86,6 +113,7 @@ public:
             ScopedLockType sl(mLock);
             if (stopping_)
             {
+                JLOG(j_.debug()) << "Abort (stopping): " << ss.str();
                 return {};
             }
 
@@ -111,13 +139,19 @@ public:
         }
 
         if (inbound->isFailed())
+        {
+            JLOG(j_.debug()) << "Abort (failed): " << ss.str();
             return {};
+        }
 
         if (!isNew)
             inbound->update(seq);
 
         if (!inbound->isComplete())
+        {
+            JLOG(j_.debug()) << "Abort (incomplete): " << ss.str();
             return {};
+        }
 
         if (reason == InboundLedger::Reason::HISTORY)
         {
@@ -130,7 +164,8 @@ public:
             if (!shardStore)
             {
                 JLOG(j_.error())
-                    << "Acquiring shard with no shard store available";
+                    << "Acquiring shard with no shard store available"
+                    << ss.str();
                 return {};
             }
             if (inbound->getLedger()->stateMap().family().isShardBacked())
@@ -138,6 +173,36 @@ public:
             else
                 shardStore->storeLedger(inbound->getLedger());
         }
+
+        /*  Acquiring ledgers is somewhat expensive. It requires lots of
+         *  computation and network communication. Avoid it when it's not
+         *  appropriate. Every validation from a peer for a ledger that
+         *  we do not have locally results in a call to this function: even
+         *  if we are moments away from validating the same ledger.
+         *
+         *  When the following are all true, it is very likely that we will
+         *  soon validate the ledger ourselves. Therefore, avoid acquiring
+         *  ledgers from the network if:
+         *  + Our mode is "full". It is very likely that we will build
+         *    the ledger through the normal consensus process, and
+         *  + Our latest ledger is close to the most recently validated ledger.
+         *    Otherwise, we are likely falling behind the network because
+         *    we have been closing ledgers that have not been validated, and
+         *  + The requested ledger sequence is greater than our validated
+         *    ledger, but not far into the future. Otherwise, it is either a
+         *    request for an historical ledger or, if far into the future,
+         *    likely we're quite behind and will benefit from acquiring it
+         *    from the network.
+         */
+        if (!shouldAcquire)
+        {
+            // This check should be before the others because it's cheaper, but
+            // it's at the end for now to test the effectiveness of the change
+            JLOG(j_.debug()) << "Abort (rule): " << ss.str();
+            return {};
+        }
+
+        JLOG(j_.debug()) << "Requesting: " << ss.str();
         return inbound->getLedger();
     }
 

@@ -430,6 +430,8 @@ public:
     clearLedgerFetch() override;
     Json::Value
     getLedgerFetchInfo() override;
+    bool
+    isFallingBehind() const override;
     std::uint32_t
     acceptLedger(
         std::optional<std::chrono::milliseconds> consensusDelay) override;
@@ -729,6 +731,7 @@ private:
     std::atomic<bool> amendmentBlocked_{false};
     std::atomic<bool> amendmentWarned_{false};
     std::atomic<bool> unlBlocked_{false};
+    std::atomic<bool> fallingBehind_{false};
 
     ClosureCounter<void, boost::system::error_code const&> waitHandlerCounter_;
     boost::asio::steady_timer heartbeatTimer_;
@@ -1810,21 +1813,68 @@ NetworkOPsImp::beginConsensus(uint256 const& networkClosed)
 
     auto closingInfo = m_ledgerMaster.getCurrentLedger()->info();
 
-    JLOG(m_journal.info()) << "Consensus time for #" << closingInfo.seq
+    JLOG(m_journal.info()) << "beginConsensus time for #" << closingInfo.seq
                            << " with LCL " << closingInfo.parentHash;
 
-    auto prevLedger = m_ledgerMaster.getLedgerByHash(closingInfo.parentHash);
+    fallingBehind_ = false;
+    if (closingInfo.seq < m_ledgerMaster.getValidLedgerIndex() - 1)
+    {
+        fallingBehind_ = true;
+        JLOG(m_journal.warn())
+            << "beginConsensus Current ledger " << closingInfo.seq
+            << " is at least 2 behind validated "
+            << m_ledgerMaster.getValidLedgerIndex();
+    }
+
+    auto const prevLedger =
+        m_ledgerMaster.getLedgerByHash(closingInfo.parentHash);
 
     if (!prevLedger)
     {
+        fallingBehind_ = true;
         // this shouldn't happen unless we jump ledgers
         if (mMode == OperatingMode::FULL)
         {
-            JLOG(m_journal.warn()) << "Don't have LCL, going to tracking";
+            JLOG(m_journal.warn())
+                << "beginConsensus Don't have LCL, going to tracking";
             setMode(OperatingMode::TRACKING);
         }
 
         return false;
+    }
+    else if (!m_ledgerMaster.isValidated(*prevLedger))
+    {
+        // Do not merge this block unless it proves useful.
+        auto parentLedger = prevLedger;
+        for (; parentLedger && !m_ledgerMaster.isValidated(*parentLedger) &&
+             parentLedger->info().seq > closingInfo.seq - 20;
+             parentLedger = m_ledgerMaster.getLedgerByHash(
+                 parentLedger->info().parentHash))
+        {
+            JLOG(m_journal.debug())
+                << "beginConsensus for " << closingInfo.seq << ". Ledger "
+                << parentLedger->info().seq << " (" << parentLedger->info().hash
+                << ") is not validated.";
+        }
+        if (parentLedger && m_ledgerMaster.isValidated(*parentLedger))
+        {
+            JLOG(m_journal.debug())
+                << "beginConsensus for " << closingInfo.seq << ". Ledger "
+                << parentLedger->info().seq << " (" << parentLedger->info().hash
+                << ") IS validated.";
+        }
+        else
+        {
+            if (parentLedger)
+                JLOG(m_journal.warn())
+                    << "beginConsensus for " << closingInfo.seq << ". Previous "
+                    << closingInfo.seq - parentLedger->info().seq
+                    << " ledgers are not validated";
+            else
+                JLOG(m_journal.warn())
+                    << "beginConsensus for " << closingInfo.seq
+                    << ". Ran out of parent ledgers to check.";
+        }
     }
 
     assert(prevLedger->info().hash == closingInfo.parentHash);
@@ -1863,7 +1913,7 @@ NetworkOPsImp::beginConsensus(uint256 const& networkClosed)
         mLastConsensusPhase = currPhase;
     }
 
-    JLOG(m_journal.debug()) << "Initiating consensus engine";
+    JLOG(m_journal.debug()) << "beginConsensus Initiating consensus engine";
     return true;
 }
 
@@ -2747,6 +2797,12 @@ Json::Value
 NetworkOPsImp::getLedgerFetchInfo()
 {
     return app_.getInboundLedgers().getInfo();
+}
+
+bool
+NetworkOPsImp::isFallingBehind() const
+{
+    return fallingBehind_;
 }
 
 void
