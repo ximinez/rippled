@@ -78,6 +78,7 @@ $(function() {
 <a href="#pub-static-methods">Static Public Member Functions</a> &#124;
 <a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="#pro-methods">Protected Member Functions</a> &#124;
+<a href="#pri-types">Private Types</a> &#124;
 <a href="#pri-methods">Private Member Functions</a> &#124;
 <a href="#pri-static-methods">Static Private Member Functions</a> &#124;
 <a href="#pri-attribs">Private Attributes</a> &#124;
@@ -205,16 +206,27 @@ Protected Member Functions</h2></td></tr>
 <tr class="memitem:a59bfce233498b74419225f3105f6631b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classripple_1_1NFTokenBurnBaseUtil__test.html#a59bfce233498b74419225f3105f6631b">run</a> (<a class="elRef" href="http://en.cppreference.com/w/cpp/types/integer.html">std::uint32_t</a> instance, bool last=false)</td></tr>
 <tr class="separator:a59bfce233498b74419225f3105f6631b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pri-types" name="pri-types"></a>
+Private Types</h2></td></tr>
+<tr class="memitem:a3acf70ddc67616e011ce99d109270e7e"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classripple_1_1NFTokenBurnBaseUtil__test.html#a3acf70ddc67616e011ce99d109270e7e">Volume</a> : bool { <a class="el" href="classripple_1_1NFTokenBurnBaseUtil__test.html#a3acf70ddc67616e011ce99d109270e7eaa523ec8a1a628ec50c658bcb91e25961">quiet</a> = false
+, <a class="el" href="classripple_1_1NFTokenBurnBaseUtil__test.html#a3acf70ddc67616e011ce99d109270e7ead1fdb503a4f183d072ca23f0b1686988">noisy</a> = true
+ }</td></tr>
+<tr class="separator:a3acf70ddc67616e011ce99d109270e7e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pri-methods" name="pri-methods"></a>
 Private Member Functions</h2></td></tr>
 <tr class="memitem:a289f999c7e4344cb39ad50ff3728a6f5"><td class="memItemLeft" align="right" valign="top"><a class="el" href="namespaceripple.html#a356c68147333a9a48a344718038576d9">uint256</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classripple_1_1NFTokenBurnBaseUtil__test.html#a289f999c7e4344cb39ad50ff3728a6f5">createNftAndOffers</a> (<a class="el" href="classripple_1_1test_1_1jtx_1_1Env.html">test::jtx::Env</a> &amp;env, <a class="el" href="classripple_1_1test_1_1jtx_1_1Account.html">test::jtx::Account</a> const &amp;owner, <a class="elRef" href="http://en.cppreference.com/w/cpp/container/vector.html">std::vector</a>&lt; <a class="el" href="namespaceripple.html#a356c68147333a9a48a344718038576d9">uint256</a> &gt; &amp;offerIndexes, size_t const tokenCancelCount)</td></tr>
 <tr class="separator:a289f999c7e4344cb39ad50ff3728a6f5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abcb5e74929999bd9c8001b4fdaac6c40"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classripple_1_1NFTokenBurnBaseUtil__test.html#abcb5e74929999bd9c8001b4fdaac6c40">printNFTPages</a> (<a class="el" href="classripple_1_1test_1_1jtx_1_1Env.html">test::jtx::Env</a> &amp;env, <a class="el" href="classripple_1_1NFTokenBurnBaseUtil__test.html#a3acf70ddc67616e011ce99d109270e7e">Volume</a> vol)</td></tr>
+<tr class="separator:abcb5e74929999bd9c8001b4fdaac6c40"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac6eb57d6e69ec09319e12ae0eeeb871b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classripple_1_1NFTokenBurnBaseUtil__test.html#ac6eb57d6e69ec09319e12ae0eeeb871b">testBurnRandom</a> (<a class="el" href="classripple_1_1FeatureBitset.html">FeatureBitset</a> features)</td></tr>
 <tr class="separator:ac6eb57d6e69ec09319e12ae0eeeb871b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af7051332023cb778464e4a809b1cb5a0"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classripple_1_1NFTokenBurnBaseUtil__test.html#af7051332023cb778464e4a809b1cb5a0">testBurnSequential</a> (<a class="el" href="classripple_1_1FeatureBitset.html">FeatureBitset</a> features)</td></tr>
 <tr class="separator:af7051332023cb778464e4a809b1cb5a0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa8b727fbfce0835185e5bb2f27b945b3"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classripple_1_1NFTokenBurnBaseUtil__test.html#aa8b727fbfce0835185e5bb2f27b945b3">testBurnTooManyOffers</a> (<a class="el" href="classripple_1_1FeatureBitset.html">FeatureBitset</a> features)</td></tr>
 <tr class="separator:aa8b727fbfce0835185e5bb2f27b945b3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a39aa7b820ecf0ee5d301179d4e040b6c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classripple_1_1NFTokenBurnBaseUtil__test.html#a39aa7b820ecf0ee5d301179d4e040b6c">exerciseBrokenLinks</a> (<a class="el" href="classripple_1_1FeatureBitset.html">FeatureBitset</a> features)</td></tr>
+<tr class="separator:a39aa7b820ecf0ee5d301179d4e040b6c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8ec9d9d6a2823f57384e23ad64f3ff86"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classripple_1_1NFTokenBurnBaseUtil__test.html#a8ec9d9d6a2823f57384e23ad64f3ff86">testWithFeats</a> (<a class="el" href="classripple_1_1FeatureBitset.html">FeatureBitset</a> features)</td></tr>
 <tr class="separator:a8ec9d9d6a2823f57384e23ad64f3ff86"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aaf73a1f738d097ca74935f643f07ef80"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classbeast_1_1unit__test_1_1suite.html#aaf73a1f738d097ca74935f643f07ef80">propagate_abort</a> ()</td></tr>
@@ -240,8 +252,37 @@ Private Attributes</h2></td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock">
-<p class="definition">Definition at line <a class="el" href="NFTokenBurn__test_8cpp_source.html#l00818">818</a> of file <a class="el" href="NFTokenBurn__test_8cpp_source.html">NFTokenBurn_test.cpp</a>.</p>
-</div><h2 class="groupheader">Member Function Documentation</h2>
+<p class="definition">Definition at line <a class="el" href="NFTokenBurn__test_8cpp_source.html#l01424">1424</a> of file <a class="el" href="NFTokenBurn__test_8cpp_source.html">NFTokenBurn_test.cpp</a>.</p>
+</div><h2 class="groupheader">Member Enumeration Documentation</h2>
+<a id="a3acf70ddc67616e011ce99d109270e7e" name="a3acf70ddc67616e011ce99d109270e7e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3acf70ddc67616e011ce99d109270e7e">&#9670;&#160;</a></span>Volume</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">enum <a class="el" href="classripple_1_1NFTokenBurnBaseUtil__test.html#a3acf70ddc67616e011ce99d109270e7e">ripple::NFTokenBurnBaseUtil_test::Volume</a> : bool</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span><span class="mlabel">inherited</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<table class="fieldtable">
+<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><a id="a3acf70ddc67616e011ce99d109270e7eaa523ec8a1a628ec50c658bcb91e25961" name="a3acf70ddc67616e011ce99d109270e7eaa523ec8a1a628ec50c658bcb91e25961"></a>quiet&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="a3acf70ddc67616e011ce99d109270e7ead1fdb503a4f183d072ca23f0b1686988" name="a3acf70ddc67616e011ce99d109270e7ead1fdb503a4f183d072ca23f0b1686988"></a>noisy&#160;</td><td class="fielddoc"></td></tr>
+</table>
+
+<p class="definition">Definition at line <a class="el" href="NFTokenBurn__test_8cpp_source.html#l00087">87</a> of file <a class="el" href="NFTokenBurn__test_8cpp_source.html">NFTokenBurn_test.cpp</a>.</p>
+
+</div>
+</div>
+<h2 class="groupheader">Member Function Documentation</h2>
 <a id="a568a88b20472655e704aa9ec7ef32dbe" name="a568a88b20472655e704aa9ec7ef32dbe"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a568a88b20472655e704aa9ec7ef32dbe">&#9670;&#160;</a></span>run() <span class="overload">[1/2]</span></h2>
 
@@ -269,7 +310,7 @@ Private Attributes</h2></td></tr>
 
 <p>Reimplemented from <a class="el" href="classripple_1_1NFTokenBurnBaseUtil__test.html#a61d112fb25101ff8ce8c1f31ba8ff121">ripple::NFTokenBurnBaseUtil_test</a>.</p>
 
-<p class="definition">Definition at line <a class="el" href="NFTokenBurn__test_8cpp_source.html#l00822">822</a> of file <a class="el" href="NFTokenBurn__test_8cpp_source.html">NFTokenBurn_test.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="NFTokenBurn__test_8cpp_source.html#l01428">1428</a> of file <a class="el" href="NFTokenBurn__test_8cpp_source.html">NFTokenBurn_test.cpp</a>.</p>
 
 </div>
 </div>
@@ -399,6 +440,44 @@ Private Attributes</h2></td></tr>
 
 </div>
 </div>
+<a id="abcb5e74929999bd9c8001b4fdaac6c40" name="abcb5e74929999bd9c8001b4fdaac6c40"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#abcb5e74929999bd9c8001b4fdaac6c40">&#9670;&#160;</a></span>printNFTPages()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void ripple::NFTokenBurnBaseUtil_test::printNFTPages </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classripple_1_1test_1_1jtx_1_1Env.html">test::jtx::Env</a> &amp;&#160;</td>
+          <td class="paramname"><em>env</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="classripple_1_1NFTokenBurnBaseUtil__test.html#a3acf70ddc67616e011ce99d109270e7e">Volume</a>&#160;</td>
+          <td class="paramname"><em>vol</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span><span class="mlabel">inherited</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="NFTokenBurn__test_8cpp_source.html#l00093">93</a> of file <a class="el" href="NFTokenBurn__test_8cpp_source.html">NFTokenBurn_test.cpp</a>.</p>
+
+</div>
+</div>
 <a id="ac6eb57d6e69ec09319e12ae0eeeb871b" name="ac6eb57d6e69ec09319e12ae0eeeb871b"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ac6eb57d6e69ec09319e12ae0eeeb871b">&#9670;&#160;</a></span>testBurnRandom()</h2>
 
@@ -423,7 +502,7 @@ Private Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="NFTokenBurn__test_8cpp_source.html#l00084">84</a> of file <a class="el" href="NFTokenBurn__test_8cpp_source.html">NFTokenBurn_test.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="NFTokenBurn__test_8cpp_source.html#l00151">151</a> of file <a class="el" href="NFTokenBurn__test_8cpp_source.html">NFTokenBurn_test.cpp</a>.</p>
 
 </div>
 </div>
@@ -451,7 +530,7 @@ Private Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="NFTokenBurn__test_8cpp_source.html#l00285">285</a> of file <a class="el" href="NFTokenBurn__test_8cpp_source.html">NFTokenBurn_test.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="NFTokenBurn__test_8cpp_source.html#l00352">352</a> of file <a class="el" href="NFTokenBurn__test_8cpp_source.html">NFTokenBurn_test.cpp</a>.</p>
 
 </div>
 </div>
@@ -479,7 +558,35 @@ Private Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="NFTokenBurn__test_8cpp_source.html#l00527">527</a> of file <a class="el" href="NFTokenBurn__test_8cpp_source.html">NFTokenBurn_test.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="NFTokenBurn__test_8cpp_source.html#l00902">902</a> of file <a class="el" href="NFTokenBurn__test_8cpp_source.html">NFTokenBurn_test.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a39aa7b820ecf0ee5d301179d4e040b6c" name="a39aa7b820ecf0ee5d301179d4e040b6c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a39aa7b820ecf0ee5d301179d4e040b6c">&#9670;&#160;</a></span>exerciseBrokenLinks()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void ripple::NFTokenBurnBaseUtil_test::exerciseBrokenLinks </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classripple_1_1FeatureBitset.html">FeatureBitset</a>&#160;</td>
+          <td class="paramname"><em>features</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span><span class="mlabel">inherited</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="NFTokenBurn__test_8cpp_source.html#l01157">1157</a> of file <a class="el" href="NFTokenBurn__test_8cpp_source.html">NFTokenBurn_test.cpp</a>.</p>
 
 </div>
 </div>
@@ -507,7 +614,7 @@ Private Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="NFTokenBurn__test_8cpp_source.html#l00782">782</a> of file <a class="el" href="NFTokenBurn__test_8cpp_source.html">NFTokenBurn_test.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="NFTokenBurn__test_8cpp_source.html#l01382">1382</a> of file <a class="el" href="NFTokenBurn__test_8cpp_source.html">NFTokenBurn_test.cpp</a>.</p>
 
 </div>
 </div>
@@ -545,7 +652,7 @@ Private Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="NFTokenBurn__test_8cpp_source.html#l00791">791</a> of file <a class="el" href="NFTokenBurn__test_8cpp_source.html">NFTokenBurn_test.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="NFTokenBurn__test_8cpp_source.html#l01392">1392</a> of file <a class="el" href="NFTokenBurn__test_8cpp_source.html">NFTokenBurn_test.cpp</a>.</p>
 
 </div>
 </div>
