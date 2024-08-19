@@ -87,16 +87,59 @@ public:
             reason != InboundLedger::Reason::SHARD ||
             (seq != 0 && app_.getShardStore()));
 
+        // If the node is not in "full" state, it needs to sync to the network,
+        // and doesn't have the necessary tx's and ledger entries to build the
+        // ledger.
         bool const isFull = app_.getOPs().isFull();
+        // fallingBehind means the last closed ledger is at least 2 behind the
+        // validated ledger. If the node is falling behind the network, it
+        // probably needs information from the network to catch up.
+        //
+        // The reason this should not simply be only at least 1 behind the
+        // validated ledger is that a slight lag is normal case because some
+        // nodes get there slightly later than others. A difference of 2 means
+        // that at least a full ledger interval has passed, so the node is
+        // beginning to fall behind.
         bool const fallingBehind = app_.getOPs().isFallingBehind();
+        // If everything else is ok, don't try to acquire the ledger if the
+        // requested seq is in the near future relative to the validated ledger.
+        // If the requested ledger is between 1 and 19 inclusive ledgers ahead
+        // of the valid ledger this node has not built it yet, but it's
+        // possible/likely it has the tx's necessary to build it and get caught
+        // up. Plus it might not become validated. On the other hand, if it's
+        // more than 20 in the future, this node should request it so that it
+        // can jump ahead and get caught up.
         LedgerIndex const validSeq =
             app_.getLedgerMaster().getValidLedgerIndex();
         constexpr std::size_t lagLeeway = 20;
         bool const nearFuture =
             (seq > validSeq) && (seq < validSeq + lagLeeway);
+        // If everything else is ok, don't try to acquire the ledger if the
+        // request is related to consensus. (Note that consensus calls usually
+        // pass a seq of 0, so nearFuture will be false other than on a brand
+        // new network.)
         bool const consensus = reason == InboundLedger::Reason::CONSENSUS;
-        bool const shouldAcquire =
-            !(isFull && !fallingBehind && (nearFuture || consensus));
+
+        bool const shouldAcquire = [&]() {
+            // If the node is not synced, try to get the ledger.
+            if (!isFull)
+                return true;
+            // If the node is falling behind, try to get the ledger.
+            if (fallingBehind)
+                return true;
+            // If the ledger is in the near future, do NOT get the ledger. This
+            // node is probably about to build it.
+            if (nearFuture)
+                return false;
+            // If the request is because of consensus, do NOT get the ledger.
+            // This node is probably about to build it.
+            if (consensus)
+                return false;
+            return true;
+        }();
+        assert(
+            shouldAcquire ==
+            !(isFull && !fallingBehind && (nearFuture || consensus)));
         ss << " Evaluating whether to acquire ledger " << hash
            << ". full: " << (isFull ? "true" : "false")
            << ". falling behind: " << (fallingBehind ? "true" : "false")
@@ -113,7 +156,7 @@ public:
             ScopedLockType sl(mLock);
             if (stopping_)
             {
-                JLOG(j_.debug()) << "Abort (stopping): " << ss.str();
+                JLOG(j_.debug()) << "Abort(stopping): " << ss.str();
                 return {};
             }
 
@@ -140,7 +183,7 @@ public:
 
         if (inbound->isFailed())
         {
-            JLOG(j_.debug()) << "Abort (failed): " << ss.str();
+            JLOG(j_.debug()) << "Abort(failed): " << ss.str();
             return {};
         }
 
@@ -149,7 +192,7 @@ public:
 
         if (!inbound->isComplete())
         {
-            JLOG(j_.debug()) << "Abort (incomplete): " << ss.str();
+            JLOG(j_.debug()) << "Abort(incomplete): " << ss.str();
             return {};
         }
 
@@ -198,7 +241,7 @@ public:
         {
             // This check should be before the others because it's cheaper, but
             // it's at the end for now to test the effectiveness of the change
-            JLOG(j_.debug()) << "Abort (rule): " << ss.str();
+            JLOG(j_.debug()) << "Abort(rule): " << ss.str();
             return {};
         }
 
