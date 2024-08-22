@@ -87,6 +87,12 @@ public:
             reason != InboundLedger::Reason::SHARD ||
             (seq != 0 && app_.getShardStore()));
 
+        /*  Acquiring ledgers is somewhat expensive. It requires lots of
+         *  computation and network communication. Avoid it when it's not
+         *  appropriate. Every validation from a peer for a ledger that
+         *  we do not have locally results in a call to this function: even
+         *  if we are moments away from validating the same ledger.
+         */
         // If the node is not in "full" state, it needs to sync to the network,
         // and doesn't have the necessary tx's and ledger entries to build the
         // ledger.
@@ -137,9 +143,6 @@ public:
                 return false;
             return true;
         }();
-        assert(
-            shouldAcquire ==
-            !(isFull && !fallingBehind && (nearFuture || consensus)));
         ss << " Evaluating whether to acquire ledger " << hash
            << ". full: " << (isFull ? "true" : "false")
            << ". falling behind: " << (fallingBehind ? "true" : "false")
@@ -149,6 +152,12 @@ public:
            << (nearFuture ? "true" : "false")
            << ". Consensus: " << (consensus ? "true" : "false")
            << ". Acquiring ledger? " << (shouldAcquire ? "true" : "false");
+
+        if (!shouldAcquire)
+        {
+            JLOG(j_.debug()) << "Abort(rule): " << ss.str();
+            return {};
+        }
 
         bool isNew = true;
         std::shared_ptr<InboundLedger> inbound;
@@ -215,34 +224,6 @@ public:
                 shardStore->setStored(inbound->getLedger());
             else
                 shardStore->storeLedger(inbound->getLedger());
-        }
-
-        /*  Acquiring ledgers is somewhat expensive. It requires lots of
-         *  computation and network communication. Avoid it when it's not
-         *  appropriate. Every validation from a peer for a ledger that
-         *  we do not have locally results in a call to this function: even
-         *  if we are moments away from validating the same ledger.
-         *
-         *  When the following are all true, it is very likely that we will
-         *  soon validate the ledger ourselves. Therefore, avoid acquiring
-         *  ledgers from the network if:
-         *  + Our mode is "full". It is very likely that we will build
-         *    the ledger through the normal consensus process, and
-         *  + Our latest ledger is close to the most recently validated ledger.
-         *    Otherwise, we are likely falling behind the network because
-         *    we have been closing ledgers that have not been validated, and
-         *  + The requested ledger sequence is greater than our validated
-         *    ledger, but not far into the future. Otherwise, it is either a
-         *    request for an historical ledger or, if far into the future,
-         *    likely we're quite behind and will benefit from acquiring it
-         *    from the network.
-         */
-        if (!shouldAcquire)
-        {
-            // This check should be before the others because it's cheaper, but
-            // it's at the end for now to test the effectiveness of the change
-            JLOG(j_.debug()) << "Abort(rule): " << ss.str();
-            return {};
         }
 
         JLOG(j_.debug()) << "Requesting: " << ss.str();
