@@ -42,6 +42,7 @@
 #include <ripple/app/rdb/backend/SQLiteDatabase.h>
 #include <ripple/app/reporting/ReportingETL.h>
 #include <ripple/app/tx/apply.h>
+#include <ripple/basics/CanProcess.h>
 #include <ripple/basics/PerfLog.h>
 #include <ripple/basics/UptimeClock.h>
 #include <ripple/basics/mulDiv.h>
@@ -2317,34 +2318,27 @@ NetworkOPsImp::recvValidation(
     JLOG(m_journal.trace())
         << "recvValidation " << val->getLedgerHash() << " from " << source;
 
-    std::unique_lock lock(validationsMutex_);
-    BypassAccept bypassAccept = BypassAccept::no;
-    try
     {
-        if (pendingValidations_.contains(val->getLedgerHash()))
-            bypassAccept = BypassAccept::yes;
-        else
-            pendingValidations_.insert(val->getLedgerHash());
-        lock.unlock();
-        handleNewValidation(app_, val, source, bypassAccept, m_journal);
-    }
-    catch (std::exception const& e)
-    {
-        JLOG(m_journal.warn())
-            << "Exception thrown for handling new validation "
-            << val->getLedgerHash() << ": " << e.what();
-    }
-    catch (...)
-    {
-        JLOG(m_journal.warn())
-            << "Unknown exception thrown for handling new validation "
-            << val->getLedgerHash();
-    }
-    if (bypassAccept == BypassAccept::no)
-    {
-        lock.lock();
-        pendingValidations_.erase(val->getLedgerHash());
-        lock.unlock();
+        CanProcess check(
+            validationsMutex_, pendingValidations_, val->getLedgerHash());
+        try
+        {
+            BypassAccept bypassAccept =
+                check.canProcess() ? BypassAccept::no : BypassAccept::yes;
+            handleNewValidation(app_, val, source, bypassAccept, m_journal);
+        }
+        catch (std::exception const& e)
+        {
+            JLOG(m_journal.warn())
+                << "Exception thrown for handling new validation "
+                << val->getLedgerHash() << ": " << e.what();
+        }
+        catch (...)
+        {
+            JLOG(m_journal.warn())
+                << "Unknown exception thrown for handling new validation "
+                << val->getLedgerHash();
+        }
     }
 
     pubValidation(val);

@@ -21,6 +21,7 @@
 #include <ripple/app/ledger/LedgerMaster.h>
 #include <ripple/app/main/Application.h>
 #include <ripple/app/misc/NetworkOPs.h>
+#include <ripple/basics/CanProcess.h>
 #include <ripple/basics/DecayingSample.h>
 #include <ripple/basics/Log.h>
 #include <ripple/basics/PerfLog.h>
@@ -156,29 +157,25 @@ public:
         std::uint32_t seq,
         InboundLedger::Reason reason) override
     {
-        std::unique_lock lock(acquiresMutex_);
-        try
+        if (CanProcess check{acquiresMutex_, pendingAcquires_, hash})
         {
-            if (pendingAcquires_.contains(hash))
-                return;
-            pendingAcquires_.insert(hash);
-            lock.unlock();
-            acquire(hash, seq, reason);
+            try
+            {
+                acquire(hash, seq, reason);
+            }
+            catch (std::exception const& e)
+            {
+                JLOG(j_.warn())
+                    << "Exception thrown for acquiring new inbound ledger "
+                    << hash << ": " << e.what();
+            }
+            catch (...)
+            {
+                JLOG(j_.warn()) << "Unknown exception thrown for acquiring new "
+                                   "inbound ledger "
+                                << hash;
+            }
         }
-        catch (std::exception const& e)
-        {
-            JLOG(j_.warn())
-                << "Exception thrown for acquiring new inbound ledger " << hash
-                << ": " << e.what();
-        }
-        catch (...)
-        {
-            JLOG(j_.warn())
-                << "Unknown exception thrown for acquiring new inbound ledger "
-                << hash;
-        }
-        lock.lock();
-        pendingAcquires_.erase(hash);
     }
 
     std::shared_ptr<InboundLedger>
