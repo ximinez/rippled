@@ -189,7 +189,7 @@ handleNewValidation(
     {
         if (val->isTrusted())
         {
-            if (bypassAccept == BypassAccept::TRUE)
+            if (bypassAccept == BypassAccept::yes)
             {
                 assert(j.has_value());
                 if (j.has_value())

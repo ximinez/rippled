@@ -33,7 +33,7 @@ namespace ripple {
 
 class Application;
 
-enum class BypassAccept { FALSE, TRUE };
+enum class BypassAccept : bool { no = false, yes };
 
 /** Wrapper over STValidation for generic Validation code
 
@@ -253,7 +253,7 @@ handleNewValidation(
     Application& app,
     std::shared_ptr<STValidation> const& val,
     std::string const& source,
-    BypassAccept const bypassAccept = BypassAccept::FALSE,
+    BypassAccept const bypassAccept = BypassAccept::no,
     std::optional<beast::Journal> j = std::nullopt);
 
 }  // namespace ripple

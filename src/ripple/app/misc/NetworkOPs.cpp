@@ -2316,9 +2316,9 @@ NetworkOPsImp::recvValidation(
     std::unique_lock lock(validationsMutex_);
     try
     {
-        BypassAccept bypassAccept = BypassAccept::FALSE;
+        BypassAccept bypassAccept = BypassAccept::no;
         if (pendingValidations_.contains(val->getLedgerHash()))
-            bypassAccept = BypassAccept::TRUE;
+            bypassAccept = BypassAccept::yes;
         else
             pendingValidations_.insert(val->getLedgerHash());
         lock.unlock();
