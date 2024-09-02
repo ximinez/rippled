@@ -23,6 +23,7 @@
 #include <ripple/app/main/Application.h>
 #include <ripple/beast/clock/abstract_clock.h>
 #include <ripple/beast/utility/Journal.h>
+#include <ripple/beast/utility/WrappedSink.h>
 #include <ripple/core/Job.h>
 #include <boost/asio/basic_waitable_timer.hpp>
 #include <mutex>
@@ -121,6 +122,7 @@ protected:
     // Used in this class for access to boost::asio::io_service and
     // ripple::Overlay. Used in subtypes for the kitchen sink.
     Application& app_;
+    beast::WrappedSink sink_;
     beast::Journal journal_;
     mutable std::recursive_mutex mtx_;
 

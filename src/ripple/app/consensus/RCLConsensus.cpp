@@ -1062,7 +1062,8 @@ void
 RCLConsensus::Adaptor::updateOperatingMode(std::size_t const positions) const
 {
     if (!positions && app_.getOPs().isFull())
-        app_.getOPs().setMode(OperatingMode::CONNECTED);
+        app_.getOPs().setMode(
+            OperatingMode::CONNECTED, "updateOperatingMode: no positions");
 }
 
 void
