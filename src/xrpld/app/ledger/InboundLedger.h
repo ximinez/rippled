@@ -57,8 +57,10 @@ public:
     ~InboundLedger();
 
     // Called when another attempt is made to fetch this same ledger
-    void
-    update(std::uint32_t seq);
+    //
+    // Returns true if this triggers requests to be sent
+    bool
+    update(std::uint32_t seq, bool broadcast);
 
     /** Returns true if we got all the data. */
     bool
@@ -89,7 +91,7 @@ public:
     bool
     checkLocal();
     void
-    init(ScopedLockType& collectionLock);
+    init(ScopedLockType& collectionLock, bool broadcast);
 
     bool
     gotData(
