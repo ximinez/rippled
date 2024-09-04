@@ -53,6 +53,22 @@ do
         includelevel="$( dirname ${includelevel} )/toplevel"
     fi
     includelevel=$( echo ${includelevel} | tr '/' '.' )
+    if [[ "${file}" =~ "/detail/" ]]
+    then
+        if [[ "${include}" =~ "/detail/" ]] || true
+        then
+            level+=".detail"
+        else
+            # Files in "detail" folders don't have to follow levelization
+            # rules, except for other "detail" folders"
+            echo "Ignoring file $file include $include" | tee -a details.txt
+            continue
+        fi
+    fi
+    if [[ "${include}" =~ "/detail/" ]]
+    then
+        includelevel+=".detail"
+    fi
 
     if [[ "$level" != "$includelevel" ]]
     then
@@ -89,6 +105,10 @@ do
     exec 5<"${source}" # open for input
     while read -r -u 5 include includefreq
     do
+      if [[ "${include}" =~ "${source}" || "${source}" =~ "${include}" ]]
+      then
+        continue
+      fi
       if [[ -f $include ]]
       then
         if grep -q -w $source $include
@@ -116,6 +136,8 @@ do
         else
           echo "$source > $include" >> "${ordering}"
         fi
+      else
+        echo "$source > $include (no includes counted)" >> "${ordering}"
       fi
     done
     exec 5>&- #close fd 5
