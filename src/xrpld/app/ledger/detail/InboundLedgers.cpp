@@ -69,7 +69,8 @@ public:
     acquire(
         uint256 const& hash,
         std::uint32_t seq,
-        InboundLedger::Reason reason) override
+        InboundLedger::Reason reason,
+        const char* context) override
     {
         auto doAcquire = [&, seq, reason]() -> std::shared_ptr<Ledger const> {
             assert(hash.isNonZero());
@@ -94,7 +95,7 @@ public:
                << "Request: " << to_string(hash) << ", " << seq
                << " NeedNetworkLedger: "
                << (app_.getOPs().isNeedNetworkLedger() ? "yes" : "no")
-               << " Reason: " << to_string(reason)
+               << " Reason: " << to_string(reason) << " Context: " << context
                << " Should acquire: " << (shouldAcquire ? "true." : "false.");
 
             /*  Acquiring ledgers is somewhat expensive. It requires lots of
@@ -224,7 +225,7 @@ public:
         {
             try
             {
-                acquire(hash, seq, reason);
+                acquire(hash, seq, reason, "acquireAsync");
             }
             catch (std::exception const& e)
             {
