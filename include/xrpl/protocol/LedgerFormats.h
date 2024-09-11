@@ -120,7 +120,7 @@ enum LedgerEntryType : std::uint16_t
 /**
     @ingroup protocol
 */
-enum LedgerSpecificFlags {
+enum SLEAccountRootFlags {
     // ltACCOUNT_ROOT
     lsfPasswordSpent = 0x00010000,  // True, if password set fee is spent.
     lsfRequireDestTag =
@@ -149,12 +149,22 @@ enum LedgerSpecificFlags {
         0x40000000,               // True, enable trustline locking
     lsfAllowTrustLineClawback =
         0x80000000,               // True, enable clawback
+    };
 
+/**
+    @ingroup protocol
+*/
+enum SLEOfferFlags{
     // ltOFFER
     lsfPassive = 0x00010000,
     lsfSell = 0x00020000,  // True, offer was placed as a sell.
     lsfHybrid = 0x00040000,  // True, offer is hybrid.
+    };
 
+/**
+    @ingroup protocol
+*/
+enum SLERippleStateFlags{
     // ltRIPPLE_STATE
     lsfLowReserve = 0x00010000,  // True, if entry counts toward reserve.
     lsfHighReserve = 0x00020000,
@@ -168,14 +178,29 @@ enum LedgerSpecificFlags {
     lsfHighDeepFreeze = 0x04000000, // True, high side has set deep freeze flag
     lsfAMMNode = 0x01000000,        // True, trust line to AMM. Used by client
                                     // apps to identify payments via AMM.
+    };
 
+/**
+    @ingroup protocol
+*/
+enum SLESignerListFlags{
     // ltSIGNER_LIST
     lsfOneOwnerCount = 0x00010000,  // True, uses only one OwnerCount
+    };
 
+/**
+    @ingroup protocol
+*/
+enum SLEDirNodeFlags{
     // ltDIR_NODE
     lsfNFTokenBuyOffers = 0x00000001,
     lsfNFTokenSellOffers = 0x00000002,
+    };
 
+/**
+    @ingroup protocol
+*/
+enum SLENFTokenOfferFlags{
     // ltNFTOKEN_OFFER
     lsfSellNFToken = 0x00000001,
 

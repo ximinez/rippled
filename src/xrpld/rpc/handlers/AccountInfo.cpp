@@ -83,7 +83,7 @@ doAccountInfo(RPC::JsonContext& context)
     auto const accountID{std::move(id.value())};
 
     static constexpr std::
-        array<std::pair<std::string_view, LedgerSpecificFlags>, 9>
+        array<std::pair<std::string_view, SLEAccountRootFlags>, 9>
             lsFlags{
                 {{"defaultRipple", lsfDefaultRipple},
                  {"depositAuth", lsfDepositAuth},
@@ -96,7 +96,7 @@ doAccountInfo(RPC::JsonContext& context)
                  {"requireDestinationTag", lsfRequireDestTag}}};
 
     static constexpr std::
-        array<std::pair<std::string_view, LedgerSpecificFlags>, 4>
+        array<std::pair<std::string_view, SLEAccountRootFlags>, 4>
             disallowIncomingFlags{
                 {{"disallowIncomingNFTokenOffer",
                   lsfDisallowIncomingNFTokenOffer},
@@ -104,7 +104,7 @@ doAccountInfo(RPC::JsonContext& context)
                  {"disallowIncomingPayChan", lsfDisallowIncomingPayChan},
                  {"disallowIncomingTrustline", lsfDisallowIncomingTrustline}}};
 
-    static constexpr std::pair<std::string_view, LedgerSpecificFlags>
+    static constexpr std::pair<std::string_view, SLEAccountRootFlags>
         allowTrustLineClawbackFlag{
             "allowTrustLineClawback", lsfAllowTrustLineClawback};
 
