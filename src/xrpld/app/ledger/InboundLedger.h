@@ -41,9 +41,10 @@ public:
 
     // These are the reasons we might acquire a ledger
     enum class Reason {
-        HISTORY,   // Acquiring past ledger
-        GENERIC,   // Generic other reasons
-        CONSENSUS  // We believe the consensus round requires this ledger
+        HISTORY,    // Acquiring past ledger
+        GENERIC,    // Generic other reasons
+        CONSENSUS,  // We believe the consensus round requires this ledger
+        PREFERRED   // We need this ledger for preferred ledger analysis
     };
 
     InboundLedger(
@@ -198,23 +199,8 @@ private:
     std::unique_ptr<PeerSet> mPeerSet;
 };
 
-inline std::string
-to_string(InboundLedger::Reason reason)
-{
-    using enum InboundLedger::Reason;
-    switch (reason)
-    {
-        case HISTORY:
-            return "HISTORY";
-        case GENERIC:
-            return "GENERIC";
-        case CONSENSUS:
-            return "CONSENSUS";
-        default:
-            assert(false);
-            return "unknown";
-    }
-}
+std::string
+to_string(InboundLedger::Reason reason);
 
 }  // namespace ripple
 
