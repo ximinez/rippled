@@ -638,6 +638,10 @@ public:
     std::enable_if_t<std::is_assignable_v<T, U>, OptionalProxy&>
     operator=(U&& u);
 
+    /** Make the field present, but without a specified value */
+    void
+    engage();
+
 private:
     friend class STObject;
 
@@ -822,6 +826,19 @@ bool
 STObject::OptionalProxy<T>::engaged() const noexcept
 {
     return this->style_ == soeDEFAULT || this->find() != nullptr;
+}
+
+template <class T>
+void
+STObject::OptionalProxy<T>::engage()
+{
+    if (this->style_ == soeREQUIRED || this->style_ == soeDEFAULT)
+        Throw<STObject::FieldErr>(
+            "Template field error '" + this->f_->getName() + "'");
+    if (this->style_ == soeINVALID)
+        this->st_->getPField(*this->f_, true);
+    else
+        this->st_->makeFieldPresent(*this->f_);
 }
 
 template <class T>

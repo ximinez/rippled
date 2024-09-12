@@ -21,6 +21,7 @@
 #include <xrpld/core/Config.h>
 #include <xrpld/ledger/View.h>
 #include <xrpl/basics/Log.h>
+#include <xrpl/protocol/SLEAccountRoot.h>
 #include <xrpl/protocol/Feature.h>
 #include <xrpl/protocol/Indexes.h>
 #include <xrpl/protocol/PublicKey.h>
@@ -194,11 +195,11 @@ SetAccount::preclaim(PreclaimContext const& ctx)
 
     std::uint32_t const uTxFlags = ctx.tx.getFlags();
 
-    auto const sle = ctx.view.read(keylet::account(id));
+    SLEAccountRoot sle(ctx.view.read(keylet::account(id)));
     if (!sle)
         return terNO_ACCOUNT;
 
-    std::uint32_t const uFlagsIn = sle->getFieldU32(sfFlags);
+    std::uint32_t const uFlagsIn = sle.Flags();
 
     std::uint32_t const uSetFlag = ctx.tx.getFieldU32(sfSetFlag);
 
@@ -255,11 +256,11 @@ SetAccount::preclaim(PreclaimContext const& ctx)
 TER
 SetAccount::doApply()
 {
-    auto const sle = view().peek(keylet::account(account_));
+    SLEAccountRoot sle{view().peek(keylet::account(account_))};
     if (!sle)
         return tefINTERNAL;
 
-    std::uint32_t const uFlagsIn = sle->getFieldU32(sfFlags);
+    std::uint32_t const uFlagsIn = sle.Flags();
     std::uint32_t uFlagsOut = uFlagsIn;
 
     STTx const& tx{ctx_.tx};
@@ -350,8 +351,7 @@ SetAccount::doApply()
             return tecNEED_MASTER_KEY;
         }
 
-        if ((!sle->isFieldPresent(sfRegularKey)) &&
-            (!view().peek(keylet::signers(account_))))
+        if ((!sle.RegularKey()) && (!view().peek(keylet::signers(account_))))
         {
             // Account has no regular key or multi-signer signer list.
             return tecNO_ALTERNATIVE_KEY;
@@ -416,16 +416,17 @@ SetAccount::doApply()
     //
     // Track transaction IDs signed by this account in its root
     //
-    if ((uSetFlag == asfAccountTxnID) && !sle->isFieldPresent(sfAccountTxnID))
+    auto accountTxnID = sle.AccountTxnID();
+    if ((uSetFlag == asfAccountTxnID) && !accountTxnID)
     {
         JLOG(j_.trace()) << "Set AccountTxnID.";
-        sle->makeFieldPresent(sfAccountTxnID);
+        accountTxnID.engage();
     }
 
-    if ((uClearFlag == asfAccountTxnID) && sle->isFieldPresent(sfAccountTxnID))
+    if ((uClearFlag == asfAccountTxnID) && accountTxnID)
     {
         JLOG(j_.trace()) << "Clear AccountTxnID.";
-        sle->makeFieldAbsent(sfAccountTxnID);
+        accountTxnID = std::nullopt;
     }
 
     //
@@ -452,15 +453,16 @@ SetAccount::doApply()
     {
         uint128 const uHash = tx.getFieldH128(sfEmailHash);
 
+        auto emailHash = sle.EmailHash();
         if (!uHash)
         {
             JLOG(j_.trace()) << "unset email hash";
-            sle->makeFieldAbsent(sfEmailHash);
+            emailHash = std::nullopt;
         }
         else
         {
             JLOG(j_.trace()) << "set email hash";
-            sle->setFieldH128(sfEmailHash, uHash);
+            emailHash = uHash;
         }
     }
 
@@ -471,15 +473,16 @@ SetAccount::doApply()
     {
         uint256 const uHash = tx.getFieldH256(sfWalletLocator);
 
+        auto walletLocator = sle.WalletLocator();
         if (!uHash)
         {
             JLOG(j_.trace()) << "unset wallet locator";
-            sle->makeFieldAbsent(sfWalletLocator);
+            walletLocator = std::nullopt;
         }
         else
         {
             JLOG(j_.trace()) << "set wallet locator";
-            sle->setFieldH256(sfWalletLocator, uHash);
+            walletLocator = uHash;
         }
     }
 
@@ -490,15 +493,16 @@ SetAccount::doApply()
     {
         Blob const messageKey = tx.getFieldVL(sfMessageKey);
 
+        auto sleKey = sle.MessageKey();
         if (messageKey.empty())
         {
             JLOG(j_.debug()) << "set message key";
-            sle->makeFieldAbsent(sfMessageKey);
+            sleKey = std::nullopt;
         }
         else
         {
             JLOG(j_.debug()) << "set message key";
-            sle->setFieldVL(sfMessageKey, messageKey);
+            sleKey = messageKey;
         }
     }
 
@@ -509,15 +513,16 @@ SetAccount::doApply()
     {
         Blob const domain = tx.getFieldVL(sfDomain);
 
+        auto sleDomain = sle.Domain();
         if (domain.empty())
         {
             JLOG(j_.trace()) << "unset domain";
-            sle->makeFieldAbsent(sfDomain);
+            sleDomain = std::nullopt;
         }
         else
         {
             JLOG(j_.trace()) << "set domain";
-            sle->setFieldVL(sfDomain, domain);
+            sleDomain = domain;
         }
     }
 
@@ -528,15 +533,16 @@ SetAccount::doApply()
     {
         std::uint32_t uRate = tx.getFieldU32(sfTransferRate);
 
+        auto transferRate = sle.TransferRate();
         if (uRate == 0 || uRate == QUALITY_ONE)
         {
             JLOG(j_.trace()) << "unset transfer rate";
-            sle->makeFieldAbsent(sfTransferRate);
+            transferRate = std::nullopt;
         }
         else
         {
             JLOG(j_.trace()) << "set transfer rate";
-            sle->setFieldU32(sfTransferRate, uRate);
+            transferRate = uRate;
         }
     }
 
@@ -546,27 +552,28 @@ SetAccount::doApply()
     if (tx.isFieldPresent(sfTickSize))
     {
         auto uTickSize = tx[sfTickSize];
+        auto tickSize = sle.TickSize();
         if ((uTickSize == 0) || (uTickSize == Quality::maxTickSize))
         {
             JLOG(j_.trace()) << "unset tick size";
-            sle->makeFieldAbsent(sfTickSize);
+            tickSize = std::nullopt;
         }
         else
         {
             JLOG(j_.trace()) << "set tick size";
-            sle->setFieldU8(sfTickSize, uTickSize);
+            tickSize = uTickSize;
         }
     }
 
     // Configure authorized minting account:
     if (ctx_.view().rules().enabled(featureNonFungibleTokensV1))
     {
+        auto nftokenMinter = sle.NFTokenMinter();
         if (uSetFlag == asfAuthorizedNFTokenMinter)
-            sle->setAccountID(sfNFTokenMinter, ctx_.tx[sfNFTokenMinter]);
+            nftokenMinter = ctx_.tx[sfNFTokenMinter];
 
-        if (uClearFlag == asfAuthorizedNFTokenMinter &&
-            sle->isFieldPresent(sfNFTokenMinter))
-            sle->makeFieldAbsent(sfNFTokenMinter);
+        if (uClearFlag == asfAuthorizedNFTokenMinter && nftokenMinter)
+            nftokenMinter = std::nullopt;
     }
 
     // Set or clear flags for disallowing various incoming instruments
@@ -602,9 +609,9 @@ SetAccount::doApply()
     }
 
     if (uFlagsIn != uFlagsOut)
-        sle->setFieldU32(sfFlags, uFlagsOut);
+        sle.Flags() = uFlagsOut;
 
-    ctx_.view().update(sle);
+    ctx_.view().update(*sle);
 
     return tesSUCCESS;
 }

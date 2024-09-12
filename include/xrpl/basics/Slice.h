@@ -20,6 +20,7 @@
 #ifndef RIPPLE_BASICS_SLICE_H_INCLUDED
 #define RIPPLE_BASICS_SLICE_H_INCLUDED
 
+#include <xrpl/basics/Blob.h>
 #include <xrpl/basics/contract.h>
 #include <xrpl/basics/strHex.h>
 #include <algorithm>
@@ -211,7 +212,31 @@ operator==(Slice const& lhs, Slice const& rhs) noexcept
 }
 
 inline bool
+operator==(Slice const& lhs, Blob const& rhs) noexcept
+{
+    return lhs == Slice(rhs.data(), rhs.size());
+}
+
+inline bool
+operator==(Blob const& lhs, Slice const& rhs) noexcept
+{
+    return Slice(lhs.data(), lhs.size()) == rhs;
+}
+
+inline bool
 operator!=(Slice const& lhs, Slice const& rhs) noexcept
+{
+    return !(lhs == rhs);
+}
+
+inline bool
+operator!=(Slice const& lhs, Blob const& rhs) noexcept
+{
+    return !(lhs == rhs);
+}
+
+inline bool
+operator!=(Blob const& lhs, Slice const& rhs) noexcept
 {
     return !(lhs == rhs);
 }
