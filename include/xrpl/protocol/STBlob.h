@@ -74,6 +74,9 @@ public:
     value() const noexcept;
 
     STBlob&
+    operator=(Blob const& blob);
+
+    STBlob&
     operator=(Buffer&& buffer);
 
     void
@@ -123,6 +126,13 @@ inline STBlob&
 STBlob::operator=(Slice const& slice)
 {
     value_ = Buffer(slice.data(), slice.size());
+    return *this;
+}
+
+inline STBlob&
+STBlob::operator=(Blob const& blob)
+{
+    value_ = Buffer(blob.data(), blob.size());
     return *this;
 }
 
