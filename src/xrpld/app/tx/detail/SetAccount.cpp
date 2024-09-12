@@ -253,8 +253,6 @@ SetAccount::preclaim(PreclaimContext const& ctx)
     if (!sle)
         return terNO_ACCOUNT;
 
-    std::uint32_t const uFlagsIn = sle.Flags();
-
     std::uint32_t const uSetFlag = ctx.tx.getFieldU32(sfSetFlag);
 
     // legacy AccountSet flags
@@ -264,7 +262,7 @@ SetAccount::preclaim(PreclaimContext const& ctx)
     //
     // RequireAuth
     //
-    if (bSetRequireAuth && !(uFlagsIn & lsfRequireAuth))
+    if (bSetRequireAuth && !(sle.OrigFlagSet(lsfRequireAuth)))
     {
         if (!dirIsEmpty(ctx.view, keylet::ownerDir(id)))
         {
@@ -280,7 +278,7 @@ SetAccount::preclaim(PreclaimContext const& ctx)
     {
         if (uSetFlag == asfAllowTrustLineClawback)
         {
-            if (uFlagsIn & lsfNoFreeze)
+            if (sle.OrigFlagSet(lsfNoFreeze))
             {
                 JLOG(ctx.j.trace()) << "Can't set Clawback if NoFreeze is set";
                 return tecNO_PERMISSION;
@@ -295,7 +293,7 @@ SetAccount::preclaim(PreclaimContext const& ctx)
         else if (uSetFlag == asfNoFreeze)
         {
             // Cannot set NoFreeze if clawback is enabled
-            if (uFlagsIn & lsfAllowTrustLineClawback)
+            if (sle.OrigFlagSet(lsfAllowTrustLineClawback))
             {
                 JLOG(ctx.j.trace())
                     << "Can't set NoFreeze if clawback is enabled";
@@ -313,9 +311,6 @@ SetAccount::doApply()
     SLEAccountRoot sle{view().peek(keylet::account(account_))};
     if (!sle)
         return tefINTERNAL;  // LCOV_EXCL_LINE
-
-    std::uint32_t const uFlagsIn = sle.Flags();
-    std::uint32_t uFlagsOut = uFlagsIn;
 
     STTx const& tx{ctx_.tx};
     std::uint32_t const uSetFlag{tx.getFieldU32(sfSetFlag)};
@@ -352,52 +347,52 @@ SetAccount::doApply()
     //
     // RequireAuth
     //
-    if (bSetRequireAuth && !(uFlagsIn & lsfRequireAuth))
+    if (bSetRequireAuth && !sle.OrigFlagSet(lsfRequireAuth))
     {
         JLOG(j_.trace()) << "Set RequireAuth.";
-        uFlagsOut |= lsfRequireAuth;
+        sle.SetFlag(lsfRequireAuth);
     }
 
-    if (bClearRequireAuth && (uFlagsIn & lsfRequireAuth))
+    if (bClearRequireAuth && sle.OrigFlagSet(lsfRequireAuth))
     {
         JLOG(j_.trace()) << "Clear RequireAuth.";
-        uFlagsOut &= ~lsfRequireAuth;
+        sle.ClearFlag(lsfRequireAuth);
     }
 
     //
     // RequireDestTag
     //
-    if (bSetRequireDest && !(uFlagsIn & lsfRequireDestTag))
+    if (bSetRequireDest && !sle.OrigFlagSet(lsfRequireDestTag))
     {
         JLOG(j_.trace()) << "Set lsfRequireDestTag.";
-        uFlagsOut |= lsfRequireDestTag;
+        sle.SetFlag(lsfRequireDestTag);
     }
 
-    if (bClearRequireDest && (uFlagsIn & lsfRequireDestTag))
+    if (bClearRequireDest && sle.OrigFlagSet(lsfRequireDestTag))
     {
         JLOG(j_.trace()) << "Clear lsfRequireDestTag.";
-        uFlagsOut &= ~lsfRequireDestTag;
+        sle.ClearFlag(lsfRequireDestTag);
     }
 
     //
     // DisallowXRP
     //
-    if (bSetDisallowXRP && !(uFlagsIn & lsfDisallowXRP))
+    if (bSetDisallowXRP && !sle.OrigFlagSet(lsfDisallowXRP))
     {
         JLOG(j_.trace()) << "Set lsfDisallowXRP.";
-        uFlagsOut |= lsfDisallowXRP;
+        sle.SetFlag(lsfDisallowXRP);
     }
 
-    if (bClearDisallowXRP && (uFlagsIn & lsfDisallowXRP))
+    if (bClearDisallowXRP && sle.OrigFlagSet(lsfDisallowXRP))
     {
         JLOG(j_.trace()) << "Clear lsfDisallowXRP.";
-        uFlagsOut &= ~lsfDisallowXRP;
+        sle.ClearFlag(lsfDisallowXRP);
     }
 
     //
     // DisableMaster
     //
-    if ((uSetFlag == asfDisableMaster) && !(uFlagsIn & lsfDisableMaster))
+    if ((uSetFlag == asfDisableMaster) && !sle.OrigFlagSet(lsfDisableMaster))
     {
         if (!sigWithMaster)
         {
@@ -412,13 +407,13 @@ SetAccount::doApply()
         }
 
         JLOG(j_.trace()) << "Set lsfDisableMaster.";
-        uFlagsOut |= lsfDisableMaster;
+        sle.SetFlag(lsfDisableMaster);
     }
 
-    if ((uClearFlag == asfDisableMaster) && (uFlagsIn & lsfDisableMaster))
+    if ((uClearFlag == asfDisableMaster) && sle.OrigFlagSet(lsfDisableMaster))
     {
         JLOG(j_.trace()) << "Clear lsfDisableMaster.";
-        uFlagsOut &= ~lsfDisableMaster;
+        sle.ClearFlag(lsfDisableMaster);
     }
 
     //
@@ -427,12 +422,12 @@ SetAccount::doApply()
     if (uSetFlag == asfDefaultRipple)
     {
         JLOG(j_.trace()) << "Set lsfDefaultRipple.";
-        uFlagsOut |= lsfDefaultRipple;
+        sle.SetFlag(lsfDefaultRipple);
     }
     else if (uClearFlag == asfDefaultRipple)
     {
         JLOG(j_.trace()) << "Clear lsfDefaultRipple.";
-        uFlagsOut &= ~lsfDefaultRipple;
+        sle.ClearFlag(lsfDefaultRipple);
     }
 
     //
@@ -440,31 +435,31 @@ SetAccount::doApply()
     //
     if (uSetFlag == asfNoFreeze)
     {
-        if (!sigWithMaster && !(uFlagsIn & lsfDisableMaster))
+        if (!sigWithMaster && !sle.OrigFlagSet(lsfDisableMaster))
         {
             JLOG(j_.trace()) << "Must use master key to set NoFreeze.";
             return tecNEED_MASTER_KEY;
         }
 
         JLOG(j_.trace()) << "Set NoFreeze flag";
-        uFlagsOut |= lsfNoFreeze;
+        sle.SetFlag(lsfNoFreeze);
     }
 
     // Anyone may set global freeze
     if (uSetFlag == asfGlobalFreeze)
     {
         JLOG(j_.trace()) << "Set GlobalFreeze flag";
-        uFlagsOut |= lsfGlobalFreeze;
+        sle.SetFlag(lsfGlobalFreeze);
     }
 
     // If you have set NoFreeze, you may not clear GlobalFreeze
     // This prevents those who have set NoFreeze from using
     // GlobalFreeze strategically.
     if ((uSetFlag != asfGlobalFreeze) && (uClearFlag == asfGlobalFreeze) &&
-        ((uFlagsOut & lsfNoFreeze) == 0))
+        (!sle.IsFlagSet(lsfNoFreeze)))
     {
         JLOG(j_.trace()) << "Clear GlobalFreeze flag";
-        uFlagsOut &= ~lsfGlobalFreeze;
+        sle.ClearFlag(lsfGlobalFreeze);
     }
 
     //
@@ -491,12 +486,12 @@ SetAccount::doApply()
         if (uSetFlag == asfDepositAuth)
         {
             JLOG(j_.trace()) << "Set lsfDepositAuth.";
-            uFlagsOut |= lsfDepositAuth;
+            sle.SetFlag(lsfDepositAuth);
         }
         else if (uClearFlag == asfDepositAuth)
         {
             JLOG(j_.trace()) << "Clear lsfDepositAuth.";
-            uFlagsOut &= ~lsfDepositAuth;
+            sle.ClearFlag(lsfDepositAuth);
         }
     }
 
@@ -634,24 +629,24 @@ SetAccount::doApply()
     if (ctx_.view().rules().enabled(featureDisallowIncoming))
     {
         if (uSetFlag == asfDisallowIncomingNFTokenOffer)
-            uFlagsOut |= lsfDisallowIncomingNFTokenOffer;
+            sle.SetFlag(lsfDisallowIncomingNFTokenOffer);
         else if (uClearFlag == asfDisallowIncomingNFTokenOffer)
-            uFlagsOut &= ~lsfDisallowIncomingNFTokenOffer;
+            sle.ClearFlag(lsfDisallowIncomingNFTokenOffer);
 
         if (uSetFlag == asfDisallowIncomingCheck)
-            uFlagsOut |= lsfDisallowIncomingCheck;
+            sle.SetFlag(lsfDisallowIncomingCheck);
         else if (uClearFlag == asfDisallowIncomingCheck)
-            uFlagsOut &= ~lsfDisallowIncomingCheck;
+            sle.ClearFlag(lsfDisallowIncomingCheck);
 
         if (uSetFlag == asfDisallowIncomingPayChan)
-            uFlagsOut |= lsfDisallowIncomingPayChan;
+            sle.SetFlag(lsfDisallowIncomingPayChan);
         else if (uClearFlag == asfDisallowIncomingPayChan)
-            uFlagsOut &= ~lsfDisallowIncomingPayChan;
+            sle.ClearFlag(lsfDisallowIncomingPayChan);
 
         if (uSetFlag == asfDisallowIncomingTrustline)
-            uFlagsOut |= lsfDisallowIncomingTrustline;
+            sle.SetFlag(lsfDisallowIncomingTrustline);
         else if (uClearFlag == asfDisallowIncomingTrustline)
-            uFlagsOut &= ~lsfDisallowIncomingTrustline;
+            sle.ClearFlag(lsfDisallowIncomingTrustline);
     }
 
     // Set or clear flags for disallowing escrow
@@ -668,11 +663,8 @@ SetAccount::doApply()
         uSetFlag == asfAllowTrustLineClawback)
     {
         JLOG(j_.trace()) << "set allow clawback";
-        uFlagsOut |= lsfAllowTrustLineClawback;
+        sle.SetFlag(lsfAllowTrustLineClawback);
     }
-
-    if (uFlagsIn != uFlagsOut)
-        sle.Flags() = uFlagsOut;
 
     ctx_.view().update(*sle);
 
