@@ -36,15 +36,6 @@ template <>
 NotTEC
 preflightHelper<Issue>(PreflightContext const& ctx)
 {
-    if (!ctx.rules.enabled(featureClawback))
-        return temDISABLED;
-
-    if (auto const ret = preflight1(ctx); !isTesSuccess(ret))
-        return ret;
-
-    if (ctx.tx.getFlags() & tfClawbackMask)
-        return temINVALID_FLAG;
-
     if (ctx.tx.isFieldPresent(sfMPTokenHolder))
         return temMALFORMED;
 
@@ -57,62 +48,88 @@ preflightHelper<Issue>(PreflightContext const& ctx)
     if (issuer == holder || isXRP(clawAmount) || clawAmount <= beast::zero)
         return temBAD_AMOUNT;
 
-    return preflight2(ctx);
+    return tesSUCCESS;
 }
 
 template <>
 NotTEC
 preflightHelper<MPTIssue>(PreflightContext const& ctx)
 {
-    if (!ctx.rules.enabled(featureClawback))
-        return temDISABLED;
-
-    auto const mptHolder = ctx.tx[~sfMPTokenHolder];
-    auto const clawAmount = ctx.tx[sfAmount];
-
     if (!ctx.rules.enabled(featureMPTokensV1))
         return temDISABLED;
 
-    if (auto const ret = preflight1(ctx); !isTesSuccess(ret))
-        return ret;
+    auto const issuer = ctx.tx[sfAccount];
+    auto const clawAmount = ctx.tx[sfAmount];
+    auto const mptHolder = ctx.tx[~sfMPTokenHolder];
 
     if (!mptHolder)
         return temMALFORMED;
 
-    if (ctx.tx.getFlags() & tfClawbackMask)
-        return temINVALID_FLAG;
-
     // issuer is the same as holder
-    if (ctx.tx[sfAccount] == *mptHolder)
+    if (issuer == *mptHolder)
         return temMALFORMED;
 
     if (clawAmount.mpt() > MPTAmount{maxMPTokenAmount} ||
         clawAmount <= beast::zero)
         return temBAD_AMOUNT;
 
+    return tesSUCCESS;
+}
+
+NotTEC
+Clawback::preflight(PreflightContext const& ctx)
+{
+    if (!ctx.rules.enabled(featureClawback))
+        return temDISABLED;
+
+    if (auto const ret = preflight1(ctx); !isTesSuccess(ret))
+        return ret;
+
+    if (ctx.tx.getFlags() & tfClawbackMask)
+        return temINVALID_FLAG;
+
+    if (auto const ret = std::visit(
+            [&]<typename T>(T const&) { return preflightHelper<T>(ctx); },
+            ctx.tx[sfAmount].asset().value());
+        !isTesSuccess(ret))
+        return ret;
+
     return preflight2(ctx);
 }
 
 template <ValidIssueType T>
+static AccountID
+preclaimHolder(PreclaimContext const& ctx, STAmount const& clawAmount)
+{
+    if constexpr (std::is_same_v<T, Issue>)
+        return clawAmount.getIssuer();
+    else if constexpr (std::is_same_v<T, MPTIssue>)
+        return ctx.tx[sfMPTokenHolder];
+    else
+    {
+        constexpr bool alwaysFalse = !std::is_same_v<T, T>;
+        static_assert(alwaysFalse, "Unsupported type for preclaimHolder");
+    }
+}
+
+template <ValidIssueType T>
 static TER
-preclaimHelper(PreclaimContext const& ctx);
+preclaimHelper(
+    PreclaimContext const& ctx,
+    std::shared_ptr<SLE const> const& sleIssuer,
+    AccountID const& issuer,
+    STAmount const& clawAmount,
+    AccountID const& holder);
 
 template <>
 TER
-preclaimHelper<Issue>(PreclaimContext const& ctx)
+preclaimHelper<Issue>(
+    PreclaimContext const& ctx,
+    std::shared_ptr<SLE const> const& sleIssuer,
+    AccountID const& issuer,
+    STAmount const& clawAmount,
+    AccountID const& holder)
 {
-    AccountID const issuer = ctx.tx[sfAccount];
-    STAmount const clawAmount = ctx.tx[sfAmount];
-    AccountID const& holder = clawAmount.getIssuer();
-
-    auto const sleIssuer = ctx.view.read(keylet::account(issuer));
-    auto const sleHolder = ctx.view.read(keylet::account(holder));
-    if (!sleIssuer || !sleHolder)
-        return terNO_ACCOUNT;
-
-    if (sleHolder->isFieldPresent(sfAMMID))
-        return tecAMM_ACCOUNT;
-
     std::uint32_t const issuerFlagsIn = sleIssuer->getFieldU32(sfFlags);
 
     // If AllowTrustLineClawback is not set or NoFreeze is set, return no
@@ -159,20 +176,13 @@ preclaimHelper<Issue>(PreclaimContext const& ctx)
 
 template <>
 TER
-preclaimHelper<MPTIssue>(PreclaimContext const& ctx)
+preclaimHelper<MPTIssue>(
+    PreclaimContext const& ctx,
+    std::shared_ptr<SLE const> const& sleIssuer,
+    AccountID const& issuer,
+    STAmount const& clawAmount,
+    AccountID const& holder)
 {
-    AccountID const issuer = ctx.tx[sfAccount];
-    auto const clawAmount = ctx.tx[sfAmount];
-    AccountID const& holder = ctx.tx[sfMPTokenHolder];
-
-    auto const sleIssuer = ctx.view.read(keylet::account(issuer));
-    auto const sleHolder = ctx.view.read(keylet::account(holder));
-    if (!sleIssuer || !sleHolder)
-        return terNO_ACCOUNT;
-
-    if (sleHolder->isFieldPresent(sfAMMID))
-        return tecAMM_ACCOUNT;
-
     auto const issuanceKey =
         keylet::mptIssuance(clawAmount.get<MPTIssue>().getMptID());
     auto const sleIssuance = ctx.view.read(issuanceKey);
@@ -198,6 +208,33 @@ preclaimHelper<MPTIssue>(PreclaimContext const& ctx)
         return tecINSUFFICIENT_FUNDS;
 
     return tesSUCCESS;
+}
+
+TER
+Clawback::preclaim(PreclaimContext const& ctx)
+{
+    AccountID const issuer = ctx.tx[sfAccount];
+    STAmount const clawAmount = ctx.tx[sfAmount];
+    AccountID const holder = std::visit(
+        [&]<typename T>(T const&) {
+            return preclaimHolder<T>(ctx, clawAmount);
+        },
+        clawAmount.asset().value());
+
+    auto const sleIssuer = ctx.view.read(keylet::account(issuer));
+    auto const sleHolder = ctx.view.read(keylet::account(holder));
+    if (!sleIssuer || !sleHolder)
+        return terNO_ACCOUNT;
+
+    if (sleHolder->isFieldPresent(sfAMMID))
+        return tecAMM_ACCOUNT;
+
+    return std::visit(
+        [&]<typename T>(T const&) {
+            return preclaimHelper<T>(
+                ctx, sleIssuer, issuer, clawAmount, holder);
+        },
+        clawAmount.asset().value());
 }
 
 template <ValidIssueType T>
@@ -258,22 +295,6 @@ applyHelper<MPTIssue>(ApplyContext& ctx)
         issuer,
         std::min(spendableAmount, clawAmount),
         ctx.journal);
-}
-
-NotTEC
-Clawback::preflight(PreflightContext const& ctx)
-{
-    return std::visit(
-        [&]<typename T>(T const&) { return preflightHelper<T>(ctx); },
-        ctx.tx[sfAmount].asset().value());
-}
-
-TER
-Clawback::preclaim(PreclaimContext const& ctx)
-{
-    return std::visit(
-        [&]<typename T>(T const&) { return preclaimHelper<T>(ctx); },
-        ctx.tx[sfAmount].asset().value());
 }
 
 TER
