@@ -860,6 +860,10 @@ AmendmentTableImpl::doVoting(
                 majorityTime = it->second;
         }
 
+        JLOG(j_.debug()) << "Amendment " << entry.second.name << " ("
+                         << entry.first << ") has " << vote->votes(entry.first)
+                         << " votes";
+
         if (enabledAmendments.count(entry.first) != 0)
         {
             JLOG(j_.trace()) << entry.first << ": amendment already enabled";
@@ -904,7 +908,7 @@ AmendmentTableImpl::doVoting(
         }
         else
         {
-            JLOG(j_.trace())
+            JLOG(j_.debug())
                 << entry.first << ": amendment does not have majority";
         }
     }
