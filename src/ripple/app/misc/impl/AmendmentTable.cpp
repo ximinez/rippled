@@ -860,10 +860,6 @@ AmendmentTableImpl::doVoting(
                 majorityTime = it->second;
         }
 
-        JLOG(j_.debug()) << "Amendment " << entry.second.name << " ("
-                         << entry.first << ") has " << vote->votes(entry.first)
-                         << " votes";
-
         if (enabledAmendments.count(entry.first) != 0)
         {
             JLOG(j_.trace()) << entry.first << ": amendment already enabled";
@@ -875,9 +871,15 @@ AmendmentTableImpl::doVoting(
                                 << " (May be a false alarm if recently enabled "
                                    "and some validators are offline)";
             }
+
+            continue;
         }
-        else if (
-            hasValMajority && (majorityTime == NetClock::time_point{}) &&
+
+        JLOG(j_.debug()) << "Amendment " << entry.first << " ("
+                         << entry.second.name << ") has "
+                         << vote->votes(entry.first) << " votes";
+
+        if (hasValMajority && (majorityTime == NetClock::time_point{}) &&
             entry.second.vote == AmendmentVote::up)
         {
             // Ledger says no majority, validators say yes
