@@ -243,10 +243,11 @@ public:
                 else if (votes.second.timeout != newTimeout)
                 {
                     assert(votes.second.timeout < newTimeout);
-                    auto const age = newTimeout - *votes.second.timeout;
-                    JLOG(j.debug())
-                        << "recordVotes: Using " << age.count()
-                        << " s(?) old cached votes from " << pkHuman;
+                    using namespace std::chrono;
+                    auto const age = duration_cast<minutes>(
+                        newTimeout - *votes.second.timeout);
+                    JLOG(j.debug()) << "recordVotes: Using " << age.count()
+                                    << "min old cached votes from " << pkHuman;
                 }
             });
     }
