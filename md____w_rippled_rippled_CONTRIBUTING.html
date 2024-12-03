@@ -237,6 +237,30 @@ Formatting</h2>
 <p >You can install a pre-commit hook to automatically run <code>clang-format</code> before every commit: </p><div class="fragment"><div class="line">pip3 install pre-commit</div>
 <div class="line">pre-commit install</div>
 </div><!-- fragment --><h2><a class="anchor" id="autotoc_md53"></a>
+Contracts and instrumentation</h2>
+<p >We are using <a href="https://antithesis.com/">Antithesis</a> for continuous fuzzing, and keep a copy of <a href="https://github.com/antithesishq/antithesis-sdk-cpp/">Antithesis C++ SDK</a> in <code>external/antithesis-sdk</code>. One of the aims of fuzzing is to identify bugs by finding external conditions which cause contracts violations inside <code>rippled</code>. The contracts are expressed as <code>ASSERT</code> or <code>UNREACHABLE</code> (defined in <code><a class="el" href="instrumentation_8h_source.html">include/xrpl/beast/utility/instrumentation.h</a></code>), which are effectively (outside of Antithesis) wrappers for <code>assert(...)</code> with added name. The purpose of name is to provide contracts with stable identity which does not rely on line numbers.</p>
+<p >When <code>rippled</code> is built with the Antithesis instrumentation enabled (using <code>voidstar</code> CMake option) and ran on the Antithesis platform, the contracts become <a href="https://antithesis.com/docs/using_antithesis/properties.html">test properties</a>; otherwise they are just like a regular <code>assert</code>. To learn more about Antithesis, see <a href="https://antithesis.com/docs/introduction/how_antithesis_works.html">How Antithesis Works</a> and <a href="https://antithesis.com/docs/using_antithesis/sdk/cpp/overview.html#">C++ SDK</a></p>
+<p >We continue to use the old style <code>assert</code> or <code>assert(false)</code> in certain locations, where the reporting of contract violations on the Antithesis platform is either not possible or not useful.</p>
+<p >For this reason:</p><ul>
+<li>The locations where <code>assert</code> or <code>assert(false)</code> contracts should continue to be used:<ul>
+<li><code>constexpr</code> functions</li>
+<li>unit tests i.e. files under <code>src/test</code></li>
+<li>unit tests-related modules (files under <code>beast/test</code> and <code>beast/unit_test</code>)</li>
+</ul>
+</li>
+<li>Outside of the listed locations, do not use <code>assert</code>; use <code>ASSERT</code> instead, giving it unique name, with the short description of the contract.</li>
+<li>Outside of the listed locations, do not use <code>assert(false)</code>; use <code>UNREACHABLE</code> instead, giving it unique name, with the description of the condition being violated</li>
+<li>The contract name should start with a full name (including scope) of the function, optionally a named lambda, followed by a colon <code>:</code> and a brief (typically at most five words) description. <code>UNREACHABLE</code> contracts can use slightly longer descriptions. If there are multiple overloads of the function, use common sense to balance both brevity and unambiguity of the function name. NOTE: the purpose of name is to provide stable means of unique identification of every contract; for this reason try to avoid elements which can change in some obvious refactors or when reinforcing the condition.</li>
+<li>Contract description typically (except for <code>UNREACHABLE</code>) should describe the <em>expected</em> condition, as in "I assert that _expected_ is true".</li>
+<li>Contract description for <code>UNREACHABLE</code> should describe the <em>unexpected</em> situation which caused the line to have been reached.</li>
+<li>Example good name for an <code>UNREACHABLE</code> macro <code>"Json::operator==(Value, Value) : invalid type"</code>; example good name for an <code>ASSERT</code> macro <code>"Json::Value::asCString : valid type"</code>.</li>
+<li>Example <b>bad</b> name <code>"RFC1751::insert(char* s, int x, int start, int length) : length is greater than or equal zero"</code> (missing namespace, unnecessary full function signature, description too verbose). Good name: <code>"ripple::RFC1751::insert : minimum length"</code>.</li>
+<li>In <b>few</b> well-justified cases a non-standard name can be used, in which case a comment should be placed to explain the rationale (example in <code><a class="el" href="contract_8cpp_source.html">contract.cpp</a></code>)</li>
+<li>Do <b>not</b> rename a contract without a good reason (e.g. the name no longer reflects the location or the condition being checked)</li>
+<li>Do not use <code>std::unreachable</code></li>
+<li>Do not put contracts where they can be violated by an external condition (e.g. timing, data payload before mandatory validation etc.) as this creates bogus bug reports (and causes crashes of Debug builds)</li>
+</ul>
+<h2><a class="anchor" id="autotoc_md54"></a>
 Unit Tests</h2>
 <p >To execute all unit tests:</p>
 <div class="fragment"><div class="line">(Note: Using multiple cores on a Mac M1 can cause spurious test failures. The </div>
@@ -244,7 +268,7 @@ Unit Tests</h2>
 <div class="line"> </div>
 <div class="line">To run a specific set of test suites:</div>
 </div><!-- fragment --><p> rippled &ndash;unittest TestSuiteName ``<code> Note: In this example, all tests with prefix</code>TestSuiteName<code>will be run, so if </code>TestSuiteName1<code>and</code>TestSuiteName2` both exist, then both tests will run. Alternatively, if the unit test name finds an exact match, it will stop doing partial matches, i.e. if a unit test with a title of <code>TestSuiteName</code> exists, then no other unit test will be executed, apart from <code>TestSuiteName</code>.</p>
-<h2><a class="anchor" id="autotoc_md54"></a>
+<h2><a class="anchor" id="autotoc_md55"></a>
 Avoid</h2>
 <ol type="1">
 <li>Proliferation of nearly identical code.</li>
@@ -256,7 +280,7 @@ Avoid</h2>
 <li>CPU or architecture-specific code unless there is a good reason to include it, and where it is used, guard it with macros and provide explanatory comments.</li>
 <li>Importing new libraries unless there is a very good reason to do so.</li>
 </ol>
-<h2><a class="anchor" id="autotoc_md55"></a>
+<h2><a class="anchor" id="autotoc_md56"></a>
 Seek to</h2>
 <ol type="1">
 <li>Extend functionality of existing code rather than creating new code.</li>
@@ -266,14 +290,14 @@ Seek to</h2>
 <li>Use TitleCase for classes, structs and filenames, camelCase for function and variable names, lower case for namespaces and folders.</li>
 <li>Provide as many comments as you feel that a competent programmer would need to understand what your code does.</li>
 </ol>
-<h1><a class="anchor" id="autotoc_md56"></a>
+<h1><a class="anchor" id="autotoc_md57"></a>
 Maintainers</h1>
 <p >Maintainers are ecosystem participants with elevated access to the repository. They are able to push new code, make decisions on when a release should be made, etc.</p>
-<h2><a class="anchor" id="autotoc_md57"></a>
+<h2><a class="anchor" id="autotoc_md58"></a>
 Adding and removing</h2>
 <p >New maintainers can be proposed by two existing maintainers, subject to a vote by a quorum of the existing maintainers. A minimum of 50% support and a 50% participation is required. In the event of a tie vote, the addition of the new maintainer will be rejected.</p>
 <p >Existing maintainers can resign, or be subject to a vote for removal at the behest of two existing maintainers. A minimum of 60% agreement and 50% participation are required. The XRP Ledger Foundation will have the ability, for cause, to remove an existing maintainer without a vote.</p>
-<h2><a class="anchor" id="autotoc_md58"></a>
+<h2><a class="anchor" id="autotoc_md59"></a>
 Current Maintainers</h2>
 <p >Maintainers are users with admin access to the repo. Maintainers do not typically approve or deny pull requests.</p>
 <ul>
@@ -283,7 +307,7 @@ Current Maintainers</h2>
 <li><a href="https://github.com/Silkjaer">Silkjaer</a> (XRP Ledger Foundation)</li>
 <li><a href="https://github.com/WietseWind">WietseWind</a> (XRPL Labs + XRP Ledger Foundation)</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md59"></a>
+<h2><a class="anchor" id="autotoc_md60"></a>
 Current Code Reviewers</h2>
 <p >Code Reviewers are developers who have the ability to review and approve source code changes.</p>
 <ul>
