@@ -633,6 +633,8 @@ Classes</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classripple_1_1LedgerDeltaAcquire.html">LedgerDeltaAcquire</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Manage the retrieval of a ledger delta (header and transactions) from the network.  <a href="classripple_1_1LedgerDeltaAcquire.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structripple_1_1LedgerEntry.html">LedgerEntry</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classripple_1_1LedgerEntryTypesMatch.html">LedgerEntryTypesMatch</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Invariant: corresponding modified ledger entries should match in type and added entries should be a valid type.  <a href="classripple_1_1LedgerEntryTypesMatch.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -1721,6 +1723,8 @@ Typedefs</h2></td></tr>
 <tr class="separator:a8f9ba329e357041ee11d59add281b978"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa61af01715581f232da60424ac48f8ff"><td class="memItemLeft" align="right" valign="top">using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceripple.html#aa61af01715581f232da60424ac48f8ff">Prices</a> = bimap&lt; multiset_of&lt; <a class="elRef" href="http://en.cppreference.com/w/cpp/types/integer.html">std::uint32_t</a>, <a class="elRef" href="http://en.cppreference.com/w/cpp/utility/functional/greater.html">std::greater</a>&lt; <a class="elRef" href="http://en.cppreference.com/w/cpp/types/integer.html">std::uint32_t</a> &gt; &gt;, multiset_of&lt; <a class="el" href="classripple_1_1STAmount.html">STAmount</a> &gt; &gt;</td></tr>
 <tr class="separator:aa61af01715581f232da60424ac48f8ff"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a298588deb0e5f3d1f49c76bc544fedee"><td class="memItemLeft" align="right" valign="top">using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceripple.html#a298588deb0e5f3d1f49c76bc544fedee">FunctionType</a> = <a class="elRef" href="http://en.cppreference.com/w/cpp/utility/optional.html">std::optional</a>&lt; <a class="el" href="namespaceripple.html#a356c68147333a9a48a344718038576d9">uint256</a> &gt;(*)(<a class="el" href="classJson_1_1Value.html">Json::Value</a> const  &amp;, <a class="el" href="classJson_1_1Value.html">Json::Value</a> &amp;)</td></tr>
+<tr class="separator:a298588deb0e5f3d1f49c76bc544fedee"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad18fcbe19742d7f978f16f21ac70fba5"><td class="memItemLeft" align="right" valign="top">using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceripple.html#ad18fcbe19742d7f978f16f21ac70fba5">FullBelowCache</a> = <a class="el" href="classripple_1_1detail_1_1BasicFullBelowCache.html">detail::BasicFullBelowCache</a></td></tr>
 <tr class="separator:ad18fcbe19742d7f978f16f21ac70fba5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:acffabb2b30913f9687dbf65f4afc0a19"><td class="memItemLeft" align="right" valign="top">using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceripple.html#acffabb2b30913f9687dbf65f4afc0a19">TreeNodeCache</a> = <a class="el" href="classripple_1_1TaggedCache.html">TaggedCache</a>&lt; <a class="el" href="namespaceripple.html#a356c68147333a9a48a344718038576d9">uint256</a>, <a class="el" href="classripple_1_1SHAMapTreeNode.html">SHAMapTreeNode</a> &gt;</td></tr>
@@ -4974,6 +4978,46 @@ requires (T::ConsequencesFactory == <a class="el" href="classripple_1_1Transacto
 <tr class="separator:ab824f1e0112d4341786e8df4e6944978"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a19d245e6bd5e15444887eaa9b37062e3"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="classripple_1_1STArray.html">STArray</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceripple.html#a19d245e6bd5e15444887eaa9b37062e3">parseAuthorizeCredentials</a> (<a class="el" href="classJson_1_1Value.html">Json::Value</a> const &amp;jv)</td></tr>
 <tr class="separator:a19d245e6bd5e15444887eaa9b37062e3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aec147980afd5a3a2cd269ce515beefc2"><td class="memItemLeft" align="right" valign="top"><a class="elRef" href="http://en.cppreference.com/w/cpp/utility/optional.html">std::optional</a>&lt; <a class="el" href="namespaceripple.html#a356c68147333a9a48a344718038576d9">uint256</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceripple.html#aec147980afd5a3a2cd269ce515beefc2">parseIndex</a> (<a class="el" href="classJson_1_1Value.html">Json::Value</a> const &amp;params, <a class="el" href="classJson_1_1Value.html">Json::Value</a> &amp;jvResult)</td></tr>
+<tr class="separator:aec147980afd5a3a2cd269ce515beefc2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9704a0169556b561f026e403bdbf0818"><td class="memItemLeft" align="right" valign="top"><a class="elRef" href="http://en.cppreference.com/w/cpp/utility/optional.html">std::optional</a>&lt; <a class="el" href="namespaceripple.html#a356c68147333a9a48a344718038576d9">uint256</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceripple.html#a9704a0169556b561f026e403bdbf0818">parseAccountRoot</a> (<a class="el" href="classJson_1_1Value.html">Json::Value</a> const &amp;params, <a class="el" href="classJson_1_1Value.html">Json::Value</a> &amp;jvResult)</td></tr>
+<tr class="separator:a9704a0169556b561f026e403bdbf0818"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aefce5b84d0d2fc869cd47101485df95e"><td class="memItemLeft" align="right" valign="top"><a class="elRef" href="http://en.cppreference.com/w/cpp/utility/optional.html">std::optional</a>&lt; <a class="el" href="namespaceripple.html#a356c68147333a9a48a344718038576d9">uint256</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceripple.html#aefce5b84d0d2fc869cd47101485df95e">parseCheck</a> (<a class="el" href="classJson_1_1Value.html">Json::Value</a> const &amp;params, <a class="el" href="classJson_1_1Value.html">Json::Value</a> &amp;jvResult)</td></tr>
+<tr class="separator:aefce5b84d0d2fc869cd47101485df95e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a17aabd9bea958458df49206cb88e72ce"><td class="memItemLeft" align="right" valign="top"><a class="elRef" href="http://en.cppreference.com/w/cpp/utility/optional.html">std::optional</a>&lt; <a class="el" href="namespaceripple.html#a356c68147333a9a48a344718038576d9">uint256</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceripple.html#a17aabd9bea958458df49206cb88e72ce">parseDepositPreauth</a> (<a class="el" href="classJson_1_1Value.html">Json::Value</a> const &amp;dp, <a class="el" href="classJson_1_1Value.html">Json::Value</a> &amp;jvResult)</td></tr>
+<tr class="separator:a17aabd9bea958458df49206cb88e72ce"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab4481f0022a793c8176117cc0005e799"><td class="memItemLeft" align="right" valign="top"><a class="elRef" href="http://en.cppreference.com/w/cpp/utility/optional.html">std::optional</a>&lt; <a class="el" href="namespaceripple.html#a356c68147333a9a48a344718038576d9">uint256</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceripple.html#ab4481f0022a793c8176117cc0005e799">parseDirectory</a> (<a class="el" href="classJson_1_1Value.html">Json::Value</a> const &amp;params, <a class="el" href="classJson_1_1Value.html">Json::Value</a> &amp;jvResult)</td></tr>
+<tr class="separator:ab4481f0022a793c8176117cc0005e799"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4bca81ef2e4d1d6a0ff83d8084e6c500"><td class="memItemLeft" align="right" valign="top"><a class="elRef" href="http://en.cppreference.com/w/cpp/utility/optional.html">std::optional</a>&lt; <a class="el" href="namespaceripple.html#a356c68147333a9a48a344718038576d9">uint256</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceripple.html#a4bca81ef2e4d1d6a0ff83d8084e6c500">parseEscrow</a> (<a class="el" href="classJson_1_1Value.html">Json::Value</a> const &amp;params, <a class="el" href="classJson_1_1Value.html">Json::Value</a> &amp;jvResult)</td></tr>
+<tr class="separator:a4bca81ef2e4d1d6a0ff83d8084e6c500"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac7c2369553907e7a9adca6231042758b"><td class="memItemLeft" align="right" valign="top"><a class="elRef" href="http://en.cppreference.com/w/cpp/utility/optional.html">std::optional</a>&lt; <a class="el" href="namespaceripple.html#a356c68147333a9a48a344718038576d9">uint256</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceripple.html#ac7c2369553907e7a9adca6231042758b">parseOffer</a> (<a class="el" href="classJson_1_1Value.html">Json::Value</a> const &amp;params, <a class="el" href="classJson_1_1Value.html">Json::Value</a> &amp;jvResult)</td></tr>
+<tr class="separator:ac7c2369553907e7a9adca6231042758b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a73cb78510deadacb9b43cc136fd05050"><td class="memItemLeft" align="right" valign="top"><a class="elRef" href="http://en.cppreference.com/w/cpp/utility/optional.html">std::optional</a>&lt; <a class="el" href="namespaceripple.html#a356c68147333a9a48a344718038576d9">uint256</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceripple.html#a73cb78510deadacb9b43cc136fd05050">parsePaymentChannel</a> (<a class="el" href="classJson_1_1Value.html">Json::Value</a> const &amp;params, <a class="el" href="classJson_1_1Value.html">Json::Value</a> &amp;jvResult)</td></tr>
+<tr class="separator:a73cb78510deadacb9b43cc136fd05050"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a283b25c7e0bad7f505990bfe03ca5571"><td class="memItemLeft" align="right" valign="top"><a class="elRef" href="http://en.cppreference.com/w/cpp/utility/optional.html">std::optional</a>&lt; <a class="el" href="namespaceripple.html#a356c68147333a9a48a344718038576d9">uint256</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceripple.html#a283b25c7e0bad7f505990bfe03ca5571">parseRippleState</a> (<a class="el" href="classJson_1_1Value.html">Json::Value</a> const &amp;jvRippleState, <a class="el" href="classJson_1_1Value.html">Json::Value</a> &amp;jvResult)</td></tr>
+<tr class="separator:a283b25c7e0bad7f505990bfe03ca5571"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a648948748fec8ad988487f05ada512db"><td class="memItemLeft" align="right" valign="top"><a class="elRef" href="http://en.cppreference.com/w/cpp/utility/optional.html">std::optional</a>&lt; <a class="el" href="namespaceripple.html#a356c68147333a9a48a344718038576d9">uint256</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceripple.html#a648948748fec8ad988487f05ada512db">parseTicket</a> (<a class="el" href="classJson_1_1Value.html">Json::Value</a> const &amp;params, <a class="el" href="classJson_1_1Value.html">Json::Value</a> &amp;jvResult)</td></tr>
+<tr class="separator:a648948748fec8ad988487f05ada512db"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abf02e765186c69c6f852a3bb97c3a8a0"><td class="memItemLeft" align="right" valign="top"><a class="elRef" href="http://en.cppreference.com/w/cpp/utility/optional.html">std::optional</a>&lt; <a class="el" href="namespaceripple.html#a356c68147333a9a48a344718038576d9">uint256</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceripple.html#abf02e765186c69c6f852a3bb97c3a8a0">parseNFTokenPage</a> (<a class="el" href="classJson_1_1Value.html">Json::Value</a> const &amp;params, <a class="el" href="classJson_1_1Value.html">Json::Value</a> &amp;jvResult)</td></tr>
+<tr class="separator:abf02e765186c69c6f852a3bb97c3a8a0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a39356927b67f80df6ae98ce87a602b23"><td class="memItemLeft" align="right" valign="top"><a class="elRef" href="http://en.cppreference.com/w/cpp/utility/optional.html">std::optional</a>&lt; <a class="el" href="namespaceripple.html#a356c68147333a9a48a344718038576d9">uint256</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceripple.html#a39356927b67f80df6ae98ce87a602b23">parseAMM</a> (<a class="el" href="classJson_1_1Value.html">Json::Value</a> const &amp;params, <a class="el" href="classJson_1_1Value.html">Json::Value</a> &amp;jvResult)</td></tr>
+<tr class="separator:a39356927b67f80df6ae98ce87a602b23"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1c3a69ca929494b7acc341493562d123"><td class="memItemLeft" align="right" valign="top"><a class="elRef" href="http://en.cppreference.com/w/cpp/utility/optional.html">std::optional</a>&lt; <a class="el" href="namespaceripple.html#a356c68147333a9a48a344718038576d9">uint256</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceripple.html#a1c3a69ca929494b7acc341493562d123">parseBridge</a> (<a class="el" href="classJson_1_1Value.html">Json::Value</a> const &amp;params, <a class="el" href="classJson_1_1Value.html">Json::Value</a> &amp;jvResult)</td></tr>
+<tr class="separator:a1c3a69ca929494b7acc341493562d123"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5b93b920d29b72c392e532330f222176"><td class="memItemLeft" align="right" valign="top"><a class="elRef" href="http://en.cppreference.com/w/cpp/utility/optional.html">std::optional</a>&lt; <a class="el" href="namespaceripple.html#a356c68147333a9a48a344718038576d9">uint256</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceripple.html#a5b93b920d29b72c392e532330f222176">parseXChainOwnedClaimID</a> (<a class="el" href="classJson_1_1Value.html">Json::Value</a> const &amp;claim_id, <a class="el" href="classJson_1_1Value.html">Json::Value</a> &amp;jvResult)</td></tr>
+<tr class="separator:a5b93b920d29b72c392e532330f222176"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a59a351b0900f47f006b7fffd7de9d260"><td class="memItemLeft" align="right" valign="top"><a class="elRef" href="http://en.cppreference.com/w/cpp/utility/optional.html">std::optional</a>&lt; <a class="el" href="namespaceripple.html#a356c68147333a9a48a344718038576d9">uint256</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceripple.html#a59a351b0900f47f006b7fffd7de9d260">parseXChainOwnedCreateAccountClaimID</a> (<a class="el" href="classJson_1_1Value.html">Json::Value</a> const &amp;claim_id, <a class="el" href="classJson_1_1Value.html">Json::Value</a> &amp;jvResult)</td></tr>
+<tr class="separator:a59a351b0900f47f006b7fffd7de9d260"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4dc170382edc3806a2a162cfe1f8783a"><td class="memItemLeft" align="right" valign="top"><a class="elRef" href="http://en.cppreference.com/w/cpp/utility/optional.html">std::optional</a>&lt; <a class="el" href="namespaceripple.html#a356c68147333a9a48a344718038576d9">uint256</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceripple.html#a4dc170382edc3806a2a162cfe1f8783a">parseDID</a> (<a class="el" href="classJson_1_1Value.html">Json::Value</a> const &amp;params, <a class="el" href="classJson_1_1Value.html">Json::Value</a> &amp;jvResult)</td></tr>
+<tr class="separator:a4dc170382edc3806a2a162cfe1f8783a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad0d949c3fc0175f34c9f532329c99feb"><td class="memItemLeft" align="right" valign="top"><a class="elRef" href="http://en.cppreference.com/w/cpp/utility/optional.html">std::optional</a>&lt; <a class="el" href="namespaceripple.html#a356c68147333a9a48a344718038576d9">uint256</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceripple.html#ad0d949c3fc0175f34c9f532329c99feb">parseOracle</a> (<a class="el" href="classJson_1_1Value.html">Json::Value</a> const &amp;params, <a class="el" href="classJson_1_1Value.html">Json::Value</a> &amp;jvResult)</td></tr>
+<tr class="separator:ad0d949c3fc0175f34c9f532329c99feb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4ae257a437692cd4adccc534f6c43f81"><td class="memItemLeft" align="right" valign="top"><a class="elRef" href="http://en.cppreference.com/w/cpp/utility/optional.html">std::optional</a>&lt; <a class="el" href="namespaceripple.html#a356c68147333a9a48a344718038576d9">uint256</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceripple.html#a4ae257a437692cd4adccc534f6c43f81">parseCredential</a> (<a class="el" href="classJson_1_1Value.html">Json::Value</a> const &amp;cred, <a class="el" href="classJson_1_1Value.html">Json::Value</a> &amp;jvResult)</td></tr>
+<tr class="separator:a4ae257a437692cd4adccc534f6c43f81"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a650e8329f1767e850b6737a8653090fd"><td class="memItemLeft" align="right" valign="top"><a class="elRef" href="http://en.cppreference.com/w/cpp/utility/optional.html">std::optional</a>&lt; <a class="el" href="namespaceripple.html#a356c68147333a9a48a344718038576d9">uint256</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceripple.html#a650e8329f1767e850b6737a8653090fd">parseMPTokenIssuance</a> (<a class="el" href="classJson_1_1Value.html">Json::Value</a> const &amp;unparsedMPTIssuanceID, <a class="el" href="classJson_1_1Value.html">Json::Value</a> &amp;jvResult)</td></tr>
+<tr class="separator:a650e8329f1767e850b6737a8653090fd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af099631065fcef20ccb17ac6b363eee8"><td class="memItemLeft" align="right" valign="top"><a class="elRef" href="http://en.cppreference.com/w/cpp/utility/optional.html">std::optional</a>&lt; <a class="el" href="namespaceripple.html#a356c68147333a9a48a344718038576d9">uint256</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceripple.html#af099631065fcef20ccb17ac6b363eee8">parseMPToken</a> (<a class="el" href="classJson_1_1Value.html">Json::Value</a> const &amp;mptJson, <a class="el" href="classJson_1_1Value.html">Json::Value</a> &amp;jvResult)</td></tr>
+<tr class="separator:af099631065fcef20ccb17ac6b363eee8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7e6294178bee238f8f439606e5a88a0f"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceripple.html#a7e6294178bee238f8f439606e5a88a0f">appendNftOfferJson</a> (<a class="el" href="classripple_1_1Application.html">Application</a> const &amp;app, <a class="elRef" href="http://en.cppreference.com/w/cpp/memory/shared_ptr.html">std::shared_ptr</a>&lt; <a class="el" href="namespaceripple.html#abbba3966df1925ac76f6d04c0aa1abe3">SLE</a> const &gt; const &amp;offer, <a class="el" href="classJson_1_1Value.html">Json::Value</a> &amp;offers)</td></tr>
 <tr class="separator:a7e6294178bee238f8f439606e5a88a0f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0c6f48a6bac78f26ccf59eab260ff05d"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="classJson_1_1Value.html">Json::Value</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceripple.html#a0c6f48a6bac78f26ccf59eab260ff05d">enumerateNFTOffers</a> (<a class="el" href="structripple_1_1RPC_1_1JsonContext.html">RPC::JsonContext</a> &amp;context, <a class="el" href="namespaceripple.html#a356c68147333a9a48a344718038576d9">uint256</a> const &amp;nftId, <a class="el" href="structripple_1_1Keylet.html">Keylet</a> const &amp;directory)</td></tr>
@@ -7690,6 +7734,22 @@ template&lt;class T &gt; </div>
 </div><div class="memdoc">
 
 <p class="definition">Definition at line <a class="el" href="GetAggregatePrice_8cpp_source.html#l00036">36</a> of file <a class="el" href="GetAggregatePrice_8cpp_source.html">GetAggregatePrice.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a298588deb0e5f3d1f49c76bc544fedee" name="a298588deb0e5f3d1f49c76bc544fedee"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a298588deb0e5f3d1f49c76bc544fedee">&#9670;&#160;</a></span>FunctionType</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="namespaceripple.html#a298588deb0e5f3d1f49c76bc544fedee">ripple::FunctionType</a> = typedef <a class="elRef" href="http://en.cppreference.com/w/cpp/utility/optional.html">std::optional</a>&lt;<a class="el" href="namespaceripple.html#a356c68147333a9a48a344718038576d9">uint256</a>&gt; (*)(<a class="el" href="classJson_1_1Value.html">Json::Value</a> const&amp;, <a class="el" href="classJson_1_1Value.html">Json::Value</a>&amp;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="LedgerEntry_8cpp_source.html#l00809">809</a> of file <a class="el" href="LedgerEntry_8cpp_source.html">LedgerEntry.cpp</a>.</p>
 
 </div>
 </div>
@@ -39615,7 +39675,7 @@ template&lt;class Clock , class Duration , class Rep , class Period &gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="RPCCall_8cpp_source.html#l01276">1276</a> of file <a class="el" href="RPCCall_8cpp_source.html">RPCCall.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="RPCCall_8cpp_source.html#l01290">1290</a> of file <a class="el" href="RPCCall_8cpp_source.html">RPCCall.cpp</a>.</p>
 
 </div>
 </div>
@@ -39657,7 +39717,7 @@ template&lt;class Clock , class Duration , class Rep , class Period &gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="RPCCall_8cpp_source.html#l01378">1378</a> of file <a class="el" href="RPCCall_8cpp_source.html">RPCCall.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="RPCCall_8cpp_source.html#l01392">1392</a> of file <a class="el" href="RPCCall_8cpp_source.html">RPCCall.cpp</a>.</p>
 
 </div>
 </div>
@@ -39708,7 +39768,7 @@ template&lt;class Clock , class Duration , class Rep , class Period &gt; </div>
 <p>Internal invocation of <a class="el" href="namespaceripple_1_1RPC.html" title="API version numbers used in later API versions.">RPC</a> client. </p>
 <p >Used by both rippled command line as well as rippled unit tests </p>
 
-<p class="definition">Definition at line <a class="el" href="RPCCall_8cpp_source.html#l01419">1419</a> of file <a class="el" href="RPCCall_8cpp_source.html">RPCCall.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="RPCCall_8cpp_source.html#l01433">1433</a> of file <a class="el" href="RPCCall_8cpp_source.html">RPCCall.cpp</a>.</p>
 
 </div>
 </div>
@@ -41984,7 +42044,7 @@ template&lt;class T &gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LedgerEntry_8cpp_source.html#l00883">883</a> of file <a class="el" href="LedgerEntry_8cpp_source.html">LedgerEntry.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LedgerEntry_8cpp_source.html#l00960">960</a> of file <a class="el" href="LedgerEntry_8cpp_source.html">LedgerEntry.cpp</a>.</p>
 
 </div>
 </div>
@@ -43090,7 +43150,7 @@ template&lt;class T &gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LedgerEntry_8cpp_source.html#l00075">75</a> of file <a class="el" href="LedgerEntry_8cpp_source.html">LedgerEntry.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LedgerEntry_8cpp_source.html#l00825">825</a> of file <a class="el" href="LedgerEntry_8cpp_source.html">LedgerEntry.cpp</a>.</p>
 
 </div>
 </div>
@@ -43914,7 +43974,607 @@ template&lt;class T &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="LedgerEntry_8cpp_source.html#l00039">39</a> of file <a class="el" href="LedgerEntry_8cpp_source.html">LedgerEntry.cpp</a>.</p>
+<p class="definition">Definition at line <a class="el" href="LedgerEntry_8cpp_source.html#l00040">40</a> of file <a class="el" href="LedgerEntry_8cpp_source.html">LedgerEntry.cpp</a>.</p>
+
+</div>
+</div>
+<a id="aec147980afd5a3a2cd269ce515beefc2" name="aec147980afd5a3a2cd269ce515beefc2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aec147980afd5a3a2cd269ce515beefc2">&#9670;&#160;</a></span>parseIndex()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="elRef" href="http://en.cppreference.com/w/cpp/utility/optional.html">std::optional</a>&lt; <a class="el" href="namespaceripple.html#a356c68147333a9a48a344718038576d9">uint256</a> &gt; ripple::parseIndex </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classJson_1_1Value.html">Json::Value</a> const &amp;&#160;</td>
+          <td class="paramname"><em>params</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="classJson_1_1Value.html">Json::Value</a> &amp;&#160;</td>
+          <td class="paramname"><em>jvResult</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="LedgerEntry_8cpp_source.html#l00071">71</a> of file <a class="el" href="LedgerEntry_8cpp_source.html">LedgerEntry.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a9704a0169556b561f026e403bdbf0818" name="a9704a0169556b561f026e403bdbf0818"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9704a0169556b561f026e403bdbf0818">&#9670;&#160;</a></span>parseAccountRoot()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="elRef" href="http://en.cppreference.com/w/cpp/utility/optional.html">std::optional</a>&lt; <a class="el" href="namespaceripple.html#a356c68147333a9a48a344718038576d9">uint256</a> &gt; ripple::parseAccountRoot </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classJson_1_1Value.html">Json::Value</a> const &amp;&#160;</td>
+          <td class="paramname"><em>params</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="classJson_1_1Value.html">Json::Value</a> &amp;&#160;</td>
+          <td class="paramname"><em>jvResult</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="LedgerEntry_8cpp_source.html#l00084">84</a> of file <a class="el" href="LedgerEntry_8cpp_source.html">LedgerEntry.cpp</a>.</p>
+
+</div>
+</div>
+<a id="aefce5b84d0d2fc869cd47101485df95e" name="aefce5b84d0d2fc869cd47101485df95e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aefce5b84d0d2fc869cd47101485df95e">&#9670;&#160;</a></span>parseCheck()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="elRef" href="http://en.cppreference.com/w/cpp/utility/optional.html">std::optional</a>&lt; <a class="el" href="namespaceripple.html#a356c68147333a9a48a344718038576d9">uint256</a> &gt; ripple::parseCheck </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classJson_1_1Value.html">Json::Value</a> const &amp;&#160;</td>
+          <td class="paramname"><em>params</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="classJson_1_1Value.html">Json::Value</a> &amp;&#160;</td>
+          <td class="paramname"><em>jvResult</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="LedgerEntry_8cpp_source.html#l00097">97</a> of file <a class="el" href="LedgerEntry_8cpp_source.html">LedgerEntry.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a17aabd9bea958458df49206cb88e72ce" name="a17aabd9bea958458df49206cb88e72ce"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a17aabd9bea958458df49206cb88e72ce">&#9670;&#160;</a></span>parseDepositPreauth()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="elRef" href="http://en.cppreference.com/w/cpp/utility/optional.html">std::optional</a>&lt; <a class="el" href="namespaceripple.html#a356c68147333a9a48a344718038576d9">uint256</a> &gt; ripple::parseDepositPreauth </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classJson_1_1Value.html">Json::Value</a> const &amp;&#160;</td>
+          <td class="paramname"><em>dp</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="classJson_1_1Value.html">Json::Value</a> &amp;&#160;</td>
+          <td class="paramname"><em>jvResult</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="LedgerEntry_8cpp_source.html#l00110">110</a> of file <a class="el" href="LedgerEntry_8cpp_source.html">LedgerEntry.cpp</a>.</p>
+
+</div>
+</div>
+<a id="ab4481f0022a793c8176117cc0005e799" name="ab4481f0022a793c8176117cc0005e799"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab4481f0022a793c8176117cc0005e799">&#9670;&#160;</a></span>parseDirectory()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="elRef" href="http://en.cppreference.com/w/cpp/utility/optional.html">std::optional</a>&lt; <a class="el" href="namespaceripple.html#a356c68147333a9a48a344718038576d9">uint256</a> &gt; ripple::parseDirectory </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classJson_1_1Value.html">Json::Value</a> const &amp;&#160;</td>
+          <td class="paramname"><em>params</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="classJson_1_1Value.html">Json::Value</a> &amp;&#160;</td>
+          <td class="paramname"><em>jvResult</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="LedgerEntry_8cpp_source.html#l00175">175</a> of file <a class="el" href="LedgerEntry_8cpp_source.html">LedgerEntry.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a4bca81ef2e4d1d6a0ff83d8084e6c500" name="a4bca81ef2e4d1d6a0ff83d8084e6c500"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4bca81ef2e4d1d6a0ff83d8084e6c500">&#9670;&#160;</a></span>parseEscrow()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="elRef" href="http://en.cppreference.com/w/cpp/utility/optional.html">std::optional</a>&lt; <a class="el" href="namespaceripple.html#a356c68147333a9a48a344718038576d9">uint256</a> &gt; ripple::parseEscrow </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classJson_1_1Value.html">Json::Value</a> const &amp;&#160;</td>
+          <td class="paramname"><em>params</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="classJson_1_1Value.html">Json::Value</a> &amp;&#160;</td>
+          <td class="paramname"><em>jvResult</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="LedgerEntry_8cpp_source.html#l00241">241</a> of file <a class="el" href="LedgerEntry_8cpp_source.html">LedgerEntry.cpp</a>.</p>
+
+</div>
+</div>
+<a id="ac7c2369553907e7a9adca6231042758b" name="ac7c2369553907e7a9adca6231042758b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac7c2369553907e7a9adca6231042758b">&#9670;&#160;</a></span>parseOffer()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="elRef" href="http://en.cppreference.com/w/cpp/utility/optional.html">std::optional</a>&lt; <a class="el" href="namespaceripple.html#a356c68147333a9a48a344718038576d9">uint256</a> &gt; ripple::parseOffer </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classJson_1_1Value.html">Json::Value</a> const &amp;&#160;</td>
+          <td class="paramname"><em>params</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="classJson_1_1Value.html">Json::Value</a> &amp;&#160;</td>
+          <td class="paramname"><em>jvResult</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="LedgerEntry_8cpp_source.html#l00274">274</a> of file <a class="el" href="LedgerEntry_8cpp_source.html">LedgerEntry.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a73cb78510deadacb9b43cc136fd05050" name="a73cb78510deadacb9b43cc136fd05050"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a73cb78510deadacb9b43cc136fd05050">&#9670;&#160;</a></span>parsePaymentChannel()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="elRef" href="http://en.cppreference.com/w/cpp/utility/optional.html">std::optional</a>&lt; <a class="el" href="namespaceripple.html#a356c68147333a9a48a344718038576d9">uint256</a> &gt; ripple::parsePaymentChannel </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classJson_1_1Value.html">Json::Value</a> const &amp;&#160;</td>
+          <td class="paramname"><em>params</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="classJson_1_1Value.html">Json::Value</a> &amp;&#160;</td>
+          <td class="paramname"><em>jvResult</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="LedgerEntry_8cpp_source.html#l00305">305</a> of file <a class="el" href="LedgerEntry_8cpp_source.html">LedgerEntry.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a283b25c7e0bad7f505990bfe03ca5571" name="a283b25c7e0bad7f505990bfe03ca5571"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a283b25c7e0bad7f505990bfe03ca5571">&#9670;&#160;</a></span>parseRippleState()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="elRef" href="http://en.cppreference.com/w/cpp/utility/optional.html">std::optional</a>&lt; <a class="el" href="namespaceripple.html#a356c68147333a9a48a344718038576d9">uint256</a> &gt; ripple::parseRippleState </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classJson_1_1Value.html">Json::Value</a> const &amp;&#160;</td>
+          <td class="paramname"><em>jvRippleState</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="classJson_1_1Value.html">Json::Value</a> &amp;&#160;</td>
+          <td class="paramname"><em>jvResult</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="LedgerEntry_8cpp_source.html#l00318">318</a> of file <a class="el" href="LedgerEntry_8cpp_source.html">LedgerEntry.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a648948748fec8ad988487f05ada512db" name="a648948748fec8ad988487f05ada512db"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a648948748fec8ad988487f05ada512db">&#9670;&#160;</a></span>parseTicket()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="elRef" href="http://en.cppreference.com/w/cpp/utility/optional.html">std::optional</a>&lt; <a class="el" href="namespaceripple.html#a356c68147333a9a48a344718038576d9">uint256</a> &gt; ripple::parseTicket </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classJson_1_1Value.html">Json::Value</a> const &amp;&#160;</td>
+          <td class="paramname"><em>params</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="classJson_1_1Value.html">Json::Value</a> &amp;&#160;</td>
+          <td class="paramname"><em>jvResult</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="LedgerEntry_8cpp_source.html#l00355">355</a> of file <a class="el" href="LedgerEntry_8cpp_source.html">LedgerEntry.cpp</a>.</p>
+
+</div>
+</div>
+<a id="abf02e765186c69c6f852a3bb97c3a8a0" name="abf02e765186c69c6f852a3bb97c3a8a0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#abf02e765186c69c6f852a3bb97c3a8a0">&#9670;&#160;</a></span>parseNFTokenPage()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="elRef" href="http://en.cppreference.com/w/cpp/utility/optional.html">std::optional</a>&lt; <a class="el" href="namespaceripple.html#a356c68147333a9a48a344718038576d9">uint256</a> &gt; ripple::parseNFTokenPage </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classJson_1_1Value.html">Json::Value</a> const &amp;&#160;</td>
+          <td class="paramname"><em>params</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="classJson_1_1Value.html">Json::Value</a> &amp;&#160;</td>
+          <td class="paramname"><em>jvResult</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="LedgerEntry_8cpp_source.html#l00386">386</a> of file <a class="el" href="LedgerEntry_8cpp_source.html">LedgerEntry.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a39356927b67f80df6ae98ce87a602b23" name="a39356927b67f80df6ae98ce87a602b23"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a39356927b67f80df6ae98ce87a602b23">&#9670;&#160;</a></span>parseAMM()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="elRef" href="http://en.cppreference.com/w/cpp/utility/optional.html">std::optional</a>&lt; <a class="el" href="namespaceripple.html#a356c68147333a9a48a344718038576d9">uint256</a> &gt; ripple::parseAMM </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classJson_1_1Value.html">Json::Value</a> const &amp;&#160;</td>
+          <td class="paramname"><em>params</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="classJson_1_1Value.html">Json::Value</a> &amp;&#160;</td>
+          <td class="paramname"><em>jvResult</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="LedgerEntry_8cpp_source.html#l00404">404</a> of file <a class="el" href="LedgerEntry_8cpp_source.html">LedgerEntry.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a1c3a69ca929494b7acc341493562d123" name="a1c3a69ca929494b7acc341493562d123"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1c3a69ca929494b7acc341493562d123">&#9670;&#160;</a></span>parseBridge()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="elRef" href="http://en.cppreference.com/w/cpp/utility/optional.html">std::optional</a>&lt; <a class="el" href="namespaceripple.html#a356c68147333a9a48a344718038576d9">uint256</a> &gt; ripple::parseBridge </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classJson_1_1Value.html">Json::Value</a> const &amp;&#160;</td>
+          <td class="paramname"><em>params</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="classJson_1_1Value.html">Json::Value</a> &amp;&#160;</td>
+          <td class="paramname"><em>jvResult</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="LedgerEntry_8cpp_source.html#l00437">437</a> of file <a class="el" href="LedgerEntry_8cpp_source.html">LedgerEntry.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a5b93b920d29b72c392e532330f222176" name="a5b93b920d29b72c392e532330f222176"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5b93b920d29b72c392e532330f222176">&#9670;&#160;</a></span>parseXChainOwnedClaimID()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="elRef" href="http://en.cppreference.com/w/cpp/utility/optional.html">std::optional</a>&lt; <a class="el" href="namespaceripple.html#a356c68147333a9a48a344718038576d9">uint256</a> &gt; ripple::parseXChainOwnedClaimID </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classJson_1_1Value.html">Json::Value</a> const &amp;&#160;</td>
+          <td class="paramname"><em>claim_id</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="classJson_1_1Value.html">Json::Value</a> &amp;&#160;</td>
+          <td class="paramname"><em>jvResult</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="LedgerEntry_8cpp_source.html#l00488">488</a> of file <a class="el" href="LedgerEntry_8cpp_source.html">LedgerEntry.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a59a351b0900f47f006b7fffd7de9d260" name="a59a351b0900f47f006b7fffd7de9d260"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a59a351b0900f47f006b7fffd7de9d260">&#9670;&#160;</a></span>parseXChainOwnedCreateAccountClaimID()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="elRef" href="http://en.cppreference.com/w/cpp/utility/optional.html">std::optional</a>&lt; <a class="el" href="namespaceripple.html#a356c68147333a9a48a344718038576d9">uint256</a> &gt; ripple::parseXChainOwnedCreateAccountClaimID </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classJson_1_1Value.html">Json::Value</a> const &amp;&#160;</td>
+          <td class="paramname"><em>claim_id</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="classJson_1_1Value.html">Json::Value</a> &amp;&#160;</td>
+          <td class="paramname"><em>jvResult</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="LedgerEntry_8cpp_source.html#l00560">560</a> of file <a class="el" href="LedgerEntry_8cpp_source.html">LedgerEntry.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a4dc170382edc3806a2a162cfe1f8783a" name="a4dc170382edc3806a2a162cfe1f8783a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4dc170382edc3806a2a162cfe1f8783a">&#9670;&#160;</a></span>parseDID()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="elRef" href="http://en.cppreference.com/w/cpp/utility/optional.html">std::optional</a>&lt; <a class="el" href="namespaceripple.html#a356c68147333a9a48a344718038576d9">uint256</a> &gt; ripple::parseDID </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classJson_1_1Value.html">Json::Value</a> const &amp;&#160;</td>
+          <td class="paramname"><em>params</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="classJson_1_1Value.html">Json::Value</a> &amp;&#160;</td>
+          <td class="paramname"><em>jvResult</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="LedgerEntry_8cpp_source.html#l00636">636</a> of file <a class="el" href="LedgerEntry_8cpp_source.html">LedgerEntry.cpp</a>.</p>
+
+</div>
+</div>
+<a id="ad0d949c3fc0175f34c9f532329c99feb" name="ad0d949c3fc0175f34c9f532329c99feb"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad0d949c3fc0175f34c9f532329c99feb">&#9670;&#160;</a></span>parseOracle()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="elRef" href="http://en.cppreference.com/w/cpp/utility/optional.html">std::optional</a>&lt; <a class="el" href="namespaceripple.html#a356c68147333a9a48a344718038576d9">uint256</a> &gt; ripple::parseOracle </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classJson_1_1Value.html">Json::Value</a> const &amp;&#160;</td>
+          <td class="paramname"><em>params</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="classJson_1_1Value.html">Json::Value</a> &amp;&#160;</td>
+          <td class="paramname"><em>jvResult</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="LedgerEntry_8cpp_source.html#l00649">649</a> of file <a class="el" href="LedgerEntry_8cpp_source.html">LedgerEntry.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a4ae257a437692cd4adccc534f6c43f81" name="a4ae257a437692cd4adccc534f6c43f81"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4ae257a437692cd4adccc534f6c43f81">&#9670;&#160;</a></span>parseCredential()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="elRef" href="http://en.cppreference.com/w/cpp/utility/optional.html">std::optional</a>&lt; <a class="el" href="namespaceripple.html#a356c68147333a9a48a344718038576d9">uint256</a> &gt; ripple::parseCredential </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classJson_1_1Value.html">Json::Value</a> const &amp;&#160;</td>
+          <td class="paramname"><em>cred</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="classJson_1_1Value.html">Json::Value</a> &amp;&#160;</td>
+          <td class="paramname"><em>jvResult</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="LedgerEntry_8cpp_source.html#l00703">703</a> of file <a class="el" href="LedgerEntry_8cpp_source.html">LedgerEntry.cpp</a>.</p>
+
+</div>
+</div>
+<a id="a650e8329f1767e850b6737a8653090fd" name="a650e8329f1767e850b6737a8653090fd"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a650e8329f1767e850b6737a8653090fd">&#9670;&#160;</a></span>parseMPTokenIssuance()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="elRef" href="http://en.cppreference.com/w/cpp/utility/optional.html">std::optional</a>&lt; <a class="el" href="namespaceripple.html#a356c68147333a9a48a344718038576d9">uint256</a> &gt; ripple::parseMPTokenIssuance </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classJson_1_1Value.html">Json::Value</a> const &amp;&#160;</td>
+          <td class="paramname"><em>unparsedMPTIssuanceID</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="classJson_1_1Value.html">Json::Value</a> &amp;&#160;</td>
+          <td class="paramname"><em>jvResult</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="LedgerEntry_8cpp_source.html#l00742">742</a> of file <a class="el" href="LedgerEntry_8cpp_source.html">LedgerEntry.cpp</a>.</p>
+
+</div>
+</div>
+<a id="af099631065fcef20ccb17ac6b363eee8" name="af099631065fcef20ccb17ac6b363eee8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af099631065fcef20ccb17ac6b363eee8">&#9670;&#160;</a></span>parseMPToken()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="elRef" href="http://en.cppreference.com/w/cpp/utility/optional.html">std::optional</a>&lt; <a class="el" href="namespaceripple.html#a356c68147333a9a48a344718038576d9">uint256</a> &gt; ripple::parseMPToken </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classJson_1_1Value.html">Json::Value</a> const &amp;&#160;</td>
+          <td class="paramname"><em>mptJson</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="classJson_1_1Value.html">Json::Value</a> &amp;&#160;</td>
+          <td class="paramname"><em>jvResult</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="LedgerEntry_8cpp_source.html#l00763">763</a> of file <a class="el" href="LedgerEntry_8cpp_source.html">LedgerEntry.cpp</a>.</p>
 
 </div>
 </div>
