@@ -203,7 +203,10 @@ enum SLEDirNodeFlags{
 enum SLENFTokenOfferFlags{
     // ltNFTOKEN_OFFER
     lsfSellNFToken = 0x00000001,
+};
 
+// Split these later
+enum LedgerSpecificFlags {
     // ltMPTOKEN_ISSUANCE
     lsfMPTLocked = 0x00000001, // Also used in ltMPTOKEN
     lsfMPTCanLock = 0x00000002,
