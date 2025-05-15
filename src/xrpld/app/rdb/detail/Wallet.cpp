@@ -87,7 +87,6 @@ saveManifests(
         // but only save trusted non-revocation manifests.
         if (!v.second.revoked() && !isTrusted(v.second.masterKey))
         {
-            JLOG(j.info()) << "Untrusted manifest in cache not saved to db";
             continue;
         }
 
