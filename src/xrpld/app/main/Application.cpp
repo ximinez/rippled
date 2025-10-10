@@ -45,6 +45,7 @@
 #include <xrpl/json/json_reader.h>
 #include <xrpl/nodestore/DummyScheduler.h>
 #include <xrpl/protocol/ApiVersion.h>
+#include <xrpl/json/to_string.h>
 #include <xrpl/protocol/BuildInfo.h>
 #include <xrpl/protocol/Feature.h>
 #include <xrpl/protocol/Protocol.h>
@@ -1469,7 +1470,7 @@ ApplicationImp::setup(boost::program_options::variables_map const& cmdline)
         if (!config_->quiet())
         {
             JLOG(m_journal.fatal())
-                << "Startup RPC: " << jvCommand << std::endl;
+                << "Startup RPC: " << to_string(jvCommand) << std::endl;
         }
 
         Resource::Charge loadType = Resource::feeReferenceRPC;
@@ -1492,7 +1493,8 @@ ApplicationImp::setup(boost::program_options::variables_map const& cmdline)
 
         if (!config_->quiet())
         {
-            JLOG(m_journal.fatal()) << "Result: " << jvResult << std::endl;
+            JLOG(m_journal.fatal())
+                << "Result: " << to_string(jvResult) << std::endl;
         }
     }
 
@@ -1740,7 +1742,7 @@ ApplicationImp::getLastFullLedger()
             stream << "Failed on ledger";
             Json::Value p;
             addJson(p, {*ledger, nullptr, LedgerFill::full});
-            stream << p;
+            stream << to_string(p);
         }
 
         return {};

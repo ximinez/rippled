@@ -457,6 +457,44 @@ public:
                 BEAST_EXPECT(jrr["error"] == "invalidParams");
                 BEAST_EXPECT(jrr["error_message"] == "Invalid field 'type'.");
             }
+            {  // jvParams[jss::type] = "ticket";
+                auto const jrr = makeRequest(jss::ticket);
+                BEAST_EXPECT(checkArraySize(jrr[jss::state], 1));
+                for (auto const& j : jrr[jss::state])
+                    BEAST_EXPECT(j["LedgerEntryType"] == jss::Ticket);
+            }
+
+            {  // jvParams[jss::type] = "escrow";
+                auto const jrr = makeRequest(jss::escrow);
+                BEAST_EXPECT(checkArraySize(jrr[jss::state], 1));
+                for (auto const& j : jrr[jss::state])
+                    BEAST_EXPECT(j["LedgerEntryType"] == jss::Escrow);
+            }
+
+            {  // jvParams[jss::type] = "payment_channel";
+                auto const jrr = makeRequest(jss::payment_channel);
+                BEAST_EXPECT(checkArraySize(jrr[jss::state], 1));
+                for (auto const& j : jrr[jss::state])
+                    BEAST_EXPECT(j["LedgerEntryType"] == jss::PayChannel);
+            }
+
+            {  // jvParams[jss::type] = "deposit_preauth";
+                auto const jrr = makeRequest(jss::deposit_preauth);
+                BEAST_EXPECT(checkArraySize(jrr[jss::state], 2));
+                for (auto const& j : jrr[jss::state])
+                    BEAST_EXPECT(j["LedgerEntryType"] == jss::DepositPreauth);
+            }
+
+            {  // jvParams[jss::type] = "misspelling";
+                Json::Value jvParams;
+                jvParams[jss::ledger_index] = "current";
+                jvParams[jss::type] = "misspelling";
+                auto const jrr = env.rpc(
+                    "json", "ledger_data", to_string(jvParams))[jss::result];
+                BEAST_EXPECT(jrr.isMember("error"));
+                BEAST_EXPECT(jrr["error"] == "invalidParams");
+                BEAST_EXPECT(jrr["error_message"] == "Invalid field 'type'.");
+            }
         }
     }
 

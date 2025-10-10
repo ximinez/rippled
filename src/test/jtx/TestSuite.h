@@ -2,6 +2,7 @@
 #define XRPL_BASICS_TESTSUITE_H_INCLUDED
 
 #include <xrpl/beast/unit_test.h>
+#include <xrpl/json/to_string.h>
 
 #include <string>
 

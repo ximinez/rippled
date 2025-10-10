@@ -850,7 +850,8 @@ TEST_CASE("compact")
     CHECK(r.parse(s, j));
     {
         std::stringstream ss;
-        ss << j;
+        // UNDO
+        ss << pretty(j);
         CHECK(countLines(ss.str()) > 1);
     }
     {

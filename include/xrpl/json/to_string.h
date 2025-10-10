@@ -16,9 +16,9 @@ to_string(Value const&);
 std::string
 pretty(Value const&);
 
-/** Output using the StyledStreamWriter. @see Json::operator>>(). */
-std::ostream&
-operator<<(std::ostream&, Value const& root);
+// /** Output using the StyledStreamWriter. @see Json::operator>>(). */
+// std::ostream&
+// operator<<(std::ostream&, Value const& root);
 
 }  // namespace Json
 

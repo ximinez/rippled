@@ -1,5 +1,6 @@
 #include <test/jtx/Oracle.h>
 
+#include <xrpl/json/to_string.h>
 #include <xrpl/protocol/jss.h>
 
 namespace ripple {
