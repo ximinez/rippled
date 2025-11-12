@@ -4418,9 +4418,10 @@ public:
         Account const ellie("ellie");
         Account const fiona("fiona");
 
+        constexpr int ledgersInQueue = 10;
         auto cfg = makeConfig(
             {{"minimum_txn_in_ledger_standalone", "1"},
-             {"ledgers_in_queue", "5"},
+             {"ledgers_in_queue", std::to_string(ledgersInQueue)},
              {"maximum_txn_per_account", "10"}},
             {{"account_reserve", "1000"}, {"owner_reserve", "50"}});
 
@@ -4446,7 +4447,9 @@ public:
         env.close();
         env.fund(XRP(10000), fiona);
         env.close();
-        checkMetrics(*this, env, 0, 10, 0, 2);
+
+        auto const metrics = env.app().getTxQ().getMetrics(*env.current());
+        checkMetrics(*this, env, 0, ledgersInQueue * metrics.txPerLedger, 0, 2);
 
         // Close ledgers until the amendments show up.
         int i = 0;
@@ -4458,7 +4461,12 @@ public:
         }
         auto expectedPerLedger = ripple::detail::numUpVotedAmendments() + 1;
         checkMetrics(
-            *this, env, 0, 5 * expectedPerLedger, 0, expectedPerLedger);
+            *this,
+            env,
+            0,
+            ledgersInQueue * expectedPerLedger,
+            0,
+            expectedPerLedger);
 
         // Now wait 2 weeks modulo 256 ledgers for the amendments to be
         // enabled.  Speed the process by closing ledgers every 80 minutes,
@@ -4477,7 +4485,7 @@ public:
             *this,
             env,
             0,
-            5 * expectedPerLedger,
+            ledgersInQueue * expectedPerLedger,
             expectedPerLedger + 1,
             expectedPerLedger);
 
@@ -4523,12 +4531,12 @@ public:
                 prepareFee(++multiplier),
                 ter(terQUEUED));
         }
-        std::size_t expectedInQueue = 60;
+        std::size_t expectedInQueue = multiplier;
         checkMetrics(
             *this,
             env,
             expectedInQueue,
-            5 * expectedPerLedger,
+            ledgersInQueue * expectedPerLedger,
             expectedPerLedger + 1,
             expectedPerLedger);
 
@@ -4555,7 +4563,7 @@ public:
                 *this,
                 env,
                 expectedInQueue,
-                5 * expectedPerLedger,
+                ledgersInQueue * expectedPerLedger,
                 expectedInLedger,
                 expectedPerLedger);
             {
