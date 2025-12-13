@@ -13,7 +13,7 @@
 #include <optional>
 #include <sstream>
 
-namespace ripple {
+namespace xrpl {
 
 // Validation flags
 
@@ -176,7 +176,7 @@ STValidation::STValidation(
 
     XRPL_ASSERT(
         nodeID_.isNonZero(),
-        "ripple::STValidation::STValidation(SerialIter) : nonzero node");
+        "xrpl::STValidation::STValidation(SerialIter) : nonzero node");
 }
 
 /** Construct, sign and trust a new STValidation issued by this node.
@@ -201,7 +201,7 @@ STValidation::STValidation(
 {
     XRPL_ASSERT(
         nodeID_.isNonZero(),
-        "ripple::STValidation::STValidation(PublicKey, SecretKey) : nonzero "
+        "xrpl::STValidation::STValidation(PublicKey, SecretKey) : nonzero "
         "node");
 
     // First, set our own public key:
@@ -268,6 +268,6 @@ STValidation::setSeen(NetClock::time_point s)
     seenTime_ = s;
 }
 
-}  // namespace ripple
+}  // namespace xrpl
 
 #endif

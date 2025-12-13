@@ -1,6 +1,6 @@
 #include <test/jtx.h>
 
-namespace ripple {
+namespace xrpl {
 
 class STObject_test : public beast::unit_test::suite
 {
@@ -460,7 +460,7 @@ public:
             st[sf3] = std::vector<uint256>{};
             BEAST_EXPECT(cst[sf3].size() == 0);
         }
-    }  // namespace ripple
+    }  // namespace xrpl
 
     void
     testMalformed()
@@ -505,6 +505,6 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE(STObject, protocol, ripple);
+BEAST_DEFINE_TESTSUITE(STObject, protocol, xrpl);
 
-}  // namespace ripple
+}  // namespace xrpl
