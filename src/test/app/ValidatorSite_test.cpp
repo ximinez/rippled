@@ -17,7 +17,7 @@
 
 #include <chrono>
 
-namespace ripple {
+namespace xrpl {
 namespace detail {
 constexpr char const*
 realValidatorContents()
@@ -693,7 +693,7 @@ public:
 // static
 std::atomic<int> TrustedPublisherServer::counter = 0;
 
-BEAST_DEFINE_TESTSUITE_PRIO(ValidatorSite, app, ripple, 5);
+BEAST_DEFINE_TESTSUITE_PRIO(ValidatorSite, app, xrpl, 5);
 
 }  // namespace test
-}  // namespace ripple
+}  // namespace xrpl
