@@ -1,5 +1,7 @@
 libxrpl.basics > openssl.toplevel (no includes counted)
 libxrpl.basics > xrpl.beast
+libxrpl.core.detail > xrpl.basics
+libxrpl.core.detail > xrpl.beast
 libxrpl.crypto > openssl.toplevel (no includes counted)
 libxrpl.crypto > xrpl.basics
 libxrpl.crypto > xrpl.beast
@@ -45,6 +47,7 @@ test.app > test.toplevel
 test.app > test.unit_test
 test.app > xrpl.basics
 test.app > xrpl.beast
+test.app > xrpl.core
 test.app > xrpld.app
 test.app > xrpld.app.detail
 test.app > xrpld.core
@@ -61,7 +64,7 @@ test.basics > test.jtx
 test.basics > test.unit_test
 test.basics > xrpl.basics
 test.basics > xrpl.beast
-test.basics > xrpld.perflog
+test.basics > xrpl.core
 test.basics > xrpld.rpc.detail
 test.basics > xrpl.json
 test.basics > xrpl.protocol
@@ -86,9 +89,9 @@ test.core > test.toplevel
 test.core > test.unit_test
 test.core > xrpl.basics
 test.core > xrpl.beast
+test.core > xrpl.core
+test.core > xrpl.core.detail
 test.core > xrpld.core
-test.core > xrpld.core.detail
-test.core > xrpld.perflog
 test.core > xrpl.json
 test.core > xrpl.server
 test.csf > xrpl.basics
@@ -97,7 +100,6 @@ test.csf > xrpld.consensus
 test.csf > xrpl.json
 test.csf > xrpl.protocol
 test.json > test.jtx
-test.json > xrpl.beast
 test.json > xrpl.json
 test.jtx > 1 (no includes counted)
 test.jtx > date.toplevel (no includes counted)
@@ -168,6 +170,7 @@ test.rpc > test.jtx
 test.rpc > test.toplevel
 test.rpc > xrpl.basics
 test.rpc > xrpl.beast
+test.rpc > xrpl.core
 test.rpc > xrpld.app
 test.rpc > xrpld.app.detail
 test.rpc > xrpld.core
@@ -210,6 +213,10 @@ xrpl.basics > date.toplevel (no includes counted)
 xrpl.basics > rocksdb.toplevel (no includes counted)
 xrpl.basics > sys.toplevel (no includes counted)
 xrpl.basics > xrpl.beast
+xrpl.core > xrpl.basics
+xrpl.core > xrpl.beast
+xrpl.core > xrpl.json
+xrpl.core.detail > xrpl.beast
 xrpl.json > xrpl.basics
 xrpl.json > xrpl.beast
 xrpl.json.detail > xrpl.basics
@@ -262,6 +269,6 @@ xrpld.app > sys.toplevel (no includes counted)
 xrpld.app > test.unit_test
 xrpld.app > xrpl.basics
 xrpld.app > xrpl.beast
+xrpld.app > xrpl.core
 xrpld.app > xrpl.crypto (no includes counted)
 xrpld.app > xrpld.consensus
-xrpld.app > xrpld.perflog
