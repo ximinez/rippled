@@ -620,7 +620,8 @@ ServerHandler::processRequest(
         {
             HTTPReply(
                 400,
-                "Unable to parse request: " + reader.getFormatedErrorMessages(),
+                "Unable to parse request: " +
+                    reader.getFormattedErrorMessages(),
                 output,
                 rpcJ);
             return;
@@ -815,7 +816,7 @@ ServerHandler::processRequest(
             else if (!params.isArray() || params.size() != 1)
             {
                 usage.charge(Resource::feeMalformedRPC);
-                HTTPReply(400, "params unparseable", output, rpcJ);
+                HTTPReply(400, "params unparsable", output, rpcJ);
                 return;
             }
             else
@@ -824,7 +825,7 @@ ServerHandler::processRequest(
                 if (!params.isObjectOrNull())
                 {
                     usage.charge(Resource::feeMalformedRPC);
-                    HTTPReply(400, "params unparseable", output, rpcJ);
+                    HTTPReply(400, "params unparsable", output, rpcJ);
                     return;
                 }
             }
