@@ -121,20 +121,16 @@ fillHandler(JsonContext& context, Handler const*& result)
         }
     }
 
-    if (!context.params.isMember(jss::command) &&
-        !context.params.isMember(jss::method))
+    if (!context.params.isMember(jss::command) && !context.params.isMember(jss::method))
         return rpcCOMMAND_MISSING;
-    if (context.params.isMember(jss::command) &&
-        context.params.isMember(jss::method))
+    if (context.params.isMember(jss::command) && context.params.isMember(jss::method))
     {
-        if (context.params[jss::command].asString() !=
-            context.params[jss::method].asString())
+        if (context.params[jss::command].asString() != context.params[jss::method].asString())
             return rpcUNKNOWN_COMMAND;
     }
 
-    std::string strCommand = context.params.isMember(jss::command)
-        ? context.params[jss::command].asString()
-        : context.params[jss::method].asString();
+    std::string strCommand = context.params.isMember(jss::command) ? context.params[jss::command].asString()
+                                                                   : context.params[jss::method].asString();
 
     JLOG(context.j.trace()) << "COMMAND:" << strCommand;
     JLOG(context.j.trace()) << "REQUEST:" << to_string(context.params);
@@ -159,11 +155,7 @@ fillHandler(JsonContext& context, Handler const*& result)
 
 template <class Object, class Method>
 Status
-callMethod(
-    JsonContext& context,
-    Method method,
-    std::string const& name,
-    Object& result)
+callMethod(JsonContext& context, Method method, std::string const& name, Object& result)
 {
     static std::atomic<std::uint64_t> requestId{0};
     auto& perfLog = context.app.getPerfLog();
@@ -171,16 +163,14 @@ callMethod(
     try
     {
         perfLog.rpcStart(name, curId);
-        auto v =
-            context.app.getJobQueue().makeLoadEvent(jtGENERIC, "cmd:" + name);
+        auto v = context.app.getJobQueue().makeLoadEvent(jtGENERIC, "cmd:" + name);
 
         auto start = std::chrono::system_clock::now();
         auto ret = method(context, result);
         auto end = std::chrono::system_clock::now();
 
-        JLOG(context.j.debug())
-            << "RPC call " << name << " completed in "
-            << ((end - start).count() / 1000000000.0) << "seconds";
+        JLOG(context.j.debug()) << "RPC call " << name << " completed in " << ((end - start).count() / 1000000000.0)
+                                << "seconds";
         perfLog.rpcFinish(name, curId);
         return ret;
     }

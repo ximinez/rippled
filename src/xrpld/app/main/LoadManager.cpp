@@ -26,8 +26,7 @@ LoadManager::~LoadManager()
     catch (std::exception const& ex)
     {
         // Swallow the exception in a destructor.
-        JLOG(journal_.warn())
-            << "std::exception in ~LoadManager.  " << ex.what();
+        JLOG(journal_.warn()) << "std::exception in ~LoadManager.  " << ex.what();
     }
 }
 
@@ -55,8 +54,7 @@ void
 LoadManager::start()
 {
     JLOG(journal_.debug()) << "Starting";
-    XRPL_ASSERT(
-        !thread_.joinable(), "xrpl::LoadManager::start : thread not joinable");
+    XRPL_ASSERT(!thread_.joinable(), "xrpl::LoadManager::start : thread not joinable");
 
     thread_ = std::thread{&LoadManager::run, this};
 }
@@ -104,8 +102,7 @@ LoadManager::run()
 
         // Measure the amount of time we have been stalled, in seconds.
         using namespace std::chrono;
-        auto const timeSpentStalled =
-            duration_cast<seconds>(steady_clock::now() - lastHeartbeat);
+        auto const timeSpentStalled = duration_cast<seconds>(steady_clock::now() - lastHeartbeat);
 
         constexpr auto reportingIntervalSeconds = 10s;
         constexpr auto stallFatalLogMessageTimeLimit = 90s;
@@ -118,9 +115,7 @@ LoadManager::run()
             {
                 if (timeSpentStalled < stallFatalLogMessageTimeLimit)
                 {
-                    JLOG(journal_.warn())
-                        << "Server stalled for " << timeSpentStalled.count()
-                        << " seconds.";
+                    JLOG(journal_.warn()) << "Server stalled for " << timeSpentStalled.count() << " seconds.";
 
                     if (app_.getJobQueue().isOverloaded())
                     {
