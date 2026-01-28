@@ -142,6 +142,7 @@ test.overlay > xrpld.app
 test.overlay > xrpld.overlay
 test.overlay > xrpld.overlay.detail
 test.overlay > xrpld.peerfinder.detail
+test.overlay > xrpl.nodestore
 test.overlay > xrpl.protocol
 test.overlay > xrpl.shamap
 test.peerfinder > test.beast
@@ -202,8 +203,9 @@ test.toplevel > test.csf
 test.toplevel > xrpl.json
 test.unit_test > xrpl.basics
 test.unit_test > xrpl.beast
-tests.libxrpl > doctest.toplevel (no includes counted)
 tests.libxrpl > google.protobuf (no includes counted)
+tests.libxrpl > gtest.toplevel (no includes counted)
+tests.libxrpl > helpers.toplevel (no includes counted)
 tests.libxrpl > xrpl.basics
 tests.libxrpl > xrpl.beast
 tests.libxrpl > xrpl.crypto (no includes counted)
