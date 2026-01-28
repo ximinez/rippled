@@ -130,45 +130,31 @@ deserializeManifest(Slice s, beast::Journal journal)
                 return std::nullopt;
         }
 
-        std::string const serialized(
-            reinterpret_cast<char const*>(s.data()), s.size());
+        std::string const serialized(reinterpret_cast<char const*>(s.data()), s.size());
 
         // If the manifest is revoked, then the signingKey will be unseated
         return Manifest(serialized, masterKey, signingKey, seq, domain);
     }
     catch (std::exception const& ex)
     {
-        JLOG(journal.error())
-            << "Exception in " << __func__ << ": " << ex.what();
+        JLOG(journal.error()) << "Exception in " << __func__ << ": " << ex.what();
         return std::nullopt;
     }
 }
 
 template <class Stream>
 Stream&
-logMftAct(
-    Stream& s,
-    std::string const& action,
-    PublicKey const& pk,
-    std::uint32_t seq)
+logMftAct(Stream& s, std::string const& action, PublicKey const& pk, std::uint32_t seq)
 {
-    s << "Manifest: " << action
-      << ";Pk: " << toBase58(TokenType::NodePublic, pk) << ";Seq: " << seq
-      << ";";
+    s << "Manifest: " << action << ";Pk: " << toBase58(TokenType::NodePublic, pk) << ";Seq: " << seq << ";";
     return s;
 }
 
 template <class Stream>
 Stream&
-logMftAct(
-    Stream& s,
-    std::string const& action,
-    PublicKey const& pk,
-    std::uint32_t seq,
-    std::uint32_t oldSeq)
+logMftAct(Stream& s, std::string const& action, PublicKey const& pk, std::uint32_t seq, std::uint32_t oldSeq)
 {
-    s << "Manifest: " << action
-      << ";Pk: " << toBase58(TokenType::NodePublic, pk) << ";Seq: " << seq
+    s << "Manifest: " << action << ";Pk: " << toBase58(TokenType::NodePublic, pk) << ";Seq: " << seq
       << ";OldSeq: " << oldSeq << ";";
     return s;
 }
@@ -247,11 +233,8 @@ loadValidatorToken(std::vector<std::string> const& blob, beast::Journal journal)
     {
         std::string tokenStr;
 
-        tokenStr.reserve(std::accumulate(
-            blob.cbegin(),
-            blob.cend(),
-            std::size_t(0),
-            [](std::size_t init, std::string const& s) {
+        tokenStr.reserve(
+            std::accumulate(blob.cbegin(), blob.cend(), std::size_t(0), [](std::size_t init, std::string const& s) {
                 return init + s.size();
             }));
 
@@ -281,8 +264,7 @@ loadValidatorToken(std::vector<std::string> const& blob, beast::Journal journal)
     }
     catch (std::exception const& ex)
     {
-        JLOG(journal.error())
-            << "Exception in " << __func__ << ": " << ex.what();
+        JLOG(journal.error()) << "Exception in " << __func__ << ": " << ex.what();
         return std::nullopt;
     }
 }
@@ -304,8 +286,7 @@ ManifestCache::getMasterKey(PublicKey const& pk) const
 {
     std::shared_lock lock{mutex_};
 
-    if (auto const iter = signingToMasterKeys_.find(pk);
-        iter != signingToMasterKeys_.end())
+    if (auto const iter = signingToMasterKeys_.find(pk); iter != signingToMasterKeys_.end())
         return iter->second;
 
     return pk;
@@ -385,12 +366,7 @@ ManifestCache::applyManifest(Manifest m, bool loading)
             // several cases including when we receive manifests from a peer who
             // doesn't have the latest data.
             if (auto stream = j_.debug())
-                logMftAct(
-                    stream,
-                    "Stale",
-                    m.masterKey,
-                    m.sequence,
-                    iter->second.sequence);
+                logMftAct(stream, "Stale", m.masterKey, m.sequence, iter->second.sequence);
             return ManifestDisposition::stale;
         }
 
@@ -415,8 +391,7 @@ ManifestCache::applyManifest(Manifest m, bool loading)
 
         // Sanity check: the master key of this manifest should not be used as
         // the ephemeral key of another manifest:
-        if (auto const x = signingToMasterKeys_.find(m.masterKey);
-            x != signingToMasterKeys_.end())
+        if (auto const x = signingToMasterKeys_.find(m.masterKey); x != signingToMasterKeys_.end())
         {
             JLOG((loading ? j_.info() : j_.warn()))
                 << to_string(m)
@@ -439,8 +414,7 @@ ManifestCache::applyManifest(Manifest m, bool loading)
 
             // Sanity check: the ephemeral key of this manifest should not be
             // used as the master or ephemeral key of another manifest:
-            if (auto const x = signingToMasterKeys_.find(*m.signingKey);
-                x != signingToMasterKeys_.end())
+            if (auto const x = signingToMasterKeys_.find(*m.signingKey); x != signingToMasterKeys_.end())
             {
                 JLOG((loading ? j_.info() : j_.warn()))
                     << to_string(m)
@@ -465,8 +439,7 @@ ManifestCache::applyManifest(Manifest m, bool loading)
 
     {
         std::shared_lock sl{mutex_};
-        if (auto d =
-                prewriteCheck(map_.find(m.masterKey), /*checkSig*/ true, sl))
+        if (auto d = prewriteCheck(map_.find(m.masterKey), /*checkSig*/ true, sl))
             return *d;
     }
 
@@ -503,12 +476,7 @@ ManifestCache::applyManifest(Manifest m, bool loading)
     // An ephemeral key was revoked and superseded by a new key. This is
     // expected, but should happen infrequently.
     if (auto stream = j_.info())
-        logMftAct(
-            stream,
-            "AcceptedUpdate",
-            m.masterKey,
-            m.sequence,
-            iter->second.sequence);
+        logMftAct(stream, "AcceptedUpdate", m.masterKey, m.sequence, iter->second.sequence);
 
     signingToMasterKeys_.erase(*iter->second.signingKey);
 
@@ -567,17 +535,14 @@ ManifestCache::load(
             configRevocation.cbegin(),
             configRevocation.cend(),
             std::size_t(0),
-            [](std::size_t init, std::string const& s) {
-                return init + s.size();
-            }));
+            [](std::size_t init, std::string const& s) { return init + s.size(); }));
 
         for (auto const& line : configRevocation)
             revocationStr += boost::algorithm::trim_copy(line);
 
         auto mo = deserializeManifest(base64_decode(revocationStr));
 
-        if (!mo || !mo->revoked() ||
-            applyManifest(std::move(*mo)) == ManifestDisposition::invalid)
+        if (!mo || !mo->revoked() || applyManifest(std::move(*mo)) == ManifestDisposition::invalid)
         {
             JLOG(j_.error()) << "Invalid validator key revocation in config";
             return false;
