@@ -394,9 +394,8 @@ TxQ::canBeHeld(
 }
 
 auto
-TxQ::erase(
-    TxQ::FeeMultiSet::const_iterator_type candidateIter,
-    std::lock_guard<std::mutex> const&) -> FeeMultiSet::iterator_type
+TxQ::erase(TxQ::FeeMultiSet::const_iterator_type candidateIter, std::lock_guard<std::mutex> const&)
+    -> FeeMultiSet::iterator_type
 {
     auto& txQAccount = byAccount_.at(candidateIter->account);
     auto const seqProx = candidateIter->seqProxy;
@@ -411,9 +410,8 @@ TxQ::erase(
 }
 
 auto
-TxQ::eraseAndAdvance(
-    TxQ::FeeMultiSet::const_iterator_type candidateIter,
-    std::lock_guard<std::mutex> const&) -> FeeMultiSet::iterator_type
+TxQ::eraseAndAdvance(TxQ::FeeMultiSet::const_iterator_type candidateIter, std::lock_guard<std::mutex> const&)
+    -> FeeMultiSet::iterator_type
 {
     auto& txQAccount = byAccount_.at(candidateIter->account);
     auto const accountIter = txQAccount.transactions.find(candidateIter->seqProxy);
@@ -545,8 +543,7 @@ TxQ::tryClearAccountQueueUpThruTx(
         // queue.
         endTxIter = erase(accountIter->second, beginTxIter, endTxIter, lock);
         // If `tx` is replacing a queued tx, delete that one, too.
-        if (endTxIter != accountIter->second.transactions.end() &&
-            endTxIter->first == tSeqProx)
+        if (endTxIter != accountIter->second.transactions.end() && endTxIter->first == tSeqProx)
             erase(accountIter->second, endTxIter, std::next(endTxIter), lock);
     }
 
@@ -1181,13 +1178,10 @@ TxQ::apply(Application& app, OpenView& view, std::shared_ptr<STTx const> const& 
             // valuable, so kick out the cheapest transaction.
             auto dropRIter = endAccount.transactions.rbegin();
             XRPL_ASSERT(
-                dropRIter->second.account == lastRIter->account,
-                "xrpl::TxQ::apply : cheapest transaction found");
-            JLOG(j_.info())
-                << "Removing last item of account " << lastRIter->account
-                << " from queue with average fee of " << endEffectiveFeeLevel
-                << " in favor of " << transactionID << " with fee of "
-                << feeLevelPaid;
+                dropRIter->second.account == lastRIter->account, "xrpl::TxQ::apply : cheapest transaction found");
+            JLOG(j_.info()) << "Removing last item of account " << lastRIter->account
+                            << " from queue with average fee of " << endEffectiveFeeLevel << " in favor of "
+                            << transactionID << " with fee of " << feeLevelPaid;
             erase(byFee_.iterator_to(dropRIter->second), lock);
         }
         else
@@ -1364,9 +1358,8 @@ TxQ::accept(Application& app, OpenView& view)
                     account.retryPenalty = true;
                 else
                     account.dropPenalty = true;
-                JLOG(j_.debug()) << "Queued transaction " << candidateIter->txID
-                                 << " failed with " << transToken(txnResult)
-                                 << ". Remove from queue.";
+                JLOG(j_.debug()) << "Queued transaction " << candidateIter->txID << " failed with "
+                                 << transToken(txnResult) << ". Remove from queue.";
                 candidateIter = eraseAndAdvance(candidateIter, lock);
             }
             else
@@ -1379,8 +1372,7 @@ TxQ::accept(Application& app, OpenView& view)
                 else
                     --candidateIter->retriesRemaining;
                 candidateIter->lastResult = txnResult;
-                if (account.dropPenalty && account.transactions.size() > 1 &&
-                    isFull<95>(lock))
+                if (account.dropPenalty && account.transactions.size() > 1 && isFull<95>(lock))
                 {
                     // The queue is close to full, this account has multiple
                     // txs queued, and this account has had a transaction
@@ -1389,12 +1381,9 @@ TxQ::accept(Application& app, OpenView& view)
                     {
                         // Since the failed transaction has a ticket, order
                         // doesn't matter.  Drop this one.
-                        JLOG(j_.info())
-                            << "Queue is nearly full, and transaction "
-                            << candidateIter->txID << " failed with "
-                            << transToken(txnResult)
-                            << ". Removing ticketed tx from account "
-                            << account.account;
+                        JLOG(j_.info()) << "Queue is nearly full, and transaction " << candidateIter->txID
+                                        << " failed with " << transToken(txnResult)
+                                        << ". Removing ticketed tx from account " << account.account;
                         candidateIter = eraseAndAdvance(candidateIter, lock);
                     }
                     else
@@ -1555,8 +1544,7 @@ TxQ::tryDirectApply(
 
     std::lock_guard lock(mutex_);
     FeeLevel64 const requiredFeeLevel = [this, &view, flags, &lock]() {
-        return getRequiredFeeLevel(
-            view, flags, feeMetrics_.getSnapshot(), lock);
+        return getRequiredFeeLevel(view, flags, feeMetrics_.getSnapshot(), lock);
     }();
 
     // If the transaction's fee is high enough we may be able to put the
@@ -1630,8 +1618,7 @@ TxQ::getMetrics(OpenView const& view) const
     result.txInLedger = view.txCount();
     result.txPerLedger = snapshot.txnsExpected;
     result.referenceFeeLevel = baseLevel;
-    result.minProcessingFeeLevel =
-        isFull(lock) ? byFee_.rbegin()->feeLevel + FeeLevel64{1} : baseLevel;
+    result.minProcessingFeeLevel = isFull(lock) ? byFee_.rbegin()->feeLevel + FeeLevel64{1} : baseLevel;
     result.medFeeLevel = snapshot.escalationMultiplier;
     result.openLedgerFeeLevel = FeeMetrics::scaleFeeLevel(snapshot, view);
 

@@ -783,9 +783,7 @@ private:
         Used to get the next "applicable" MaybeTx for accept().
     */
     FeeMultiSet::iterator_type
-    eraseAndAdvance(
-        FeeMultiSet::const_iterator_type,
-        std::lock_guard<std::mutex> const&);
+    eraseAndAdvance(FeeMultiSet::const_iterator_type, std::lock_guard<std::mutex> const&);
     /// Erase a range of items, based on TxQAccount::TxMap iterators
     TxQAccount::TxMap::iterator
     erase(
