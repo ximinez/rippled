@@ -81,25 +81,17 @@ TxQ::FeeMetrics::update(
     milliseconds const averageTime = recentRoundTimes_.empty()
         ? 0ms
         : milliseconds{
-              std::accumulate(
-                  recentRoundTimes_.begin(), recentRoundTimes_.end(), 0ms) /
-              recentRoundTimes_.size()};
-    bool const timeLeap = !roundTime ||
-        (roundTime > timeLeapCutoff &&
-         roundTime > averageTime * timeLeapFactor);
+              std::accumulate(recentRoundTimes_.begin(), recentRoundTimes_.end(), 0ms) / recentRoundTimes_.size()};
+    bool const timeLeap = !roundTime || (roundTime > timeLeapCutoff && roundTime > averageTime * timeLeapFactor);
     if (roundTime)
         recentRoundTimes_.push_back(*roundTime);
 
     JLOG((timeLeap ? j_.warn() : j_.debug()))
-        << "Ledger " << view.header().seq << " has " << size
-        << " transactions. "
-        << "Ledgers are processing " << (timeLeap ? "slowly" : "as expected")
-        << ". Current consensus round took "
-        << (roundTime ? to_string(roundTime->count()) + "ms"
-                      : "INDETERMINATE TIME")
-        << " and recent average round time is " << averageTime.count()
-        << "ms. Expected transactions is currently " << txnsExpected_
-        << " and multiplier is " << escalationMultiplier_;
+        << "Ledger " << view.header().seq << " has " << size << " transactions. "
+        << "Ledgers are processing " << (timeLeap ? "slowly" : "as expected") << ". Current consensus round took "
+        << (roundTime ? to_string(roundTime->count()) + "ms" : "INDETERMINATE TIME")
+        << " and recent average round time is " << averageTime.count() << "ms. Expected transactions is currently "
+        << txnsExpected_ << " and multiplier is " << escalationMultiplier_;
 
     if (timeLeap)
     {
