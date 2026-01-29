@@ -990,14 +990,12 @@ ValidatorList::updatePublisherList(
 
         if (!m)
         {
-            JLOG(j_.warn()) << "List for " << strHex(pubKey)
-                            << " contained malformed validator manifest";
+            JLOG(j_.warn()) << "List for " << strHex(pubKey) << " contained malformed validator manifest";
             continue;
         }
         if (!keyListings_.count(m->masterKey))
         {
-            JLOG(j_.warn()) << "List for " << strHex(pubKey)
-                            << " contained untrusted validator manifest "
+            JLOG(j_.warn()) << "List for " << strHex(pubKey) << " contained untrusted validator manifest "
                             << "with master key: " << strHex(m->masterKey);
             continue;
         }
