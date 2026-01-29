@@ -823,27 +823,18 @@ logVLBlob(beast::Journal j, ValidatorBlobInfo const& blob, std::size_t count)
     auto const stream = j.trace();
     JLOG(stream) << "Blob " << count << " Signature: " << blob.signature;
     JLOG(stream) << "Blob " << count << " blob: " << base64_decode(blob.blob);
-    JLOG(stream) << "Blob " << count << " manifest: "
-                 << (blob.manifest ? base64_decode(*blob.manifest) : "NONE");
+    JLOG(stream) << "Blob " << count << " manifest: " << (blob.manifest ? base64_decode(*blob.manifest) : "NONE");
 }
 
 void
-logVLBlob(
-    beast::Journal j,
-    std::pair<std::size_t, ValidatorBlobInfo> const& blob,
-    std::size_t count)
+logVLBlob(beast::Journal j, std::pair<std::size_t, ValidatorBlobInfo> const& blob, std::size_t count)
 {
     logVLBlob(j, blob.second, count);
 }
 
 template <class TBlobs>
 void
-logVL(
-    beast::Journal j,
-    std::string const& manifest,
-    std::uint32_t version,
-    TBlobs const& blobs,
-    uint256 const& hash)
+logVL(beast::Journal j, std::string const& manifest, std::uint32_t version, TBlobs const& blobs, uint256 const& hash)
 {
     auto const stream = j.trace();
     JLOG(stream) << "Manifest: " << manifest;
@@ -2077,20 +2068,14 @@ PeerImp::onValidatorListMessage(
                     current <= applyResult.sequence,
                     "ripple::PeerImp::onValidatorListMessage : (stale) valid "
                     "sequence");
-                return std::make_pair(
-                    pubKey, current ? current : applyResult.sequence);
+                return std::make_pair(pubKey, current ? current : applyResult.sequence);
             }();
             if (currentPeerSeq <= applyResult.sequence)
             {
                 auto const [sentmanifest, sentversion, sentblobs, senthash] =
                     app_.validators().sendLatestValidatorLists(
-                        *this,
-                        currentPeerSeq,
-                        pubKey,
-                        app_.getHashRouter(),
-                        p_journal_);
-                logVL(
-                    p_journal_, sentmanifest, sentversion, sentblobs, senthash);
+                        *this, currentPeerSeq, pubKey, app_.getHashRouter(), p_journal_);
+                logVL(p_journal_, sentmanifest, sentversion, sentblobs, senthash);
             }
         }
         break;

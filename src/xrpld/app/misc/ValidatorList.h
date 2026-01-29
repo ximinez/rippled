@@ -349,11 +349,7 @@ public:
         HashRouter& hashRouter,
         beast::Journal j);
 
-    std::tuple<
-        std::string,
-        std::uint32_t,
-        std::map<std::size_t, ValidatorBlobInfo>,
-        uint256>
+    std::tuple<std::string, std::uint32_t, std::map<std::size_t, ValidatorBlobInfo>, uint256>
     sendLatestValidatorLists(
         Peer& peer,
         std::uint64_t peerSequence,

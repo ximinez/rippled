@@ -661,11 +661,7 @@ ValidatorList::buildValidatorListMessages(
     return {0, 0};
 }
 
-std::tuple<
-    std::string,
-    std::uint32_t,
-    std::map<std::size_t, ValidatorBlobInfo>,
-    uint256>
+std::tuple<std::string, std::uint32_t, std::map<std::size_t, ValidatorBlobInfo>, uint256>
 ValidatorList::sendLatestValidatorLists(
     Peer& peer,
     std::uint64_t peerSequence,
@@ -678,13 +674,11 @@ ValidatorList::sendLatestValidatorLists(
 
     if (publisherLists_.count(publisherKey) == 0)
         return {};
-    ValidatorList::PublisherListCollection const& lists =
-        publisherLists_.at(publisherKey);
+    ValidatorList::PublisherListCollection const& lists = publisherLists_.at(publisherKey);
 
     auto const maxSequence = lists.current.sequence;
     ASSERT(
-        lists.current.sequence == maxSequence ||
-            lists.remaining.count(maxSequence) == 1,
+        lists.current.sequence == maxSequence || lists.remaining.count(maxSequence) == 1,
         "ripple::ValidatorList::sendLatestValidatorLists : valid sequence");
 
     if (peerSequence < maxSequence)
@@ -709,8 +703,7 @@ ValidatorList::sendLatestValidatorLists(
             lasthash = m.hash;
             hashRouter.addSuppressionPeer(lasthash, peer.id());
         }
-        return std::make_tuple(
-            lists.rawManifest, lists.rawVersion, blobInfos, lasthash);
+        return std::make_tuple(lists.rawManifest, lists.rawVersion, blobInfos, lasthash);
     }
     return {};
 }
@@ -762,12 +755,9 @@ ValidatorList::sendValidatorList(
         {
             if (messageVersion > 1)
             {
-                JLOG(j.debug())
-                    << "Sent " << messages.size()
-                    << " validator list collection(s) containing " << numVLs
-                    << " validator list(s) for " << strHex(publisherKey)
-                    << " with sequence range " << peerSequence << ", "
-                    << newPeerSequence << " to " << peer.fingerprint();
+                JLOG(j.debug()) << "Sent " << messages.size() << " validator list collection(s) containing " << numVLs
+                                << " validator list(s) for " << strHex(publisherKey) << " with sequence range "
+                                << peerSequence << ", " << newPeerSequence << " to " << peer.fingerprint();
                 return "ValidatorListCollection";
             }
             else
@@ -776,10 +766,8 @@ ValidatorList::sendValidatorList(
                     numVLs == 1,
                     "xrpl::ValidatorList::sendValidatorList : one validator "
                     "list");
-                JLOG(j.debug())
-                    << "Sent validator list for " << strHex(publisherKey)
-                    << " with sequence " << newPeerSequence << " to "
-                    << peer.fingerprint();
+                JLOG(j.debug()) << "Sent validator list for " << strHex(publisherKey) << " with sequence "
+                                << newPeerSequence << " to " << peer.fingerprint();
                 return "ValidatorList";
             }
         }
@@ -802,16 +790,7 @@ ValidatorList::sendValidatorList(
 {
     std::vector<ValidatorList::MessageWithHash> messages;
     return sendValidatorList(
-        peer,
-        peerSequence,
-        publisherKey,
-        maxSequence,
-        rawVersion,
-        rawManifest,
-        blobInfos,
-        messages,
-        hashRouter,
-        j);
+        peer, peerSequence, publisherKey, maxSequence, rawVersion, rawManifest, blobInfos, messages, hashRouter, j);
 }
 
 // static
@@ -869,8 +848,7 @@ ValidatorList::broadcastBlobs(
         std::map<std::size_t, ValidatorBlobInfo> blobInfos;
 
         XRPL_ASSERT(
-            lists.current.sequence <= maxSequence ||
-                lists.remaining.count(maxSequence) == 1,
+            lists.current.sequence <= maxSequence || lists.remaining.count(maxSequence) == 1,
             "xrpl::ValidatorList::broadcastBlobs : valid sequence");
         // Can't use overlay.foreach here because we need to modify
         // the peer, and foreach provides a const&
