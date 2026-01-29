@@ -3710,8 +3710,7 @@ public:
 
         {
             // Use a mostly default config
-            Env env(
-                *this, makeConfig({{"minimum_txn_in_ledger_standalone", "3"}}));
+            Env env(*this, makeConfig({{"minimum_txn_in_ledger_standalone", "3"}}));
             auto alice = Account("alice");
 
             checkMetrics(__LINE__, env, 0, std::nullopt, 0, 3, 256);
@@ -3754,8 +3753,7 @@ public:
         {
             // Use a "bad" config - minimum of 0. Treated as 1 for
             // escalation calculations
-            Env env(
-                *this, makeConfig({{"minimum_txn_in_ledger_standalone", "0"}}));
+            Env env(*this, makeConfig({{"minimum_txn_in_ledger_standalone", "0"}}));
 
             checkMetrics(__LINE__, env, 0, std::nullopt, 0, 0, 256);
             // we don't crash anymore
@@ -3766,10 +3764,8 @@ public:
                 auto const& view = *env.current();
                 auto const metrics = env.app().getTxQ().getMetrics(view);
                 BEAST_EXPECT(metrics.openLedgerFeeLevel == 256);
-                auto const openLedgerDrops = mulDiv(
-                    metrics.openLedgerFeeLevel,
-                    view.fees().base,
-                    metrics.referenceFeeLevel);
+                auto const openLedgerDrops =
+                    mulDiv(metrics.openLedgerFeeLevel, view.fees().base, metrics.referenceFeeLevel);
                 BEAST_EXPECT(openLedgerDrops && *openLedgerDrops + 1 == 11);
             }
 
@@ -3781,10 +3777,8 @@ public:
                 auto const& view = *env.current();
                 auto metrics = env.app().getTxQ().getMetrics(view);
                 BEAST_EXPECT(metrics.openLedgerFeeLevel == 512000);
-                auto const openLedgerDrops = mulDiv(
-                    metrics.openLedgerFeeLevel,
-                    view.fees().base,
-                    metrics.referenceFeeLevel);
+                auto const openLedgerDrops =
+                    mulDiv(metrics.openLedgerFeeLevel, view.fees().base, metrics.referenceFeeLevel);
                 BEAST_EXPECT(openLedgerDrops && *openLedgerDrops == 20000);
             }
         }
