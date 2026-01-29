@@ -1976,8 +1976,7 @@ PeerImp::onValidatorListMessage(
             str << " Blob " << count << ":";
             str << " Signature: " << blob.signature;
             str << " blob: " << base64_decode(blob.blob);
-            str << " manifest: "
-                << (blob.manifest ? base64_decode(*blob.manifest) : "NONE");
+            str << " manifest: " << (blob.manifest ? base64_decode(*blob.manifest) : "NONE");
             ++count;
         }
         sink << str.str();
