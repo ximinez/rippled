@@ -297,10 +297,8 @@ saveValidatedLedger(
                 {
                     // It's okay for pseudo transactions to not affect any
                     // accounts.  But otherwise...
-                    JLOG(j.warn()) << "Transaction in ledger " << seq
-                                   << " affects no accounts";
-                    JLOG(j.warn())
-                        << to_string(sleTxn->getJson(JsonOptions::none));
+                    JLOG(j.warn()) << "Transaction in ledger " << seq << " affects no accounts";
+                    JLOG(j.warn()) << to_string(sleTxn->getJson(JsonOptions::none));
                 }
 
                 *db

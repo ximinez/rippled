@@ -448,8 +448,7 @@ public:
                 Json::Value jvParams;
                 jvParams[jss::ledger_index] = "current";
                 jvParams[jss::type] = "misspelling";
-                auto const jrr = env.rpc(
-                    "json", "ledger_data", to_string(jvParams))[jss::result];
+                auto const jrr = env.rpc("json", "ledger_data", to_string(jvParams))[jss::result];
                 BEAST_EXPECT(jrr.isMember("error"));
                 BEAST_EXPECT(jrr["error"] == "invalidParams");
                 BEAST_EXPECT(jrr["error_message"] == "Invalid field 'type'.");

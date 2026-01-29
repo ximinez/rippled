@@ -95,8 +95,7 @@ public:
 
         expectEquals(
             to_string(result[jss::key_type]),
-            params.isMember(jss::key_type) ? to_string(params[jss::key_type])
-                                           : "secp256k1");
+            params.isMember(jss::key_type) ? to_string(params[jss::key_type]) : "secp256k1");
         BEAST_EXPECT(!result.isMember(jss::warning));
 
         std::string seed = result[jss::master_seed].asString();
@@ -115,14 +114,12 @@ public:
         BEAST_EXPECT(!contains_error(result));
         expectEquals(to_string(result[jss::account_id]), s.account_id);
         expectEquals(to_string(result[jss::master_seed]), s.master_seed);
-        expectEquals(
-            to_string(result[jss::master_seed_hex]), s.master_seed_hex);
+        expectEquals(to_string(result[jss::master_seed_hex]), s.master_seed_hex);
         expectEquals(to_string(result[jss::public_key]), s.public_key);
         expectEquals(to_string(result[jss::public_key_hex]), s.public_key_hex);
         expectEquals(
             to_string(result[jss::key_type]),
-            params.isMember(jss::key_type) ? to_string(params[jss::key_type])
-                                           : "secp256k1");
+            params.isMember(jss::key_type) ? to_string(params[jss::key_type]) : "secp256k1");
         return result;
     }
 

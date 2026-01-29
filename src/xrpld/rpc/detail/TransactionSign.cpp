@@ -268,8 +268,7 @@ checkPayment(
             }
 
             auto j = app.journal("RPCHandler");
-            JLOG(j.debug()) << "transactionSign: build_path: "
-                            << to_string(result.getJson(JsonOptions::none));
+            JLOG(j.debug()) << "transactionSign: build_path: " << to_string(result.getJson(JsonOptions::none));
 
             if (!result.empty())
                 tx_json[jss::Paths] = result.getJson(JsonOptions::none);

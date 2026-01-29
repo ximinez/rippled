@@ -134,8 +134,7 @@ fillHandler(JsonContext& context, Handler const*& result)
 
     JLOG(context.j.trace()) << "COMMAND:" << strCommand;
     JLOG(context.j.trace()) << "REQUEST:" << to_string(context.params);
-    auto handler = getHandler(
-        context.apiVersion, context.app.config().BETA_RPC_API, strCommand);
+    auto handler = getHandler(context.apiVersion, context.app.config().BETA_RPC_API, strCommand);
 
     if (!handler)
         return rpcUNKNOWN_COMMAND;
@@ -201,24 +200,20 @@ doCommand(RPC::JsonContext& context, Json::Value& result)
 
     auto const extra = [&context]() {
         using namespace std::string_literals;
-        if (!context.headers.user.empty() ||
-            !context.headers.forwardedFor.empty())
+        if (!context.headers.user.empty() || !context.headers.forwardedFor.empty())
         {
-            return ", user: "s + std::string(context.headers.user) +
-                ", forwarded for: "s +
+            return ", user: "s + std::string(context.headers.user) + ", forwarded for: "s +
                 std::string(context.headers.forwardedFor);
         }
         return ""s;
     }();
     if (auto method = handler->valueMethod_)
     {
-        JLOG(context.j.debug()) << "start command: " << handler->name_ << extra
-                                << to_string(context.params);
+        JLOG(context.j.debug()) << "start command: " << handler->name_ << extra << to_string(context.params);
 
         auto ret = callMethod(context, method, handler->name_, result);
 
-        JLOG(context.j.debug()) << "finish command: " << handler->name_ << extra
-                                << to_string(context.params);
+        JLOG(context.j.debug()) << "finish command: " << handler->name_ << extra << to_string(context.params);
 
         return ret;
     }

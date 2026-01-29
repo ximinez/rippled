@@ -238,8 +238,7 @@ ApplyStateTable::apply(
 
         // VFALCO For diagnostics do we want to show
         //        metadata even when the base view is open?
-        JLOG(j.trace()) << "metadata "
-                        << to_string(meta.getJson(JsonOptions::none));
+        JLOG(j.trace()) << "metadata " << to_string(meta.getJson(JsonOptions::none));
 
         metadata = meta;
     }

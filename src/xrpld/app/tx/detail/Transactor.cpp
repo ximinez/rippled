@@ -1066,8 +1066,7 @@ Transactor::operator()()
             JLOG(j_.fatal()) << "Transaction serdes mismatch";
             JLOG(j_.fatal()) << to_string(ctx_.tx.getJson(JsonOptions::none));
             JLOG(j_.fatal()) << to_string(s2.getJson(JsonOptions::none));
-            UNREACHABLE(
-                "xrpl::Transactor::operator() : transaction serdes mismatch");
+            UNREACHABLE("xrpl::Transactor::operator() : transaction serdes mismatch");
             // LCOV_EXCL_STOP
         }
     }

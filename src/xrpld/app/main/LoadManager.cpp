@@ -119,19 +119,13 @@ LoadManager::run()
 
                     if (app_.getJobQueue().isOverloaded())
                     {
-                        JLOG(journal_.warn())
-                            << "JobQueue: "
-                            << to_string(app_.getJobQueue().getJson(0));
+                        JLOG(journal_.warn()) << "JobQueue: " << to_string(app_.getJobQueue().getJson(0));
                     }
                 }
                 else
                 {
-                    JLOG(journal_.fatal())
-                        << "Server stalled for " << timeSpentStalled.count()
-                        << " seconds.";
-                    JLOG(journal_.fatal())
-                        << "JobQueue: "
-                        << to_string(app_.getJobQueue().getJson(0));
+                    JLOG(journal_.fatal()) << "Server stalled for " << timeSpentStalled.count() << " seconds.";
+                    JLOG(journal_.fatal()) << "JobQueue: " << to_string(app_.getJobQueue().getJson(0));
                 }
             }
 
@@ -140,11 +134,9 @@ LoadManager::run()
             // as a LogicError
             if (timeSpentStalled >= stallLogicErrorTimeLimit)
             {
-                JLOG(journal_.fatal())
-                    << "LogicError: Fatal server stall detected. Stalled time: "
-                    << timeSpentStalled.count() << "s";
-                JLOG(journal_.fatal())
-                    << "JobQueue: " << to_string(app_.getJobQueue().getJson(0));
+                JLOG(journal_.fatal()) << "LogicError: Fatal server stall detected. Stalled time: "
+                                       << timeSpentStalled.count() << "s";
+                JLOG(journal_.fatal()) << "JobQueue: " << to_string(app_.getJobQueue().getJson(0));
                 LogicError("Fatal server stall detected");
             }
         }
@@ -153,8 +145,7 @@ LoadManager::run()
     bool change = false;
     if (app_.getJobQueue().isOverloaded())
     {
-        JLOG(journal_.info()) << "Raising local fee (JQ overload): "
-                              << to_string(app_.getJobQueue().getJson(0));
+        JLOG(journal_.info()) << "Raising local fee (JQ overload): " << to_string(app_.getJobQueue().getJson(0));
         change = app_.getFeeTrack().raiseLocalFee();
     }
     else
