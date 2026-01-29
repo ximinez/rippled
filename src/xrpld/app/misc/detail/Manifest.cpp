@@ -351,12 +351,8 @@ ManifestCache::applyManifest(Manifest m, bool loading)
     // first run.
     auto prewriteCheck =
         [this, &m, &loading](
-            auto const& iter,
-            bool checkSignature,
-            auto const& lock) -> std::optional<ManifestDisposition> {
-        XRPL_ASSERT(
-            lock.owns_lock(),
-            "xrpl::ManifestCache::applyManifest::prewriteCheck : locked");
+            auto const& iter, bool checkSignature, auto const& lock) -> std::optional<ManifestDisposition> {
+        XRPL_ASSERT(lock.owns_lock(), "xrpl::ManifestCache::applyManifest::prewriteCheck : locked");
         (void)lock;  // not used. parameter is present to ensure the mutex is
                      // locked when the lambda is called.
         if (iter != map_.end() && m.sequence <= iter->second.sequence)
@@ -393,10 +389,8 @@ ManifestCache::applyManifest(Manifest m, bool loading)
         // the ephemeral key of another manifest:
         if (auto const x = signingToMasterKeys_.find(m.masterKey); x != signingToMasterKeys_.end())
         {
-            JLOG((loading ? j_.info() : j_.warn()))
-                << to_string(m)
-                << ": Master key already used as ephemeral key for "
-                << toBase58(TokenType::NodePublic, x->second);
+            JLOG((loading ? j_.info() : j_.warn())) << to_string(m) << ": Master key already used as ephemeral key for "
+                                                    << toBase58(TokenType::NodePublic, x->second);
 
             return ManifestDisposition::badMasterKey;
         }
@@ -417,8 +411,7 @@ ManifestCache::applyManifest(Manifest m, bool loading)
             if (auto const x = signingToMasterKeys_.find(*m.signingKey); x != signingToMasterKeys_.end())
             {
                 JLOG((loading ? j_.info() : j_.warn()))
-                    << to_string(m)
-                    << ": Ephemeral key already used as ephemeral key for "
+                    << to_string(m) << ": Ephemeral key already used as ephemeral key for "
                     << toBase58(TokenType::NodePublic, x->second);
 
                 return ManifestDisposition::badEphemeralKey;
@@ -427,8 +420,7 @@ ManifestCache::applyManifest(Manifest m, bool loading)
             if (auto const x = map_.find(*m.signingKey); x != map_.end())
             {
                 JLOG((loading ? j_.info() : j_.warn()))
-                    << to_string(m) << ": Ephemeral key used as master key for "
-                    << to_string(x->second);
+                    << to_string(m) << ": Ephemeral key used as master key for " << to_string(x->second);
 
                 return ManifestDisposition::badEphemeralKey;
             }
