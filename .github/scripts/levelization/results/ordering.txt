@@ -218,6 +218,7 @@ xrpl.basics > xrpl.beast
 xrpl.core > xrpl.basics
 xrpl.core > xrpl.beast
 xrpl.core > xrpl.json
+xrpl.core > xrpl.ledger
 xrpl.core.detail > xrpl.beast
 xrpl.json > xrpl.basics
 xrpl.json > xrpl.beast
