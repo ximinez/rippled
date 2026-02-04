@@ -1,5 +1,4 @@
-#ifndef XRPL_TEST_TRUSTED_PUBLISHER_SERVER_H_INCLUDED
-#define XRPL_TEST_TRUSTED_PUBLISHER_SERVER_H_INCLUDED
+#pragma once
 
 #include <test/jtx/envconfig.h>
 
@@ -654,4 +653,3 @@ make_TrustedPublisherServer(
 
 }  // namespace test
 }  // namespace xrpl
-#endif
