@@ -1,5 +1,4 @@
-#ifndef XRPL_APP_MISC_VALIDATORLIST_H_INCLUDED
-#define XRPL_APP_MISC_VALIDATORLIST_H_INCLUDED
+#pragma once
 
 #include <xrpld/app/misc/Manifest.h>
 #include <xrpld/core/TimeKeeper.h>
@@ -934,5 +933,3 @@ hash_append(Hasher& h, TMValidatorListCollection const& msg)
 }
 
 }  // namespace protocol
-
-#endif
