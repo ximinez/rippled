@@ -4,13 +4,21 @@ Loop: test.jtx test.toplevel
 Loop: test.jtx test.unit_test
   test.unit_test == test.jtx
 
-Loop: xrpld.app xrpld.core
-  xrpld.app > xrpld.core
-
 Loop: xrpld.app xrpld.overlay
   xrpld.app > xrpld.overlay
 
 Loop: xrpld.app xrpld.peerfinder.detail
-  xrpld.peerfinder.detail ~= xrpld.app
+  xrpld.peerfinder.detail == xrpld.app
 
 Loop: xrpld.app xrpld.rpc
+  xrpld.rpc > xrpld.app
+
+Loop: xrpld.app xrpld.rpc.detail
+  xrpld.rpc.detail > xrpld.app
+
+Loop: xrpld.app xrpld.shamap
+  xrpld.shamap ~= xrpld.app
+
+Loop: xrpld.overlay xrpld.rpc
+  xrpld.rpc ~= xrpld.overlay
+
