@@ -3,6 +3,7 @@
 #include <xrpl/json/json_reader.h>
 #include <xrpl/json/json_value.h>
 #include <xrpl/json/json_writer.h>
+#include <xrpl/json/to_string.h>
 
 #include <gtest/gtest.h>
 
