@@ -115,17 +115,21 @@ LoadManager::run()
             {
                 if (timeSpentStalled < stallFatalLogMessageTimeLimit)
                 {
-                    JLOG(journal_.warn()) << "Server stalled for " << timeSpentStalled.count() << " seconds.";
+                    JLOG(journal_.warn())
+                        << "Server stalled for " << timeSpentStalled.count() << " seconds.";
 
                     if (app_.getJobQueue().isOverloaded())
                     {
-                        JLOG(journal_.warn()) << "JobQueue: " << to_string(app_.getJobQueue().getJson(0));
+                        JLOG(journal_.warn())
+                            << "JobQueue: " << to_string(app_.getJobQueue().getJson(0));
                     }
                 }
                 else
                 {
-                    JLOG(journal_.fatal()) << "Server stalled for " << timeSpentStalled.count() << " seconds.";
-                    JLOG(journal_.fatal()) << "JobQueue: " << to_string(app_.getJobQueue().getJson(0));
+                    JLOG(journal_.fatal())
+                        << "Server stalled for " << timeSpentStalled.count() << " seconds.";
+                    JLOG(journal_.fatal())
+                        << "JobQueue: " << to_string(app_.getJobQueue().getJson(0));
                 }
             }
 
@@ -145,7 +149,8 @@ LoadManager::run()
     bool change = false;
     if (app_.getJobQueue().isOverloaded())
     {
-        JLOG(journal_.info()) << "Raising local fee (JQ overload): " << to_string(app_.getJobQueue().getJson(0));
+        JLOG(journal_.info()) << "Raising local fee (JQ overload): "
+                              << to_string(app_.getJobQueue().getJson(0));
         change = app_.getFeeTrack().raiseLocalFee();
     }
     else

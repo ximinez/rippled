@@ -152,7 +152,10 @@ public:
     }
 
     void
-    testLegacyPassphrase(char const* value, std::optional<std::string> const& keyType, key_strings const& strings)
+    testLegacyPassphrase(
+        char const* value,
+        std::optional<std::string> const& keyType,
+        key_strings const& strings)
     {
         Json::Value params;
         if (keyType)
@@ -427,7 +430,9 @@ public:
             auto ret = keypairForSignature(params, error);
             BEAST_EXPECT(contains_error(error));
             BEAST_EXPECT(!ret);
-            BEAST_EXPECT(error[jss::error_message] == "The secret field is not allowed if key_type is used.");
+            BEAST_EXPECT(
+                error[jss::error_message] ==
+                "The secret field is not allowed if key_type is used.");
         }
 
         // Specify unknown or bad "key_type"
@@ -707,7 +712,8 @@ public:
                 auto ret = keypairForSignature(params, error);
 
                 BEAST_EXPECT(contains_error(error));
-                BEAST_EXPECT(error[jss::error_message] == "Specified seed is for an Ed25519 wallet.");
+                BEAST_EXPECT(
+                    error[jss::error_message] == "Specified seed is for an Ed25519 wallet.");
             }
 
             {
@@ -737,7 +743,8 @@ public:
                 auto ret = keypairForSignature(params, error);
 
                 BEAST_EXPECT(contains_error(error));
-                BEAST_EXPECT(error[jss::error_message] == "Specified seed is for an Ed25519 wallet.");
+                BEAST_EXPECT(
+                    error[jss::error_message] == "Specified seed is for an Ed25519 wallet.");
             }
         };
 

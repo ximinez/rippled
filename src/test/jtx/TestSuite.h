@@ -48,7 +48,10 @@ public:
 
     template <class Collection>
     bool
-    expectCollectionEquals(Collection const& actual, Collection const& expected, std::string const& message = "")
+    expectCollectionEquals(
+        Collection const& actual,
+        Collection const& expected,
+        std::string const& message = "")
     {
         auto msg = addPrefix(message);
         bool success = expectEquals(actual.size(), expected.size(), msg + "Sizes are different");

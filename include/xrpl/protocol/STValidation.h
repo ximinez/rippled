@@ -65,7 +65,12 @@ public:
         @param f callback function to "fill" the validation with necessary data
     */
     template <typename F>
-    STValidation(NetClock::time_point signTime, PublicKey const& pk, SecretKey const& sk, NodeID const& nodeID, F&& f);
+    STValidation(
+        NetClock::time_point signTime,
+        PublicKey const& pk,
+        SecretKey const& sk,
+        NodeID const& nodeID,
+        F&& f);
 
     // Hash of the validated ledger
     uint256
@@ -118,10 +123,13 @@ public:
     render() const
     {
         std::stringstream ss;
-        ss << "validation: " << " ledger_hash: " << getLedgerHash() << " consensus_hash: " << getConsensusHash()
-           << " sign_time: " << to_string(getSignTime()) << " seen_time: " << to_string(getSeenTime())
-           << " signer_public_key: " << getSignerPublic() << " node_id: " << getNodeID() << " is_valid: " << isValid()
-           << " is_full: " << isFull() << " is_trusted: " << isTrusted() << " signing_hash: " << getSigningHash()
+        ss << "validation: " << " ledger_hash: " << getLedgerHash()
+           << " consensus_hash: " << getConsensusHash()
+           << " sign_time: " << to_string(getSignTime())
+           << " seen_time: " << to_string(getSeenTime())
+           << " signer_public_key: " << getSignerPublic() << " node_id: " << getNodeID()
+           << " is_valid: " << isValid() << " is_full: " << isFull()
+           << " is_trusted: " << isTrusted() << " signing_hash: " << getSigningHash()
            << " base58: " << toBase58(TokenType::NodePublic, getSignerPublic());
         return ss.str();
     }
@@ -153,7 +161,8 @@ STValidation::STValidation(SerialIter& sit, LookupNodeID&& lookupNodeID, bool ch
 {
     if (checkSignature && !isValid())
     {
-        JLOG(debugLog().error()) << "Invalid signature in validation: " << to_string(getJson(JsonOptions::none));
+        JLOG(debugLog().error()) << "Invalid signature in validation: "
+                                 << to_string(getJson(JsonOptions::none));
         Throw<std::runtime_error>("Invalid signature in validation");
     }
 
@@ -175,7 +184,10 @@ STValidation::STValidation(
     SecretKey const& sk,
     NodeID const& nodeID,
     F&& f)
-    : STObject(validationFormat(), sfValidation), signingPubKey_(pk), nodeID_(nodeID), seenTime_(signTime)
+    : STObject(validationFormat(), sfValidation)
+    , signingPubKey_(pk)
+    , nodeID_(nodeID)
+    , seenTime_(signTime)
 {
     XRPL_ASSERT(
         nodeID_.isNonZero(),

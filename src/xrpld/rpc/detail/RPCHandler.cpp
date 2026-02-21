@@ -129,8 +129,9 @@ fillHandler(JsonContext& context, Handler const*& result)
             return rpcUNKNOWN_COMMAND;
     }
 
-    std::string strCommand = context.params.isMember(jss::command) ? context.params[jss::command].asString()
-                                                                   : context.params[jss::method].asString();
+    std::string strCommand = context.params.isMember(jss::command)
+        ? context.params[jss::command].asString()
+        : context.params[jss::method].asString();
 
     JLOG(context.j.trace()) << "COMMAND:" << strCommand;
     JLOG(context.j.trace()) << "REQUEST:" << to_string(context.params);
@@ -168,8 +169,8 @@ callMethod(JsonContext& context, Method method, std::string const& name, Object&
         auto ret = method(context, result);
         auto end = std::chrono::system_clock::now();
 
-        JLOG(context.j.debug()) << "RPC call " << name << " completed in " << ((end - start).count() / 1000000000.0)
-                                << "seconds";
+        JLOG(context.j.debug()) << "RPC call " << name << " completed in "
+                                << ((end - start).count() / 1000000000.0) << "seconds";
         perfLog.rpcFinish(name, curId);
         return ret;
     }
@@ -209,11 +210,13 @@ doCommand(RPC::JsonContext& context, Json::Value& result)
     }();
     if (auto method = handler->valueMethod_)
     {
-        JLOG(context.j.debug()) << "start command: " << handler->name_ << extra << to_string(context.params);
+        JLOG(context.j.debug()) << "start command: " << handler->name_ << extra
+                                << to_string(context.params);
 
         auto ret = callMethod(context, method, handler->name_, result);
 
-        JLOG(context.j.debug()) << "finish command: " << handler->name_ << extra << to_string(context.params);
+        JLOG(context.j.debug()) << "finish command: " << handler->name_ << extra
+                                << to_string(context.params);
 
         return ret;
     }
