@@ -250,7 +250,12 @@ public:
                 will return `{ terQUEUED, false }`.
     */
     ApplyResult
-    apply(Application& app, OpenView& view, std::shared_ptr<STTx const> const& tx, ApplyFlags flags, beast::Journal j);
+    apply(
+        Application& app,
+        OpenView& view,
+        std::shared_ptr<STTx const> const& tx,
+        ApplyFlags flags,
+        beast::Journal j);
 
     /**
         Fill the new open ledger with transactions from the queue.
@@ -337,7 +342,9 @@ public:
 private:
     // Implementation for nextQueuableSeq().  The passed lock must be held.
     SeqProxy
-    nextQueuableSeqImpl(std::shared_ptr<SLE const> const& sleAccount, std::lock_guard<std::mutex> const&) const;
+    nextQueuableSeqImpl(
+        std::shared_ptr<SLE const> const& sleAccount,
+        std::lock_guard<std::mutex> const&) const;
 
     /**
         Track and use the fee escalation metrics of the
@@ -370,12 +377,16 @@ private:
     public:
         /// Constructor
         FeeMetrics(Setup const& setup, beast::Journal j)
-            : minimumTxnCount_(setup.standAlone ? setup.minimumTxnInLedgerSA : setup.minimumTxnInLedger)
-            , targetTxnCount_(setup.targetTxnInLedger < minimumTxnCount_ ? minimumTxnCount_ : setup.targetTxnInLedger)
+            : minimumTxnCount_(
+                  setup.standAlone ? setup.minimumTxnInLedgerSA : setup.minimumTxnInLedger)
+            , targetTxnCount_(
+                  setup.targetTxnInLedger < minimumTxnCount_ ? minimumTxnCount_
+                                                             : setup.targetTxnInLedger)
             , maximumTxnCount_(
-                  setup.maximumTxnInLedger
-                      ? *setup.maximumTxnInLedger < targetTxnCount_ ? targetTxnCount_ : *setup.maximumTxnInLedger
-                      : std::optional<std::size_t>(std::nullopt))
+                  setup.maximumTxnInLedger ? *setup.maximumTxnInLedger < targetTxnCount_
+                          ? targetTxnCount_
+                          : *setup.maximumTxnInLedger
+                                           : std::optional<std::size_t>(std::nullopt))
             , txnsExpected_(minimumTxnCount_)
             , recentTxnCounts_(setup.ledgersInQueue)
             , escalationMultiplier_(setup.minimumEscalationMultiplier)
@@ -706,10 +717,11 @@ private:
         std::shared_ptr<STTx const> const& tx,
         std::lock_guard<std::mutex> const&);
 
-    using FeeHook =
-        boost::intrusive::member_hook<MaybeTx, boost::intrusive::set_member_hook<>, &MaybeTx::byFeeListHook>;
+    using FeeHook = boost::intrusive::
+        member_hook<MaybeTx, boost::intrusive::set_member_hook<>, &MaybeTx::byFeeListHook>;
 
-    using FeeMultiSet = boost::intrusive::multiset<MaybeTx, FeeHook, boost::intrusive::compare<OrderCandidates>>;
+    using FeeMultiSet =
+        boost::intrusive::multiset<MaybeTx, FeeHook, boost::intrusive::compare<OrderCandidates>>;
 
     using AccountMap = std::map<AccountID, TxQAccount>;
 
@@ -827,7 +839,8 @@ toDrops(FeeLevel<T> const& level, XRPAmount baseFee)
 inline FeeLevel64
 toFeeLevel(XRPAmount const& drops, XRPAmount const& baseFee)
 {
-    return mulDiv(drops, TxQ::baseLevel, baseFee).value_or(FeeLevel64(std::numeric_limits<std::uint64_t>::max()));
+    return mulDiv(drops, TxQ::baseLevel, baseFee)
+        .value_or(FeeLevel64(std::numeric_limits<std::uint64_t>::max()));
 }
 
 }  // namespace xrpl
