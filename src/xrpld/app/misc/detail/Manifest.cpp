@@ -145,13 +145,19 @@ template <class Stream>
 Stream&
 logMftAct(Stream& s, std::string const& action, PublicKey const& pk, std::uint32_t seq)
 {
-    s << "Manifest: " << action << ";Pk: " << toBase58(TokenType::NodePublic, pk) << ";Seq: " << seq << ";";
+    s << "Manifest: " << action << ";Pk: " << toBase58(TokenType::NodePublic, pk) << ";Seq: " << seq
+      << ";";
     return s;
 }
 
 template <class Stream>
 Stream&
-logMftAct(Stream& s, std::string const& action, PublicKey const& pk, std::uint32_t seq, std::uint32_t oldSeq)
+logMftAct(
+    Stream& s,
+    std::string const& action,
+    PublicKey const& pk,
+    std::uint32_t seq,
+    std::uint32_t oldSeq)
 {
     s << "Manifest: " << action << ";Pk: " << toBase58(TokenType::NodePublic, pk) << ";Seq: " << seq
       << ";OldSeq: " << oldSeq << ";";
@@ -233,9 +239,11 @@ loadValidatorToken(std::vector<std::string> const& blob, beast::Journal journal)
         std::string tokenStr;
 
         tokenStr.reserve(
-            std::accumulate(blob.cbegin(), blob.cend(), std::size_t(0), [](std::size_t init, std::string const& s) {
-                return init + s.size();
-            }));
+            std::accumulate(
+                blob.cbegin(),
+                blob.cend(),
+                std::size_t(0),
+                [](std::size_t init, std::string const& s) { return init + s.size(); }));
 
         for (auto const& line : blob)
             tokenStr += boost::algorithm::trim_copy(line);
@@ -348,9 +356,10 @@ ManifestCache::applyManifest(Manifest m, bool loading)
     // signature should be checked. Since `prewriteCheck` is run twice (see
     // comment below), `checkSignature` only needs to be set to true on the
     // first run.
-    auto prewriteCheck =
-        [this, &m, &loading](
-            auto const& iter, bool checkSignature, auto const& lock) -> std::optional<ManifestDisposition> {
+    auto prewriteCheck = [this, &m, &loading](
+                             auto const& iter,
+                             bool checkSignature,
+                             auto const& lock) -> std::optional<ManifestDisposition> {
         XRPL_ASSERT(lock.owns_lock(), "xrpl::ManifestCache::applyManifest::prewriteCheck : locked");
         (void)lock;  // not used. parameter is present to ensure the mutex is
                      // locked when the lambda is called.
@@ -388,8 +397,9 @@ ManifestCache::applyManifest(Manifest m, bool loading)
         // the ephemeral key of another manifest:
         if (auto const x = signingToMasterKeys_.find(m.masterKey); x != signingToMasterKeys_.end())
         {
-            JLOG((loading ? j_.info() : j_.warn())) << to_string(m) << ": Master key already used as ephemeral key for "
-                                                    << toBase58(TokenType::NodePublic, x->second);
+            JLOG((loading ? j_.info() : j_.warn()))
+                << to_string(m) << ": Master key already used as ephemeral key for "
+                << toBase58(TokenType::NodePublic, x->second);
 
             return ManifestDisposition::badMasterKey;
         }
@@ -407,7 +417,8 @@ ManifestCache::applyManifest(Manifest m, bool loading)
 
             // Sanity check: the ephemeral key of this manifest should not be
             // used as the master or ephemeral key of another manifest:
-            if (auto const x = signingToMasterKeys_.find(*m.signingKey); x != signingToMasterKeys_.end())
+            if (auto const x = signingToMasterKeys_.find(*m.signingKey);
+                x != signingToMasterKeys_.end())
             {
                 JLOG((loading ? j_.info() : j_.warn()))
                     << to_string(m) << ": Ephemeral key already used as ephemeral key for "
@@ -419,7 +430,8 @@ ManifestCache::applyManifest(Manifest m, bool loading)
             if (auto const x = map_.find(*m.signingKey); x != map_.end())
             {
                 JLOG((loading ? j_.info() : j_.warn()))
-                    << to_string(m) << ": Ephemeral key used as master key for " << to_string(x->second);
+                    << to_string(m) << ": Ephemeral key used as master key for "
+                    << to_string(x->second);
 
                 return ManifestDisposition::badEphemeralKey;
             }
