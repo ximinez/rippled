@@ -1073,6 +1073,12 @@ public:
         return trapTxID_;
     }
 
+    size_t
+    getNumberOfThreads() const override
+    {
+        return get_number_of_threads();
+    }
+
 private:
     // For a newly-started validator, this is the greatest persisted ledger
     // and new validations must be greater than this.
