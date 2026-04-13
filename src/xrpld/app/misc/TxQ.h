@@ -146,23 +146,23 @@ public:
         explicit Metrics() = default;
 
         /// Number of transactions in the queue
-        std::size_t txCount;
+        std::size_t txCount{};
         /// Max transactions currently allowed in queue
         std::optional<std::size_t> txQMaxSize;
         /// Number of transactions currently in the open ledger
-        std::size_t txInLedger;
+        std::size_t txInLedger{};
         /// Number of transactions expected per ledger
-        std::size_t txPerLedger;
+        std::size_t txPerLedger{};
         /// Reference transaction fee level
-        FeeLevel64 referenceFeeLevel;
+        FeeLevel64 referenceFeeLevel{};
         /// Minimum fee level for a transaction to be considered for
         /// the open ledger or the queue
-        FeeLevel64 minProcessingFeeLevel;
+        FeeLevel64 minProcessingFeeLevel{};
         /// Median fee level of the last ledger
-        FeeLevel64 medFeeLevel;
+        FeeLevel64 medFeeLevel{};
         /// Minimum fee level to get into the current open ledger,
         /// bypassing the queue
-        FeeLevel64 openLedgerFeeLevel;
+        FeeLevel64 openLedgerFeeLevel{};
     };
 
     /**
@@ -415,11 +415,11 @@ private:
             Updates fee metrics based on the transactions in the ReadView
             for use in fee escalation calculations.
 
-            @param app Rippled Application object.
+            @param app Xrpld Application object.
             @param view View of the LCL that was just closed or received.
             @param roundTime Time it took for the current consensus round to
-           complete. If unseated, indicates "unusual" processing, such as
-           startup or re-syncing.
+             complete. If unseated, indicates "unusual" processing, such as
+             startup or re-syncing.
             @param setup Customization params.
 
             @return bool indicating whether the round time was unusually high,
@@ -536,7 +536,7 @@ private:
             their `retriesRemaining` forced down as part of the
             penalty.
         */
-        int retriesRemaining;
+        int retriesRemaining{retriesAllowed};
         /// Flags provided to `apply`. If the transaction is later
         /// attempted with different flags, it will need to be
         /// `preflight`ed again.
@@ -718,12 +718,12 @@ private:
     };
 
     // Helper function returns requiredFeeLevel.
-    FeeLevel64
+    static FeeLevel64
     getRequiredFeeLevel(
         OpenView& view,
         ApplyFlags flags,
         FeeMetrics::Snapshot const& metricsSnapshot,
-        std::lock_guard<std::mutex> const& lock) const;
+        std::lock_guard<std::mutex> const& lock);
 
     // Helper function for TxQ::apply.  If a transaction's fee is high enough,
     // attempt to directly apply that transaction to the ledger.
