@@ -129,7 +129,7 @@ fillHandler(JsonContext& context, Handler const*& result)
             return rpcUNKNOWN_COMMAND;
     }
 
-    std::string strCommand = context.params.isMember(jss::command)
+    std::string const strCommand = context.params.isMember(jss::command)
         ? context.params[jss::command].asString()
         : context.params[jss::method].asString();
 
@@ -137,13 +137,13 @@ fillHandler(JsonContext& context, Handler const*& result)
     JLOG(context.j.trace()) << "REQUEST:" << to_string(context.params);
     auto handler = getHandler(context.apiVersion, context.app.config().BETA_RPC_API, strCommand);
 
-    if (!handler)
+    if (handler == nullptr)
         return rpcUNKNOWN_COMMAND;
 
     if (handler->role_ == Role::ADMIN && context.role != Role::ADMIN)
         return rpcNO_PERMISSION;
 
-    error_code_i res = conditionMet(handler->condition_, context);
+    error_code_i const res = conditionMet(handler->condition_, context);
     if (res != rpcSUCCESS)
     {
         return res;
@@ -199,27 +199,29 @@ doCommand(RPC::JsonContext& context, Json::Value& result)
         return error;
     }
 
-    auto const extra = [&context]() {
-        using namespace std::string_literals;
-        if (!context.headers.user.empty() || !context.headers.forwardedFor.empty())
-        {
-            return ", user: "s + std::string(context.headers.user) + ", forwarded for: "s +
-                std::string(context.headers.forwardedFor);
+    auto const extra =
+        [&context]() {
+            using namespace std::string_literals;
+            if (!context.headers.user.empty() || !context.headers.forwardedFor.empty())
+            {
+                JLOG(context.j.debug())
+                    << "start command: " << handler->name_
+                    << ", user: " << std::string(context.headers.user)
+                    << ", forwarded for: " << std::string(context.headers.forwardedFor);
+
+                auto ret = callMethod(context, method, handler->name_, result);
+
+                JLOG(context.j.debug())
+                    << "finish command: " << handler->name_
+                    << ", user: " << std::string(context.headers.user)
+                    << ", forwarded for: " << std::string(context.headers.forwardedFor);
+
+                return ret;
+            }
+
+            auto ret = callMethod(context, method, handler->name_, result);
+            return ret;
         }
-        return ""s;
-    }();
-    if (auto method = handler->valueMethod_)
-    {
-        JLOG(context.j.debug()) << "start command: " << handler->name_ << extra
-                                << to_string(context.params);
-
-        auto ret = callMethod(context, method, handler->name_, result);
-
-        JLOG(context.j.debug()) << "finish command: " << handler->name_ << extra
-                                << to_string(context.params);
-
-        return ret;
-    }
 
     return rpcUNKNOWN_COMMAND;
 }
@@ -229,7 +231,7 @@ roleRequired(unsigned int version, bool betaEnabled, std::string const& method)
 {
     auto handler = RPC::getHandler(version, betaEnabled, method);
 
-    if (!handler)
+    if (handler == nullptr)
         return Role::FORBID;
 
     return handler->role_;

@@ -24,7 +24,7 @@ private:
             Env env(*this);
             Account const bad("bad");
             env.memoize(bad);
-            Oracle oracle(
+            Oracle const oracle(
                 env,
                 {.owner = bad,
                  .seq = seq(1),
@@ -36,7 +36,7 @@ private:
         {
             Env env(*this);
             env.fund(env.current()->fees().accountReserve(0), owner);
-            Oracle oracle(
+            Oracle const oracle(
                 env,
                 {.owner = owner,
                  .fee = static_cast<int>(env.current()->fees().base.drops()),
@@ -303,7 +303,7 @@ private:
             Env env(*this);
             auto const baseFee = static_cast<int>(env.current()->fees().base.drops());
             env.fund(XRP(1'000), owner);
-            Oracle oracle(
+            Oracle const oracle(
                 env,
                 {.owner = owner,
                  .series = {{"USD", "USD", 740, 1}},
@@ -316,7 +316,7 @@ private:
             Env env(*this);
             auto const baseFee = static_cast<int>(env.current()->fees().base.drops());
             env.fund(XRP(1'000), owner);
-            Oracle oracle(
+            Oracle const oracle(
                 env,
                 {.owner = owner,
                  .series = {{"USD", "BTC", 740, maxPriceScale + 1}},
@@ -355,7 +355,7 @@ private:
             Env env(*this);
             env.fund(XRP(1'000), owner);
             Oracle oracle(env, {.owner = owner, .fee = -1, .err = ter(temBAD_FEE)});
-            Oracle oracle1(
+            Oracle const oracle1(
                 env, {.owner = owner, .fee = static_cast<int>(env.current()->fees().base.drops())});
             oracle.set(UpdateArg{.owner = owner, .fee = -1, .err = ter(temBAD_FEE)});
         }
@@ -372,7 +372,7 @@ private:
             auto const baseFee = static_cast<int>(env.current()->fees().base.drops());
             env.fund(XRP(1'000), owner);
             auto const count = ownerCount(env, owner);
-            Oracle oracle(env, {.owner = owner, .series = series, .fee = baseFee});
+            Oracle const oracle(env, {.owner = owner, .series = series, .fee = baseFee});
             BEAST_EXPECT(oracle.exists());
             BEAST_EXPECT(ownerCount(env, owner) == (count + adj));
             auto const entry = oracle.ledgerEntry();
@@ -507,9 +507,9 @@ private:
             auto const acctDelFee{drops(env.current()->fees().increment)};
             env.fund(XRP(1'000), owner);
             env.fund(XRP(1'000), alice);
-            Oracle oracle(
+            Oracle const oracle(
                 env, {.owner = owner, .series = {{"XRP", "USD", 740, 1}}, .fee = baseFee});
-            Oracle oracle1(
+            Oracle const oracle1(
                 env,
                 {.owner = owner,
                  .documentID = 2,
@@ -765,7 +765,7 @@ private:
 
         env.fund(XRP(1'000), owner);
         {
-            Oracle oracle(env, {.owner = owner, .fee = baseFee, .err = ter(temDISABLED)});
+            Oracle const oracle(env, {.owner = owner, .fee = baseFee, .err = ter(temDISABLED)});
         }
 
         {
