@@ -23,8 +23,7 @@
 #include <exception>
 #include <string>
 
-namespace xrpl {
-namespace RPC {
+namespace xrpl::RPC {
 
 namespace {
 
@@ -238,5 +237,4 @@ roleRequired(unsigned int version, bool betaEnabled, std::string const& method)
     return handler->role_;
 }
 
-}  // namespace RPC
-}  // namespace xrpl
+}  // namespace xrpl::RPC
