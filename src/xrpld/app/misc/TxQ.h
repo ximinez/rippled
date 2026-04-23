@@ -603,7 +603,8 @@ private:
         TxConsequences const&
         consequences() const
         {
-            return pfResult->consequences;
+            return pfResult->consequences;  // NOLINT(bugprone-unchecked-optional-access) invariant:
+                                            // pfResult is never empty
         }
 
         /// Return a TxDetails based on contained information.
@@ -618,7 +619,8 @@ private:
                 seqProxy,
                 txn,
                 retriesRemaining,
-                pfResult->ter,
+                pfResult->ter,  // NOLINT(bugprone-unchecked-optional-access) invariant: pfResult is
+                                // never empty
                 lastResult};
         }
     };
