@@ -106,8 +106,11 @@ public:
         st[sfPublicKey] = pk;
         st[sfSigningPubKey] = spk;
 
+        // NOLINTBEGIN(bugprone-unchecked-optional-access) publicKeyType returns value for valid
+        // keys
         sign(st, HashPrefix::manifest, *publicKeyType(spk), ssk);
         sign(st, HashPrefix::manifest, *publicKeyType(pk), sk, sfMasterSignature);
+        // NOLINTEND(bugprone-unchecked-optional-access)
 
         Serializer s;
         st.add(s);
@@ -516,7 +519,9 @@ private:
             {
                 if (ssl)
                 {
-                    http::read(*ssl_stream, sb, req, ec);
+                    http::read(
+                        *ssl_stream, sb, req, ec);  // NOLINT(bugprone-unchecked-optional-access)
+                                                    // ssl_stream emplaced when ssl==true
                 }
                 else
                 {
@@ -665,7 +670,8 @@ private:
 
             if (ssl)
             {
-                write(*ssl_stream, res, ec);
+                write(*ssl_stream, res, ec);  // NOLINT(bugprone-unchecked-optional-access)
+                                              // ssl_stream emplaced when ssl==true
             }
             else
             {
@@ -678,7 +684,8 @@ private:
 
         // Perform the SSL shutdown
         if (ssl)
-            ssl_stream->shutdown(ec);
+            ssl_stream->shutdown(ec);  // NOLINT(bugprone-unchecked-optional-access) ssl_stream
+                                       // emplaced when ssl==true
     }
 };
 
