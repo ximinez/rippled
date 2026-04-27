@@ -447,7 +447,7 @@ private:
         };
 
         /// Get the current @ref Snapshot
-        Snapshot
+        [[nodiscard]] Snapshot
         getSnapshot() const
         {
             return {.txnsExpected = txnsExpected_, .escalationMultiplier = escalationMultiplier_};
@@ -600,7 +600,7 @@ private:
 
         /// Potential @ref TxConsequences of applying this transaction
         /// to the open ledger.
-        TxConsequences const&
+        [[nodiscard]] TxConsequences const&
         consequences() const
         {
             return pfResult->consequences;  // NOLINT(bugprone-unchecked-optional-access) invariant:
@@ -608,7 +608,7 @@ private:
         }
 
         /// Return a TxDetails based on contained information.
-        TxDetails
+        [[nodiscard]] TxDetails
         getTxDetails() const
         {
             return {
@@ -690,21 +690,21 @@ private:
         explicit TxQAccount(AccountID const& account);
 
         /// Return the number of transactions currently queued for this account
-        std::size_t
+        [[nodiscard]] std::size_t
         getTxnCount() const
         {
             return transactions.size();
         }
 
         /// Checks if this account has no transactions queued
-        bool
+        [[nodiscard]] bool
         empty() const
         {
             return getTxnCount() == 0u;
         }
 
         /// Find the entry in transactions that precedes seqProx, if one does.
-        TxMap::const_iterator
+        [[nodiscard]] TxMap::const_iterator
         getPrevTx(SeqProxy seqProx) const;
 
         /// Add a transaction candidate to this account for queuing
