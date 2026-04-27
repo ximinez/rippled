@@ -181,7 +181,7 @@ private:
             }
         }
 
-        std::chrono::milliseconds
+        [[nodiscard]] std::chrono::milliseconds
         get() const
         {
             return lastSample_.load();
