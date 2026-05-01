@@ -376,7 +376,7 @@ TxQ::~TxQ()
 
 template <size_t fillPercentage>
 bool
-TxQ::isFull(std::lock_guard<std::mutex> const&) const
+TxQ::isFull(std::scoped_lock<std::mutex> const&) const
 {
     static_assert(fillPercentage > 0 && fillPercentage <= 100, "Invalid fill percentage");
     return maxSize_ && byFee_.size() >= (*maxSize_ * fillPercentage / 100);
@@ -390,7 +390,7 @@ TxQ::canBeHeld(
     std::shared_ptr<SLE const> const& sleAccount,
     AccountMap::iterator const& accountIter,
     std::optional<TxQAccount::TxMap::iterator> const& replacementIter,
-    std::lock_guard<std::mutex> const& lock)
+    std::scoped_lock<std::mutex> const& lock)
 {
     // PreviousTxnID is deprecated and should never be used.
     // AccountTxnID is not supported by the transaction
@@ -454,7 +454,7 @@ TxQ::canBeHeld(
 }
 
 auto
-TxQ::erase(TxQ::FeeMultiSet::const_iterator_type candidateIter, std::lock_guard<std::mutex> const&)
+TxQ::erase(TxQ::FeeMultiSet::const_iterator_type candidateIter, std::scoped_lock<std::mutex> const&)
     -> FeeMultiSet::iterator_type
 {
     auto& txQAccount = byAccount_.at(candidateIter->account);
@@ -472,7 +472,7 @@ TxQ::erase(TxQ::FeeMultiSet::const_iterator_type candidateIter, std::lock_guard<
 auto
 TxQ::eraseAndAdvance(
     TxQ::FeeMultiSet::const_iterator_type candidateIter,
-    std::lock_guard<std::mutex> const&) -> FeeMultiSet::iterator_type
+    std::scoped_lock<std::mutex> const&) -> FeeMultiSet::iterator_type
 {
     auto& txQAccount = byAccount_.at(candidateIter->account);
     auto const accountIter = txQAccount.transactions.find(candidateIter->seqProxy);
@@ -508,7 +508,7 @@ TxQ::erase(
     TxQ::TxQAccount& txQAccount,
     TxQ::TxQAccount::TxMap::const_iterator begin,
     TxQ::TxQAccount::TxMap::const_iterator end,
-    std::lock_guard<std::mutex> const&) -> TxQAccount::TxMap::iterator
+    std::scoped_lock<std::mutex> const&) -> TxQAccount::TxMap::iterator
 {
     for (auto it = begin; it != end; ++it)
     {
@@ -529,7 +529,7 @@ TxQ::tryClearAccountQueueUpThruTx(
     std::size_t const txExtraCount,
     ApplyFlags flags,
     FeeMetrics::Snapshot const& metricsSnapshot,
-    std::lock_guard<std::mutex> const& lock,
+    std::scoped_lock<std::mutex> const& lock,
     beast::Journal j)
 {
     SeqProxy const tSeqProx{tx.getSeqProxy()};
@@ -779,7 +779,7 @@ TxQ::apply(
         return {terPRE_TICKET, false};
     }
 
-    std::lock_guard const lock(mutex_);
+    std::scoped_lock const lock(mutex_);
 
     // accountIter is not const because it may be updated further down.
     AccountMap::iterator accountIter = byAccount_.find(account);
@@ -1337,7 +1337,7 @@ TxQ::apply(
 void
 TxQ::processClosedLedger(Application& app, ReadView const& view, bool timeLeap)
 {
-    std::lock_guard const lock(mutex_);
+    std::scoped_lock const lock(mutex_);
 
     feeMetrics_.update(app, view, timeLeap, setup_);
     auto const& snapshot = feeMetrics_.getSnapshot();
@@ -1416,7 +1416,7 @@ TxQ::accept(Application& app, OpenView& view)
 
     auto ledgerChanged = false;
 
-    std::lock_guard const lock(mutex_);
+    std::scoped_lock const lock(mutex_);
 
     auto const metricsSnapshot = feeMetrics_.getSnapshot();
 
@@ -1580,7 +1580,7 @@ TxQ::accept(Application& app, OpenView& view)
 SeqProxy
 TxQ::nextQueuableSeq(std::shared_ptr<SLE const> const& sleAccount) const
 {
-    std::lock_guard<std::mutex> const lock(mutex_);
+    std::scoped_lock const lock(mutex_);
     return nextQueuableSeqImpl(sleAccount, lock);
 }
 
@@ -1593,7 +1593,7 @@ TxQ::nextQueuableSeq(std::shared_ptr<SLE const> const& sleAccount) const
 SeqProxy
 TxQ::nextQueuableSeqImpl(
     std::shared_ptr<SLE const> const& sleAccount,
-    std::lock_guard<std::mutex> const&) const
+    std::scoped_lock<std::mutex> const&) const
 {
     // If the account is not in the ledger or a non-account was passed
     // then return zero.  We have no idea.
@@ -1642,7 +1642,7 @@ TxQ::getRequiredFeeLevel(
     OpenView& view,
     ApplyFlags flags,
     FeeMetrics::Snapshot const& metricsSnapshot,
-    std::lock_guard<std::mutex> const& lock)
+    std::scoped_lock<std::mutex> const& lock)
 {
     return FeeMetrics::scaleFeeLevel(metricsSnapshot, view);
 }
@@ -1670,7 +1670,7 @@ TxQ::tryDirectApply(
     if (txSeqProx.isSeq() && txSeqProx != acctSeqProx)
         return {};
 
-    std::lock_guard const lock(mutex_);
+    std::scoped_lock const lock(mutex_);
     FeeLevel64 const requiredFeeLevel = [this, &view, flags, &lock]() {
         return getRequiredFeeLevel(view, flags, feeMetrics_.getSnapshot(), lock);
     }();
@@ -1716,7 +1716,7 @@ std::optional<TxQ::TxQAccount::TxMap::iterator>
 TxQ::removeFromByFee(
     std::optional<TxQAccount::TxMap::iterator> const& replacedTxIter,
     std::shared_ptr<STTx const> const& tx,
-    std::lock_guard<std::mutex> const& lock)
+    std::scoped_lock<std::mutex> const& lock)
 {
     if (replacedTxIter && tx)
     {
@@ -1744,7 +1744,7 @@ TxQ::getMetrics(OpenView const& view) const
 {
     Metrics result;
 
-    std::lock_guard const lock(mutex_);
+    std::scoped_lock const lock(mutex_);
 
     auto const snapshot = feeMetrics_.getSnapshot();
 
@@ -1766,7 +1766,7 @@ TxQ::getTxRequiredFeeAndSeq(OpenView const& view, std::shared_ptr<STTx const> co
 {
     auto const account = (*tx)[sfAccount];
 
-    std::lock_guard const lock(mutex_);
+    std::scoped_lock const lock(mutex_);
 
     auto const snapshot = feeMetrics_.getSnapshot();
     auto const baseFee = calculateBaseFee(view, *tx);
@@ -1788,7 +1788,7 @@ TxQ::getAccountTxs(AccountID const& account) const
 {
     std::vector<TxDetails> result;
 
-    std::lock_guard const lock(mutex_);
+    std::scoped_lock const lock(mutex_);
 
     AccountMap::const_iterator const accountIter{byAccount_.find(account)};
 
@@ -1808,7 +1808,7 @@ TxQ::getTxs() const
 {
     std::vector<TxDetails> result;
 
-    std::lock_guard const lock(mutex_);
+    std::scoped_lock const lock(mutex_);
 
     result.reserve(byFee_.size());
 

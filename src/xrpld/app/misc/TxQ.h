@@ -344,7 +344,7 @@ private:
     SeqProxy
     nextQueuableSeqImpl(
         std::shared_ptr<SLE const> const& sleAccount,
-        std::lock_guard<std::mutex> const&) const;
+        std::scoped_lock<std::mutex> const&) const;
 
     /**
         Track and use the fee escalation metrics of the
@@ -701,7 +701,7 @@ private:
         OpenView& view,
         ApplyFlags flags,
         FeeMetrics::Snapshot const& metricsSnapshot,
-        std::lock_guard<std::mutex> const& lock);
+        std::scoped_lock<std::mutex> const& lock);
 
     // Helper function for TxQ::apply.  If a transaction's fee is high enough,
     // attempt to directly apply that transaction to the ledger.
@@ -718,7 +718,7 @@ private:
     removeFromByFee(
         std::optional<TxQAccount::TxMap::iterator> const& replacedTxIter,
         std::shared_ptr<STTx const> const& tx,
-        std::lock_guard<std::mutex> const&);
+        std::scoped_lock<std::mutex> const&);
 
     using FeeHook = boost::intrusive::
         member_hook<MaybeTx, boost::intrusive::set_member_hook<>, &MaybeTx::byFeeListHook>;
@@ -773,7 +773,7 @@ private:
     /// Is the queue at least `fillPercentage` full?
     template <size_t fillPercentage = 100>
     bool
-    isFull(std::lock_guard<std::mutex> const&) const;
+    isFull(std::scoped_lock<std::mutex> const&) const;
 
     /** Checks if the indicated transaction fits the conditions
         for being stored in the queue.
@@ -786,24 +786,24 @@ private:
         std::shared_ptr<SLE const> const& sleAccount,
         AccountMap::iterator const&,
         std::optional<TxQAccount::TxMap::iterator> const&,
-        std::lock_guard<std::mutex> const&);
+        std::scoped_lock<std::mutex> const&);
 
     /// Erase and return the next entry in byFee_ (lower fee level)
     FeeMultiSet::iterator_type
-    erase(FeeMultiSet::const_iterator_type, std::lock_guard<std::mutex> const&);
+    erase(FeeMultiSet::const_iterator_type, std::scoped_lock<std::mutex> const&);
     /** Erase and return the next entry for the account (if fee level
         is higher), or next entry in byFee_ (lower fee level).
         Used to get the next "applicable" MaybeTx for accept().
     */
     FeeMultiSet::iterator_type
-    eraseAndAdvance(FeeMultiSet::const_iterator_type, std::lock_guard<std::mutex> const&);
+    eraseAndAdvance(FeeMultiSet::const_iterator_type, std::scoped_lock<std::mutex> const&);
     /// Erase a range of items, based on TxQAccount::TxMap iterators
     TxQAccount::TxMap::iterator
     erase(
         TxQAccount& txQAccount,
         TxQAccount::TxMap::const_iterator begin,
         TxQAccount::TxMap::const_iterator end,
-        std::lock_guard<std::mutex> const&);
+        std::scoped_lock<std::mutex> const&);
 
     /**
         All-or-nothing attempt to try to apply the queued txs for
@@ -822,7 +822,7 @@ private:
         std::size_t const txExtraCount,
         ApplyFlags flags,
         FeeMetrics::Snapshot const& metricsSnapshot,
-        std::lock_guard<std::mutex> const&,
+        std::scoped_lock<std::mutex> const&,
         beast::Journal j);
 };
 
