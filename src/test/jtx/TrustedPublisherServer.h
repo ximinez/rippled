@@ -101,7 +101,7 @@ public:
         SecretKey const& ssk,
         int seq)
     {
-        STObject st(kSF_GENERIC);
+        STObject st(kSfGeneric);
         st[sfSequence] = seq;
         st[sfPublicKey] = pk;
         st[sfSigningPubKey] = spk;
@@ -346,7 +346,7 @@ public:
     static std::string const&
     cert()
     {
-        static std::string const kCERT{R"cert(
+        static std::string const kCert{R"cert(
 -----BEGIN CERTIFICATE-----
 MIIDczCCAlugAwIBAgIBATANBgkqhkiG9w0BAQsFADBjMQswCQYDVQQGEwJVUzEL
 MAkGA1UECAwCQ0ExFDASBgNVBAcMC0xvcyBBbmdlbGVzMRswGQYDVQQKDBJyaXBw
@@ -369,13 +369,13 @@ GSGO8NEEq8BTVmp69zD1JyfvQcXzsi7WtkAX+/EOFZ7LesnZ6VsyjZ74wECCaQuD
 X1yu/XxHqchM+DOzzVw6wRKaM7Zsk80=
 -----END CERTIFICATE-----
 )cert"};
-        return kCERT;
+        return kCert;
     }
 
     static std::string const&
     key()
     {
-        static std::string const kEY{R"pkey(
+        static std::string const kKey{R"pkey(
 -----BEGIN RSA PRIVATE KEY-----
 MIIEpAIBAAKCAQEAueZ1hgRxwPgfeVx2AdngUYx7zYcaxcGYXyqi7izJqTuBUcVc
 TRC/9Ip67RAEhfcgGudRS/a4Sv1ljwiRknSCcD/ZjzOFDLgbqYGSZNEs+T/qkwmc
@@ -404,13 +404,13 @@ cK55dMILcbHqeIBq/wR6sIhw6IJcaDBfFfrJiKKDilfij2lHxR2FQrEngtTCCRV+
 ZzARzaWhQPvbDqEtLJDWuXZNXfL8/PTIs5NmuKuQ8F4+gQJpkQgwaw==
 -----END RSA PRIVATE KEY-----
 )pkey"};
-        return kEY;
+        return kKey;
     }
 
     static std::string const&
     caCert()
     {
-        static std::string const kCERT{R"cert(
+        static std::string const kCert{R"cert(
 -----BEGIN CERTIFICATE-----
 MIIDpzCCAo+gAwIBAgIUWc45WqaaNuaSLoFYTMC/Mjfqw/gwDQYJKoZIhvcNAQEL
 BQAwYzELMAkGA1UEBhMCVVMxCzAJBgNVBAgMAkNBMRQwEgYDVQQHDAtMb3MgQW5n
@@ -434,7 +434,7 @@ mRMyNekaRw+Npy4Hjou5sx272cXHHmPCSF5TjwdaibSaGjx1k0Q50mOf7S9KG5b5
 7X1e3FekJlaD02EBEhtkXURIxogOQALdFncj
 -----END CERTIFICATE-----
 )cert"};
-        return kCERT;
+        return kCert;
     }
 
     static std::string const&
@@ -552,11 +552,11 @@ private:
                     else
                     {
                         int refresh = 5;
-                        constexpr char const* kREFRESH_PREFIX = "/validators2/refresh/";
-                        if (boost::starts_with(path, kREFRESH_PREFIX))
+                        static constexpr char const* kRefreshPrefix = "/validators2/refresh/";
+                        if (boost::starts_with(path, kRefreshPrefix))
                         {
                             refresh = boost::lexical_cast<unsigned int>(
-                                path.substr(strlen(kREFRESH_PREFIX)));
+                                path.substr(strlen(kRefreshPrefix)));
                         }
                         res.body() = getList2_(refresh);
                     }
@@ -576,11 +576,11 @@ private:
                     else
                     {
                         int refresh = 5;
-                        constexpr char const* kREFRESH_PREFIX = "/validators/refresh/";
-                        if (boost::starts_with(path, kREFRESH_PREFIX))
+                        static constexpr char const* kRefreshPrefix = "/validators/refresh/";
+                        if (boost::starts_with(path, kRefreshPrefix))
                         {
                             refresh = boost::lexical_cast<unsigned int>(
-                                path.substr(strlen(kREFRESH_PREFIX)));
+                                path.substr(strlen(kRefreshPrefix)));
                         }
                         res.body() = getList_(refresh);
                     }
