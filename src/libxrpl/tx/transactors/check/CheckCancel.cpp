@@ -14,8 +14,6 @@
 #include <xrpl/tx/Transactor.h>
 
 #include <cstdint>
-#include <memory>
-
 namespace xrpl {
 
 NotTEC
@@ -93,8 +91,7 @@ CheckCancel::doApply()
     }
 
     // If we succeeded, update the check owner's reserve.
-    auto const sleSrc = view().peek(keylet::account(srcId));
-    adjustOwnerCount(view(), sleSrc, -1, viewJ);
+    decreaseOwnerCountForObject(view(), srcId, sleCheck, 1, viewJ);
 
     // Remove check from ledger.
     view().erase(sleCheck);
@@ -102,10 +99,7 @@ CheckCancel::doApply()
 }
 
 void
-CheckCancel::visitInvariantEntry(
-    bool,
-    std::shared_ptr<SLE const> const&,
-    std::shared_ptr<SLE const> const&)
+CheckCancel::visitInvariantEntry(bool, SLE::const_ref, SLE::const_ref)
 {
     // No transaction-specific invariants yet (future work).
 }
