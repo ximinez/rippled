@@ -1,16 +1,20 @@
 #pragma once
 
 #include <xrpl/basics/CountedObject.h>
+#include <xrpl/basics/UnorderedContainers.h>
 #include <xrpl/beast/utility/instrumentation.h>
 #include <xrpl/json/json_value.h>
-#include <xrpl/protocol/Asset.h>
+#include <xrpl/protocol/AccountID.h>
 #include <xrpl/protocol/PathAsset.h>
 #include <xrpl/protocol/SField.h>
 #include <xrpl/protocol/STBase.h>
+#include <xrpl/protocol/Serializer.h>
 #include <xrpl/protocol/UintTypes.h>
 
 #include <cstddef>
 #include <optional>
+#include <utility>
+#include <vector>
 
 namespace xrpl {
 
@@ -21,8 +25,8 @@ class STPathElement final : public CountedObject<STPathElement>
     PathAsset assetID_;
     AccountID issuerID_;
 
-    bool is_offer_;
-    std::size_t hash_value_;
+    bool isOffer_;
+    std::size_t hashValue_;
 
 public:
     // Bitwise values (typeCurrency | typeMPT)
@@ -105,11 +109,11 @@ public:
     [[nodiscard]] bool
     isType(Type const& pe) const;
 
-    bool
-    operator==(STPathElement const& t) const;
+    [[nodiscard]] size_t
+    getHash() const;
 
     bool
-    operator!=(STPathElement const& t) const;
+    operator==(STPathElement const& t) const;
 
 private:
     static std::size_t
@@ -168,12 +172,23 @@ public:
     reserve(size_t s);
 };
 
+template <class Hasher>
+void
+hash_append(Hasher& h, STPath const& p) noexcept
+{
+    for (auto const& e : p)
+    {
+        beast::hash_append(h, e.getHash());
+    }
+}
+
 //------------------------------------------------------------------------------
 
 // A set of zero or more payment paths
 class STPathSet final : public STBase, public CountedObject<STPathSet>
 {
     std::vector<STPath> value_;
+    xrpl::hardened_hash_set<STPath> seenHashes_;
 
 public:
     STPathSet() = default;
@@ -202,9 +217,6 @@ public:
     std::vector<STPath>::const_reference
     operator[](std::vector<STPath>::size_type n) const;
 
-    std::vector<STPath>::reference
-    operator[](std::vector<STPath>::size_type n);
-
     [[nodiscard]] std::vector<STPath>::const_iterator
     begin() const;
 
@@ -224,6 +236,9 @@ public:
     void
     emplaceBack(Args&&... args);
 
+    [[nodiscard]] bool
+    contains(STPath const& path) const;
+
 private:
     STBase*
     copy(std::size_t n, void* buf) const override;
@@ -235,9 +250,12 @@ private:
 
 // ------------ STPathElement ------------
 
-inline STPathElement::STPathElement() : type_(TypeNone), is_offer_(true)
+inline STPathElement::STPathElement() : type_(TypeNone), isOffer_(true)
 {
-    hash_value_ = getHash(*this);
+    // hashValue_ is derived from the whole object, so it is computed in the body
+    // once every other member is initialized (as in the other constructors).
+    // NOLINTNEXTLINE(cppcoreguidelines-prefer-member-initializer)
+    hashValue_ = getHash(*this);
 }
 
 inline STPathElement::STPathElement(
@@ -248,11 +266,11 @@ inline STPathElement::STPathElement(
 {
     if (!account)
     {
-        is_offer_ = true;
+        isOffer_ = true;
     }
     else
     {
-        is_offer_ = false;
+        isOffer_ = false;
         accountID_ = *account;
         type_ |= TypeAccount;
         XRPL_ASSERT(
@@ -272,7 +290,7 @@ inline STPathElement::STPathElement(
         XRPL_ASSERT(issuerID_ != noAccount(), "xrpl::STPathElement::STPathElement : issuer is set");
     }
 
-    hash_value_ = getHash(*this);
+    hashValue_ = getHash(*this);
 }
 
 inline STPathElement::STPathElement(
@@ -284,9 +302,9 @@ inline STPathElement::STPathElement(
     , accountID_(account)
     , assetID_(asset)
     , issuerID_(issuer)
-    , is_offer_(isXRP(accountID_))
+    , isOffer_(isXRP(accountID_))
 {
-    if (!is_offer_)
+    if (!isOffer_)
         type_ |= TypeAccount;
 
     if (forceAsset || !isXRP(assetID_))
@@ -295,7 +313,7 @@ inline STPathElement::STPathElement(
     if (!isXRP(issuer))
         type_ |= TypeIssuer;
 
-    hash_value_ = getHash(*this);
+    hashValue_ = getHash(*this);
 }
 
 inline STPathElement::STPathElement(
@@ -307,12 +325,15 @@ inline STPathElement::STPathElement(
     , accountID_(account)
     , assetID_(asset)
     , issuerID_(issuer)
-    , is_offer_(isXRP(accountID_))
+    , isOffer_(isXRP(accountID_))
 {
     assetID_.visit(
         [&](Currency const&) { type_ = type_ & (~Type::TypeMpt); },
         [&](MPTID const&) { type_ = type_ & (~Type::TypeCurrency); });
-    hash_value_ = getHash(*this);
+    // hashValue_ must be computed after type_ is adjusted above, so this cannot
+    // be a member initializer.
+    // NOLINTNEXTLINE(cppcoreguidelines-prefer-member-initializer)
+    hashValue_ = getHash(*this);
 }
 
 inline auto
@@ -324,7 +345,7 @@ STPathElement::getNodeType() const
 inline bool
 STPathElement::isOffer() const
 {
-    return is_offer_;
+    return isOffer_;
 }
 
 inline bool
@@ -404,14 +425,8 @@ STPathElement::getIssuerID() const
 inline bool
 STPathElement::operator==(STPathElement const& t) const
 {
-    return (type_ & TypeAccount) == (t.type_ & TypeAccount) && hash_value_ == t.hash_value_ &&
+    return (type_ & TypeAccount) == (t.type_ & TypeAccount) && hashValue_ == t.hashValue_ &&
         accountID_ == t.accountID_ && assetID_ == t.assetID_ && issuerID_ == t.issuerID_;
-}
-
-inline bool
-STPathElement::operator!=(STPathElement const& t) const
-{
-    return !operator==(t);
 }
 
 // ------------ STPath ------------
@@ -506,12 +521,6 @@ STPathSet::operator[](std::vector<STPath>::size_type n) const
     return value_[n];
 }
 
-inline std::vector<STPath>::reference
-STPathSet::operator[](std::vector<STPath>::size_type n)
-{
-    return value_[n];
-}
-
 inline std::vector<STPath>::const_iterator
 STPathSet::begin() const
 {
@@ -540,6 +549,7 @@ inline void
 STPathSet::pushBack(STPath const& e)
 {
     value_.push_back(e);
+    seenHashes_.emplace(value_.back());
 }
 
 template <typename... Args>
@@ -547,6 +557,13 @@ inline void
 STPathSet::emplaceBack(Args&&... args)
 {
     value_.emplace_back(std::forward<Args>(args)...);
+    seenHashes_.emplace(value_.back());
+}
+
+inline bool
+STPathSet::contains(STPath const& path) const
+{
+    return seenHashes_.contains(path);
 }
 
 }  // namespace xrpl

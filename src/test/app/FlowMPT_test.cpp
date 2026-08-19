@@ -5,6 +5,7 @@
 #include <test/jtx/amount.h>
 #include <test/jtx/balance.h>
 #include <test/jtx/mpt.h>
+#include <test/jtx/offer.h>
 #include <test/jtx/owners.h>
 #include <test/jtx/paths.h>
 #include <test/jtx/pay.h>
@@ -25,11 +26,13 @@
 #include <xrpl/protocol/AccountID.h>
 #include <xrpl/protocol/Asset.h>
 #include <xrpl/protocol/Feature.h>
+#include <xrpl/protocol/Indexes.h>
 #include <xrpl/protocol/Keylet.h>
 #include <xrpl/protocol/LedgerFormats.h>
 #include <xrpl/protocol/SField.h>
 #include <xrpl/protocol/STAmount.h>
 #include <xrpl/protocol/STPathSet.h>
+#include <xrpl/protocol/SeqProxy.h>
 #include <xrpl/protocol/TER.h>
 #include <xrpl/protocol/TxFlags.h>
 #include <xrpl/protocol/XRPAmount.h>
@@ -37,7 +40,6 @@
 #include <xrpl/tx/paths/detail/Steps.h>
 
 #include <cstdint>
-#include <memory>
 #include <optional>
 #include <string>
 #include <type_traits>
@@ -408,7 +410,7 @@ struct FlowMPT_test : public beast::unit_test::Suite
                 env(pay(gw, alice, usd(1'000)));
                 env(pay(gw, bob, eur(1'000)));
 
-                Keylet const bobUsdOffer = keylet::offer(bob, env.seq(bob));
+                Keylet const bobUsdOffer = keylet::offer(bob, SeqProxy::rawSequence(env.seq(bob)));
                 env(offer(bob, usd(10), drops(2)), Txflags(tfPassive));
                 env(offer(bob, drops(1), eur(1'000)), Txflags(tfPassive));
 
@@ -433,7 +435,7 @@ struct FlowMPT_test : public beast::unit_test::Suite
                     env.require(Balance(bob, eur(999)));
 
                     // Show that bob's USD offer is now a blocker.
-                    std::shared_ptr<SLE const> const usdOffer = env.le(bobUsdOffer);
+                    SLE::const_pointer const usdOffer = env.le(bobUsdOffer);
                     if (BEAST_EXPECT(usdOffer))
                     {
                         std::uint64_t const bookRate = [&usdOffer]() {
@@ -726,19 +728,177 @@ struct FlowMPT_test : public beast::unit_test::Suite
     static XRPAmount
     reserve(jtx::Env& env, std::uint32_t count)
     {
-        return env.current()->fees().accountReserve(count);
+        return env.current()->fees().accountReserve(count, 1);
     }
 
     // Helper function that returns the Offers on an account.
-    static std::vector<std::shared_ptr<SLE const>>
+    static std::vector<SLE::const_pointer>
     offersOnAccount(jtx::Env& env, jtx::Account account)
     {
-        std::vector<std::shared_ptr<SLE const>> result;
-        forEachItem(*env.current(), account, [&result](std::shared_ptr<SLE const> const& sle) {
+        std::vector<SLE::const_pointer> result;
+        forEachItem(*env.current(), account, [&result](SLE::const_ref sle) {
             if (sle->getType() == ltOFFER)
                 result.push_back(sle);
         });
         return result;
+    }
+
+    void
+    testOfferOwnerMPTCreation(FeatureBitset features)
+    {
+        using namespace jtx;
+        Account const alice("alice");
+        Account const bob("bob");
+        Account const carol("carol");
+        Account const gw("gw");
+
+        {
+            testcase("Reserve-edge offer owner cannot create another object");
+
+            Env env(*this, features);
+
+            auto const baseFee = env.current()->fees().base;
+            auto const ownerIncrement = reserve(env, 1) - reserve(env, 0);
+            auto const xrpOffer = ownerIncrement - drops(1);
+            auto const bobStart = reserve(env, 2) - drops(1) + baseFee;
+
+            env.fund(XRP(10'000), alice, gw);
+            env.fund(bobStart, bob);
+            env.close();
+
+            MPTTester const usd({.env = env, .issuer = gw, .maxAmt = 10});
+
+            env(offer(bob, usd(1), xrpOffer));
+            env.close();
+
+            env.require(Balance(bob, reserve(env, 2) - drops(1)), Owners(bob, 1));
+
+            // This mirrors the full-crossing setup below. Bob has enough XRP
+            // for the resting offer, but not enough to pay a fee and add
+            // another owner-count object while the offer remains on ledger.
+            env(check::create(bob, alice, drops(1)), Ter(tecINSUFFICIENT_RESERVE));
+            env.close();
+
+            env.require(Owners(bob, 1));
+            BEAST_EXPECT(offersOnAccount(env, bob).size() == 1);
+        }
+
+        {
+            testcase("Reserve-edge offer owner creates MPToken during consume");
+
+            Env env(*this, features);
+
+            auto const baseFee = env.current()->fees().base;
+            auto const ownerIncrement = reserve(env, 1) - reserve(env, 0);
+            auto const xrpOffer = ownerIncrement - drops(1);
+            auto const bobStart = reserve(env, 2) - drops(1) + baseFee;
+
+            env.fund(XRP(10'000), alice, carol, gw);
+            env.fund(bobStart, bob);
+            env.close();
+
+            MPTTester const usd({.env = env, .issuer = gw, .holders = {alice}, .maxAmt = 10});
+
+            env(pay(gw, alice, usd(1)));
+            env(offer(bob, usd(1), xrpOffer));
+            env.close();
+
+            env.require(Balance(bob, reserve(env, 2) - drops(1)), Owners(bob, 1));
+            BEAST_EXPECT(!env.le(keylet::mptoken(usd.issuanceID(), bob.id())));
+            auto const carolXRP = env.balance(carol);
+
+            // Bob has enough XRP for the resting offer but is close to
+            // reserve. The payment should not create Bob's USD MPToken until
+            // the offer is actually consumed, otherwise the temporary owner
+            // count increase can make the offer look underfunded during path
+            // execution.
+            env(pay(alice, carol, xrpOffer),
+                Path(~XRP),
+                Sendmax(usd(1)),
+                Txflags(tfNoRippleDirect));
+            env.close();
+
+            env.require(Balance(carol, carolXRP + xrpOffer));
+            env.require(Balance(bob, usd(1)));
+            env.require(Balance(bob, reserve(env, 1)), Owners(bob, 1));
+            BEAST_EXPECT(env.le(keylet::mptoken(usd.issuanceID(), bob.id())));
+            BEAST_EXPECT(offersOnAccount(env, bob).empty());
+        }
+
+        {
+            testcase("Partial offer owner creates MPToken during consume");
+
+            Env env(*this, features);
+
+            auto const baseFee = env.current()->fees().base;
+            auto const ownerIncrement = reserve(env, 1) - reserve(env, 0);
+            auto const bobStart = reserve(env, 3) + baseFee;
+
+            env.fund(XRP(10'000), alice, carol, gw);
+            env.fund(bobStart, bob);
+            env.close();
+
+            MPTTester const usd({.env = env, .issuer = gw, .holders = {alice}, .maxAmt = 10});
+
+            env(pay(gw, alice, usd(1)));
+            env(offer(bob, usd(2), drops(2 * ownerIncrement)));
+            env.close();
+
+            env.require(Balance(bob, reserve(env, 3)), Owners(bob, 1));
+            BEAST_EXPECT(!env.le(keylet::mptoken(usd.issuanceID(), bob.id())));
+            auto const carolXRP = env.balance(carol);
+
+            // Partial consumption leaves Bob's offer on the ledger, so he ends
+            // up owning both the remaining offer and a newly created MPToken.
+            // The MPToken is created regardless of reserve; this setup simply
+            // funds Bob enough that he still meets reserve(2) afterward (the
+            // under-reserved case is covered in OfferMPT_test's no-reserve-check
+            // testcase).
+            env(pay(alice, carol, drops(ownerIncrement)),
+                Path(~XRP),
+                Sendmax(usd(1)),
+                Txflags(tfNoRippleDirect));
+            env.close();
+
+            env.require(Balance(carol, carolXRP + drops(ownerIncrement)));
+            env.require(Balance(bob, usd(1)));
+            env.require(Balance(bob, reserve(env, 2)), Owners(bob, 2));
+            BEAST_EXPECT(env.le(keylet::mptoken(usd.issuanceID(), bob.id())));
+            BEAST_EXPECT(offersOnAccount(env, bob).size() == 1);
+            BEAST_EXPECT(isOffer(env, bob, usd(1), drops(ownerIncrement)));
+        }
+
+        {
+            testcase("Issuer-owned offer does not create issuer MPToken");
+
+            Env env(*this, features);
+
+            env.fund(XRP(10'000), alice, carol, gw);
+            env.close();
+
+            MPTTester const usd({.env = env, .issuer = gw, .holders = {alice}, .maxAmt = 10});
+
+            env(pay(gw, alice, usd(1)));
+            env(offer(gw, usd(1), drops(1'000)));
+            env.close();
+
+            BEAST_EXPECT(!env.le(keylet::mptoken(usd.issuanceID(), gw.id())));
+            auto const carolXRP = env.balance(carol);
+
+            // The issuer can own an offer that receives its own MPT without an
+            // MPToken. Consuming that offer should keep the issuer side
+            // tokenless.
+            env(pay(alice, carol, drops(1'000)),
+                Path(~XRP),
+                Sendmax(usd(1)),
+                Txflags(tfNoRippleDirect));
+            env.close();
+
+            env.require(Balance(alice, usd(0)));
+            env.require(Balance(carol, carolXRP + drops(1'000)));
+            BEAST_EXPECT(!env.le(keylet::mptoken(usd.issuanceID(), gw.id())));
+            BEAST_EXPECT(offersOnAccount(env, gw).empty());
+        }
     }
 
     void
@@ -1792,7 +1952,7 @@ struct FlowMPT_test : public beast::unit_test::Suite
                 // but OutstandingAmount is 300USD because gw's sell offer is balanced out by
                 // gw's buy offer.
                 //*maxAmt sendMax limitEUR expectEUR outstandingUSD edBuy danBuy bobSell gwXRP offersGw lastGw
-                {  400,   400,    400,     400,      300,           100,  100,   100,    1100, 0,       false},
+                {  .maxAmt=400,   .sendMax=400,    .dstTrustLimit=400,     .dstExpectEUR=400,      .outstandingUSD=300,           .expEdBuyUSD=100,  .expDanBuyUSD=100,   .expBobSellUSD=100,    .expGwXRP=1100, .expOffersGw=0,       .lastGwBuyUSD=false},
                 // Sell USD: alice, carol, bob, gw are consumed.
                 // Buy USD: john, gw, dan, ed (partially) are consumed.
                 // gw's sell USD is partially consumed because there is available balance (50USD).
@@ -1801,32 +1961,32 @@ struct FlowMPT_test : public beast::unit_test::Suite
                 // gw's offer is removed from the order book because it's partially consumed and
                 // the remaining offer is unfunded.
                 //*maxAmt sendMax limitEUR expectEUR outstandingUSD edBuy danBuy bobSell gwXRP offersGw lastGw
-                {  350,   400,    400,     350,      250,           50,   100,   100,    1050, 0,       false},
+                {  .maxAmt=350,   .sendMax=400,    .dstTrustLimit=400,     .dstExpectEUR=350,      .outstandingUSD=250,           .expEdBuyUSD=50,   .expDanBuyUSD=100,   .expBobSellUSD=100,    .expGwXRP=1050, .expOffersGw=0,       .lastGwBuyUSD=false},
                 // Sell USD: alice, carol, bob are consumed; gw's is unfunded
                 //   since OutstandingAmount is initially at MaximumAmount.
                 // Buy USD: john, gw, dan are consumed; ed's remains on the order
                 //   book since 300USD is the sell limit.
                 //*maxAmt sendMax limitEUR expectEUR outstandingUSD edBuy danBuy bobSell gwXRP offersGw lastGw
-                {  300,   400,    400,     300,      200,           0,    100,   100,    1000, 0,       false},
+                {  .maxAmt=300,   .sendMax=400,    .dstTrustLimit=400,     .dstExpectEUR=300,      .outstandingUSD=200,           .expEdBuyUSD=0,    .expDanBuyUSD=100,   .expBobSellUSD=100,    .expGwXRP=1000, .expOffersGw=0,       .lastGwBuyUSD=false},
                 // Same as above. bill's trustline limit sets the output to 300USD.
                 //*maxAmt sendMax limitEUR expectEUR outstandingUSD edBuy danBuy bobSell gwXRP offersGw lastGw
-                {  300,   400,    300,     300,      200,           0,    100,   100,    1000, 0,       false},
+                {  .maxAmt=300,   .sendMax=400,    .dstTrustLimit=300,     .dstExpectEUR=300,      .outstandingUSD=200,           .expEdBuyUSD=0,    .expDanBuyUSD=100,   .expBobSellUSD=100,    .expGwXRP=1000, .expOffersGw=0,       .lastGwBuyUSD=false},
                 // Sell USD: alice, carol, bob are consumed; gw's removed from
                 //   the order book since it's unfunded.
                 // Buy USD: john, gw, dan are consumed; ed's  remains on the order
                 //   book since 300USD is the limit.
                 //*maxAmt sendMax limitEUR expectEUR outstandingUSD edBuy danBuy bobSell gwXRP offersGw lastGw
-                {  300,   400,    300,     300,      200,           0,    100,   100,    1000, 0,       true},
+                {  .maxAmt=300,   .sendMax=400,    .dstTrustLimit=300,     .dstExpectEUR=300,      .outstandingUSD=200,           .expEdBuyUSD=0,    .expDanBuyUSD=100,   .expBobSellUSD=100,    .expGwXRP=1000, .expOffersGw=0,       .lastGwBuyUSD=true},
                 // Sell USD: alice, carol are consumed; gw's removed from
                 //   the order book in rev pass since it's unfunded; bob's
                 //   remains on the order book.
                 // Buy USD: john, gw; ed's, dan's  remains on the order
                 //   book since 300USD is the limit.
                 //*maxAmt sendMax limitEUR expectEUR outstandingUSD edBuy danBuy bobSell gwXRP offersGw lastGw
-                {  300,   200,    300,     200,      200,           0,    0,     0,      1000, 0,       false},
+                {  .maxAmt=300,   .sendMax=200,    .dstTrustLimit=300,     .dstExpectEUR=200,      .outstandingUSD=200,           .expEdBuyUSD=0,    .expDanBuyUSD=0,     .expBobSellUSD=0,      .expGwXRP=1000, .expOffersGw=0,       .lastGwBuyUSD=false},
                 // Same as three tests above since limited by buy 300USD (gw offer is unfunded)
                 //*maxAmt sendMax limitEUR expectEUR outstandingUSD edBuy danBuy bobSell gwXRP offersGw lastGw
-                {  300,   380,    400,     300,      200,           0,    100,   100,    1000, 0,       false},
+                {  .maxAmt=300,   .sendMax=380,    .dstTrustLimit=400,     .dstExpectEUR=300,      .outstandingUSD=200,           .expEdBuyUSD=0,    .expDanBuyUSD=100,   .expBobSellUSD=100,    .expGwXRP=1000, .expOffersGw=0,       .lastGwBuyUSD=false},
             };
             // clang-format on
             for (auto const& t : tests)
@@ -1912,26 +2072,26 @@ struct FlowMPT_test : public beast::unit_test::Suite
                 // Gw gets 300USD from alice; carol and bob buy 200USD,
                 // therefore OutstandingAmount is 200.
                 //*maxAmt sendMax gwOffer dstXRP outstandingUSD bobBuy gwXRP offersGw lastGw
-                { 300,    300,    100,    1300,  200,           100,   900,  0,       false},
+                { .maxAmt=300,    .sendMax=300,    .gwOffer=100,    .dstExpectXRP=1300,  .outstandingUSD=200,           .expBobBuyUSD=100,   .expGwXRP=900,  .expOffersGw=0,       .lastGwBuyUSD=false},
                 // Same as above. Gw offer location in the order book doesn't matter
                 //*maxAmt sendMax gwOffer dstXRP outstandingUSD bobBuy gwXRP offersGw lastGw
-                { 300,    300,    100,    1300,  200,           100,   900,  0,       true},
+                { .maxAmt=300,    .sendMax=300,    .gwOffer=100,    .dstExpectXRP=1300,  .outstandingUSD=200,           .expBobBuyUSD=100,   .expGwXRP=900,  .expOffersGw=0,       .lastGwBuyUSD=true},
                 // Buy USD: carol, gw are consumed. bob's offer remains on the order book.
                 // Gw gets 300USD from alice; carol buys 100USD,
                 // therefore OutstandingAmount is 100.
                 //*maxAmt sendMax gwOffer dstXRP outstandingUSD bobBuy gwXRP offersGw lastGw
-                { 300,    300,    200,    1300,  100,           0,     800,  0,       false},
+                { .maxAmt=300,    .sendMax=300,    .gwOffer=200,    .dstExpectXRP=1300,  .outstandingUSD=100,           .expBobBuyUSD=0,     .expGwXRP=800,  .expOffersGw=0,       .lastGwBuyUSD=false},
                 // Buy USD: carol, bob are consumed; gw's is partially consumed (100/100) since it's last.
                 // Gw gets 300USD from alice; carol and bob buy 200USD,
                 // therefore OutstandingAmount is 200.
                 //*maxAmt sendMax gwOffer dstXRP outstandingUSD bobBuy gwXRP offersGw lastGw
-                { 300,    300,    200,    1300,  200,           100,   900,  1,       true},
+                { .maxAmt=300,    .sendMax=300,    .gwOffer=200,    .dstExpectXRP=1300,  .outstandingUSD=200,           .expBobBuyUSD=100,   .expGwXRP=900,  .expOffersGw=1,       .lastGwBuyUSD=true},
                 // Buy USD: carol, bob are consumed; gw's is partially consumed (50/50) since it's last
                 // and sendMax limits the output.
                 // Gw gets 250USD from alice; carol and bob buy 200USD, alice has 50USD left,
                 // therefore OutstandingAmount is 200.
                 //*maxAmt sendMax gwOffer dstXRP outstandingUSD bobBuy gwXRP offersGw lastGw
-                { 300,    250,    200,    1250,  250,           100,   950,  1,       true},
+                { .maxAmt=300,    .sendMax=250,    .gwOffer=200,    .dstExpectXRP=1250,  .outstandingUSD=250,           .expBobBuyUSD=100,   .expGwXRP=950,  .expOffersGw=1,       .lastGwBuyUSD=true},
             };
             // clang-format on
             for (auto const& t : tests)
@@ -2024,10 +2184,10 @@ struct FlowMPT_test : public beast::unit_test::Suite
                 // Sell USD: carol, gw, bob are consumed.
                 // ed buys 300USD from carol, gw, bob therefore OutstandingAmount is 300.
                 //*maxAmt sendMax initDst gwOffer dstUSD outstandingUSD aliceXRP bobSell gwXRP offersGw lastGw
-                { 300,    300,    0,      100,    300,   300,           700,     100,    1100, 0,       false},
+                { .maxAmt=300,    .sendMax=300,    .initDst=0,      .gwOffer=100,    .dstExpectUSD=300,   .outstandingUSD=300,           .expAliceXRP=700,     .expBobSellUSD=100,    .expGwXRP=1100, .expOffersGw=0,       .lastGwBuyUSD=false},
                 // Same as above. Gw offer location in the order book doesn't matter
                 //*maxAmt sendMax initDst gwOffer dstUSD outstandingUSD aliceXRP bobSell gwXRP offersGw lastGw
-                { 300,    300,    0,      100,    300,   300,           700,     100,    1100, 0,       true},
+                { .maxAmt=300,    .sendMax=300,    .initDst=0,      .gwOffer=100,    .dstExpectUSD=300,   .outstandingUSD=300,           .expAliceXRP=700,     .expBobSellUSD=100,    .expGwXRP=1100, .expOffersGw=0,       .lastGwBuyUSD=true},
                 // Sell USD: carol, bob are consumed, gw is partially consumed.
                 // ed buys 200 from carol and bob and 50 from gw because gw can only issue 50
                 // (300(max) - 200(carol+bob) - 50(ed)). ed buys 250 from carol, gw, bob and has 50 initially,
@@ -2035,33 +2195,33 @@ struct FlowMPT_test : public beast::unit_test::Suite
                 // gw's offer is removed from the order book because it's partially consumed and the remaining
                 // offer is unfunded.
                 //*maxAmt sendMax initDst gwOffer dstUSD outstandingUSD aliceXRP bobSell gwXRP offersGw lastGw
-                { 300,    300,    50,     100,    300,   300,           750,     100,    1050, 0,       false},
+                { .maxAmt=300,    .sendMax=300,    .initDst=50,     .gwOffer=100,    .dstExpectUSD=300,   .outstandingUSD=300,           .expAliceXRP=750,     .expBobSellUSD=100,    .expGwXRP=1050, .expOffersGw=0,       .lastGwBuyUSD=false},
                 // Same as above. Gw offer location in the order book doesn't matter.
                 //*maxAmt sendMax initDst gwOffer dstUSD outstandingUSD aliceXRP bobSell gwXRP offersGw lastGw
-                { 300,    300,    50,     100,    300,   300,           750,     100,    1050, 0,       true},
+                { .maxAmt=300,    .sendMax=300,    .initDst=50,     .gwOffer=100,    .dstExpectUSD=300,   .outstandingUSD=300,           .expAliceXRP=750,     .expBobSellUSD=100,    .expGwXRP=1050, .expOffersGw=0,       .lastGwBuyUSD=true},
                 // Same as above. Gw offer size doesn't matter.
                 //*maxAmt sendMax initDst gwOffer dstUSD outstandingUSD aliceXRP bobSell gwXRP offersGw lastGw
-                { 300,    300,    50,     200,    300,   300,           750,     100,    1050, 0,       true},
+                { .maxAmt=300,    .sendMax=300,    .initDst=50,     .gwOffer=200,    .dstExpectUSD=300,   .outstandingUSD=300,           .expAliceXRP=750,     .expBobSellUSD=100,    .expGwXRP=1050, .expOffersGw=0,       .lastGwBuyUSD=true},
                 // Sell USD: carol, gw are consumed, bob is partially consumed.
                 // ed buys 200 from carol and gw and 50 form bob because of sendMax limit. bob keeps 50,
                 // therefore OutstandingAmount is 300.
                 //*maxAmt sendMax initDst gwOffer dstUSD outstandingUSD aliceXRP bobSell gwXRP offersGw lastGw
-                { 300,    250,    0,      100,    250,   300,           750,     50,     1100, 0,       false},
+                { .maxAmt=300,    .sendMax=250,    .initDst=0,      .gwOffer=100,    .dstExpectUSD=250,   .outstandingUSD=300,           .expAliceXRP=750,     .expBobSellUSD=50,     .expGwXRP=1100, .expOffersGw=0,       .lastGwBuyUSD=false},
                 // Sell USD: carol, bob are consumed, gw is partially consumed because of sendMax limit.
                 // ed buys 200 from carol and bob and 50 from gw. Therefore, OutstandingAmount is 250.
                 // gw's offer remains on the order book because it's partially consumed and has more funds.
                 //*maxAmt sendMax initDst gwOffer dstUSD outstandingUSD aliceXRP bobSell gwXRP offersGw lastGw
-                { 300,    250,    0,      100,    250,   250,           750,     100,    1050, 1,       true},
+                { .maxAmt=300,    .sendMax=250,    .initDst=0,      .gwOffer=100,    .dstExpectUSD=250,   .outstandingUSD=250,           .expAliceXRP=750,     .expBobSellUSD=100,    .expGwXRP=1050, .expOffersGw=1,       .lastGwBuyUSD=true},
                 // Sell USD: carol, bob are consumed, gw is partially consumed because of sendMax limit, also
                 // there is only 50 available to issue. ed buys 200 from carol and bob and 50 from gw, plus
                 // he has initially 50, therefore OutstandingAmount is 300.
                 //*maxAmt sendMax initDst gwOffer dstUSD outstandingUSD aliceXRP bobSell gwXRP offersGw lastGw
-                { 300,    250,    50,     100,    300,   300,           750,     100,    1050, 0,       true},
+                { .maxAmt=300,    .sendMax=250,    .initDst=50,     .gwOffer=100,    .dstExpectUSD=300,   .outstandingUSD=300,           .expAliceXRP=750,     .expBobSellUSD=100,    .expGwXRP=1050, .expOffersGw=0,       .lastGwBuyUSD=true},
                 // Sell USD: carol, bob are consumed, gw is not consumed because there is not available funds
                 // to issue. ed buys 200 from carol and bob and, plus he has initially 100,
                 // therefore OutstandingAmount is 300. gw offer is removed because it's unfunded.
                 //*maxAmt sendMax initDst gwOffer dstUSD outstandingUSD aliceXRP bobSell gwXRP offersGw lastGw
-                { 300,    250,    100,    100,    300,   300,           800,     100,    1000, 0,       true},
+                { .maxAmt=300,    .sendMax=250,    .initDst=100,    .gwOffer=100,    .dstExpectUSD=300,   .outstandingUSD=300,           .expAliceXRP=800,     .expBobSellUSD=100,    .expGwXRP=1000, .expOffersGw=0,       .lastGwBuyUSD=true},
             };
             // clang-format on
             for (auto const& t : tests)
@@ -2120,6 +2280,7 @@ struct FlowMPT_test : public beast::unit_test::Suite
         testFalseDry(features);
         testDirectStep(features);
         testBookStep(features);
+        testOfferOwnerMPTCreation(features);
         testTransferRate(features);
         testSelfPayment1(features);
         testSelfPayment2(features);
