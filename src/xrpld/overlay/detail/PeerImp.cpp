@@ -876,6 +876,46 @@ PeerImp::domain() const
 // Protocol logic
 
 void
+logVLBlob(beast::Journal j, ValidatorBlobInfo const& blob, std::size_t count)
+{
+    auto const stream = j.trace();
+    JLOG(stream) << "Blob " << count << " Signature: " << blob.signature;
+    JLOG(stream) << "Blob " << count << " blob: " << base64Decode(blob.blob);
+    JLOG(stream) << "Blob " << count
+                 << " manifest: " << (blob.manifest ? base64Decode(*blob.manifest) : "NONE");
+}
+
+void
+logVLBlob(
+    beast::Journal j,
+    std::pair<std::size_t, ValidatorBlobInfo> const& blob,
+    std::size_t count)
+{
+    logVLBlob(j, blob.second, count);
+}
+
+template <class TBlobs>
+void
+logVL(
+    beast::Journal j,
+    std::string const& manifest,
+    std::uint32_t version,
+    TBlobs const& blobs,
+    uint256 const& hash)
+{
+    auto const stream = j.trace();
+    JLOG(stream) << "Manifest: " << manifest;
+    JLOG(stream) << "Version: " << version;
+    JLOG(stream) << "Hash: " << hash;
+    std::size_t count = 1;
+    for (auto const& blob : blobs)
+    {
+        logVLBlob(j, blob, count);
+        ++count;
+    }
+}
+
+void
 PeerImp::doProtocolStart()
 {
     onReadMessage(error_code(), 0);
@@ -2253,6 +2293,8 @@ PeerImp::onValidatorListMessage(
         return;
     }
 
+    logVL(pJournal_, manifest, version, blobs, hash);
+
     auto const applyResult = app_.getValidators().applyListsAndBroadcast(
         manifest,
         version,
@@ -2294,7 +2336,8 @@ PeerImp::onValidatorListMessage(
                     "xrpl::PeerImp::onValidatorListMessage : lower sequence");
             }
 #endif
-            publisherListSequences_[pubKey] = applyResult.sequence;
+            if (publisherListSequences_[pubKey] < applyResult.sequence)
+                publisherListSequences_[pubKey] = applyResult.sequence;
         }
         break;
         // NOLINTNEXTLINE(bugprone-branch-clone): identical to the next branch only in Release
@@ -2313,8 +2356,31 @@ PeerImp::onValidatorListMessage(
         }
 #endif  // !NDEBUG
 
+            [[fallthrough]];
+        case ListDisposition::Stale: {
+            auto const [pubKey, currentPeerSeq] = [&]() {
+                std::lock_guard<std::mutex> sl(recentLock_);
+                XRPL_ASSERT(
+                    applyResult.sequence && applyResult.publisherKey,
+                    "ripple::PeerImp::onValidatorListMessage : (stale) nonzero "
+                    "sequence");
+                auto const& pubKey = *applyResult.publisherKey;
+                auto const& current = publisherListSequences_[pubKey];
+                XRPL_ASSERT(
+                    current <= applyResult.sequence,
+                    "ripple::PeerImp::onValidatorListMessage : (stale) valid "
+                    "sequence");
+                return std::make_pair(pubKey, current ? current : applyResult.sequence);
+            }();
+            if (currentPeerSeq <= applyResult.sequence)
+            {
+                auto const [sentmanifest, sentversion, sentblobs, senthash] =
+                    app_.getValidators().sendLatestValidatorLists(
+                        *this, currentPeerSeq, pubKey, app_.getHashRouter(), pJournal_);
+                logVL(pJournal_, sentmanifest, sentversion, sentblobs, senthash);
+            }
+        }
         break;
-        case ListDisposition::Stale:
         case ListDisposition::Untrusted:
         case ListDisposition::Invalid:
         case ListDisposition::UnsupportedVersion:
