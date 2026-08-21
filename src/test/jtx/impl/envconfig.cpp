@@ -80,8 +80,8 @@ secureGateway(std::unique_ptr<Config> cfg)
 std::unique_ptr<Config>
 adminLocalnet(std::unique_ptr<Config> cfg)
 {
-    (*cfg)[Sections::kPortRpc].set(Keys::kAdmin, "127.0.0.0/8");
-    (*cfg)[Sections::kPortWs].set(Keys::kAdmin, "127.0.0.0/8");
+    (*cfg)[Sections::kPortRpc].set(Keys::kAdmin, "127.0.0.0/8,[::1]");
+    (*cfg)[Sections::kPortWs].set(Keys::kAdmin, "127.0.0.0/8,[::1]");
     return cfg;
 }
 
@@ -90,8 +90,8 @@ secureGatewayLocalnet(std::unique_ptr<Config> cfg)
 {
     (*cfg)[Sections::kPortRpc].set(Keys::kAdmin, "");
     (*cfg)[Sections::kPortWs].set(Keys::kAdmin, "");
-    (*cfg)[Sections::kPortRpc].set(Keys::kSecureGateway, "127.0.0.0/8");
-    (*cfg)[Sections::kPortWs].set(Keys::kSecureGateway, "127.0.0.0/8");
+    (*cfg)[Sections::kPortRpc].set(Keys::kSecureGateway, "127.0.0.0/8,[::1]");
+    (*cfg)[Sections::kPortWs].set(Keys::kSecureGateway, "127.0.0.0/8,[::1]");
     return cfg;
 }
 std::unique_ptr<Config>
