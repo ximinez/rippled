@@ -2142,7 +2142,7 @@ NetworkOPsImp::switchLastClosedLedger(std::shared_ptr<Ledger const> const& newLC
     clearNeedNetworkLedger();
 
     // Update fee computations.
-    registry_.get().getTxQ().processClosedLedger(registry_.get().getApp(), *newLCL, true);
+    registry_.get().getTxQ().processClosedLedger(registry_.get().getApp(), *newLCL, std::nullopt);
 
     // Caller must own master lock
     {

@@ -99,11 +99,11 @@ increase(FeeLevel64 level, std::uint32_t increasePercent)
 
 //////////////////////////////////////////////////////////////////////////
 
-std::size_t
+bool
 TxQ::FeeMetrics::update(
     Application& app,
     ReadView const& view,
-    bool timeLeap,
+    std::optional<std::chrono::milliseconds> const& roundTime,
     TxQ::Setup const& setup)
 {
     std::vector<FeeLevel64> feeLevels;
@@ -117,10 +117,25 @@ TxQ::FeeMetrics::update(
     std::ranges::sort(feeLevels);
     XRPL_ASSERT(size == feeLevels.size(), "xrpl::TxQ::FeeMetrics::update : fee levels size");
 
+    using namespace std::chrono;
+
+    milliseconds const averageTime = recentRoundTimes_.empty()
+        ? 0ms
+        : milliseconds{
+              std::accumulate(recentRoundTimes_.begin(), recentRoundTimes_.end(), 0ms) /
+              recentRoundTimes_.size()};
+    bool const timeLeap =
+        !roundTime || (roundTime > timeLeapCutoff && roundTime > averageTime * timeLeapFactor);
+    if (roundTime)
+        recentRoundTimes_.push_back(*roundTime);
+
     JLOG((timeLeap ? j_.warn() : j_.debug()))
         << "Ledger " << view.header().seq << " has " << size << " transactions. "
         << "Ledgers are processing " << (timeLeap ? "slowly" : "as expected")
-        << ". Expected transactions is currently " << txnsExpected_ << " and multiplier is "
+        << ". Current consensus round took "
+        << (roundTime ? to_string(roundTime->count()) + "ms" : "INDETERMINATE TIME")
+        << " and recent average round time is " << averageTime.count()
+        << "ms. Expected transactions is currently " << txnsExpected_ << " and multiplier is "
         << escalationMultiplier_;
 
     if (timeLeap)
@@ -176,7 +191,7 @@ TxQ::FeeMetrics::update(
     JLOG(j_.debug()) << "Expected transactions updated to " << txnsExpected_
                      << " and multiplier updated to " << escalationMultiplier_;
 
-    return size;
+    return timeLeap;
 }
 
 FeeLevel64
@@ -1344,11 +1359,14 @@ TxQ::apply(
 
 */
 void
-TxQ::processClosedLedger(Application& app, ReadView const& view, bool timeLeap)
+TxQ::processClosedLedger(
+    Application& app,
+    ReadView const& view,
+    std::optional<std::chrono::milliseconds> const& roundTime)
 {
     std::scoped_lock const lock(mutex_);
 
-    feeMetrics_.update(app, view, timeLeap, setup_);
+    bool const timeLeap = feeMetrics_.update(app, view, roundTime, setup_);
     auto const& snapshot = feeMetrics_.getSnapshot();
 
     auto ledgerSeq = view.header().seq;
