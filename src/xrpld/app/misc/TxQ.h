@@ -871,7 +871,8 @@ private:
     std::optional<TxQAccount::TxMap::iterator>
     removeFromByFee(
         std::optional<TxQAccount::TxMap::iterator> const& replacedTxIter,
-        std::shared_ptr<STTx const> const& tx);
+        std::shared_ptr<STTx const> const& tx,
+        std::scoped_lock<std::mutex> const&);
 
     using FeeHook = boost::intrusive::
         member_hook<MaybeTx, boost::intrusive::set_member_hook<>, &MaybeTx::byFeeListHook>;
@@ -937,7 +938,7 @@ private:
      */
     template <size_t FillPercentage = 100>
     bool
-    isFull() const;
+    isFull(std::scoped_lock<std::mutex> const&) const;
 
     /**
      * Checks if the indicated transaction fits the conditions
@@ -951,18 +952,21 @@ private:
         SLE::const_ref sleAccount,
         AccountMap::iterator const&,
         std::optional<TxQAccount::TxMap::iterator> const&,
-        std::scoped_lock<std::mutex> const& lock);
+        std::scoped_lock<std::mutex> const&);
 
     /**
      * Erase and return the next entry in byFee_ (lower fee level)
      */
-    FeeMultiSet::iterator_type erase(FeeMultiSet::const_iterator_type);
+    FeeMultiSet::iterator_type
+    erase(FeeMultiSet::const_iterator_type, std::scoped_lock<std::mutex> const&);
     /**
      * Erase and return the next entry for the account (if fee level
      * is higher), or next entry in byFee_ (lower fee level).
      * Used to get the next "applicable" MaybeTx for accept().
      */
-    FeeMultiSet::iterator_type eraseAndAdvance(FeeMultiSet::const_iterator_type);
+    FeeMultiSet::iterator_type
+    eraseAndAdvance(FeeMultiSet::const_iterator_type, std::scoped_lock<std::mutex> const&);
+
     /**
      * Erase a range of items, based on TxQAccount::TxMap iterators
      */
@@ -970,7 +974,8 @@ private:
     erase(
         TxQAccount& txQAccount,
         TxQAccount::TxMap::const_iterator begin,
-        TxQAccount::TxMap::const_iterator end);
+        TxQAccount::TxMap::const_iterator end,
+        std::scoped_lock<std::mutex> const&);
 
     /**
      * All-or-nothing attempt to try to apply the queued txs for
@@ -989,6 +994,7 @@ private:
         std::size_t const txExtraCount,
         ApplyFlags flags,
         FeeMetrics::Snapshot const& metricsSnapshot,
+        std::scoped_lock<std::mutex> const&,
         beast::Journal j);
 };
 
