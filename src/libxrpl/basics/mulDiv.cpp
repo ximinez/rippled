@@ -10,7 +10,10 @@ namespace xrpl {
 std::optional<std::uint64_t>
 mulDiv(std::uint64_t value, std::uint64_t mul, std::uint64_t div)
 {
+    XRPL_ASSERT(div != 0, "ripple::mulDiv : non-zero divisor);
+
     boost::multiprecision::uint128_t result;
+
     result = multiply(result, value, mul);
 
     result /= div;
