@@ -713,7 +713,12 @@ public:
     }
 };
 
-BEAST_DEFINE_TESTSUITE_PRIO(ValidatorSite, app, xrpl, 2);
+// Quick hack for TrustedPublisherServer definition so I don't have to
+// make a cpp file
+// static
+std::atomic<int> TrustedPublisherServer::counter = 0;
+
+BEAST_DEFINE_TESTSUITE_PRIO(ValidatorSite, app, xrpl, 5);
 
 }  // namespace test
 }  // namespace xrpl
