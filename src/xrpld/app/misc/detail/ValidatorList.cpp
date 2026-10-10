@@ -640,8 +640,55 @@ ValidatorList::buildValidatorListMessages(
     return {0, 0};
 }
 
+std::tuple<std::string, std::uint32_t, std::map<std::size_t, ValidatorBlobInfo>, uint256>
+ValidatorList::sendLatestValidatorLists(
+    Peer& peer,
+    std::uint64_t peerSequence,
+    PublicKey const& publisherKey,
+    HashRouter& hashRouter,
+    beast::Journal j) const
+{
+    std::vector<ValidatorList::MessageWithHash> messages;
+    std::map<std::size_t, ValidatorBlobInfo> blobInfos;
+
+    if (publisherLists_.count(publisherKey) == 0)
+        return {};
+    ValidatorList::PublisherListCollection const& lists = publisherLists_.at(publisherKey);
+
+    auto const maxSequence = lists.current.sequence;
+    XRPL_ASSERT(
+        lists.current.sequence == maxSequence || lists.remaining.count(maxSequence) == 1,
+        "ripple::ValidatorList::sendLatestValidatorLists : valid sequence");
+
+    if (peerSequence < maxSequence)
+    {
+        buildBlobInfos(blobInfos, lists);
+        sendValidatorList(
+            peer,
+            peerSequence,
+            publisherKey,
+            maxSequence,
+            lists.rawVersion,
+            lists.rawManifest,
+            blobInfos,
+            messages,
+            hashRouter,
+            j);
+
+        // Suppress the messages so they'll be ignored next time.
+        uint256 lasthash;
+        for (auto const& m : messages)
+        {
+            lasthash = m.hash;
+            hashRouter.addSuppressionPeer(lasthash, peer.id());
+        }
+        return std::make_tuple(lists.rawManifest, lists.rawVersion, blobInfos, lasthash);
+    }
+    return {};
+}
+
 // static
-void
+std::optional<std::string>
 ValidatorList::sendValidatorList(
     Peer& peer,
     std::uint64_t peerSequence,
@@ -689,10 +736,11 @@ ValidatorList::sendValidatorList(
                             << " to " << peer.fingerprint();
         }
     }
+    return {};
 }
 
 // static
-void
+std::optional<std::string>
 ValidatorList::sendValidatorList(
     Peer& peer,
     std::uint64_t peerSequence,
@@ -705,7 +753,7 @@ ValidatorList::sendValidatorList(
     beast::Journal j)
 {
     std::vector<ValidatorList::MessageWithHash> messages;
-    sendValidatorList(
+    return sendValidatorList(
         peer,
         peerSequence,
         publisherKey,
@@ -770,7 +818,7 @@ ValidatorList::broadcastBlobs(
         std::map<std::size_t, ValidatorBlobInfo> blobInfos;
 
         XRPL_ASSERT(
-            lists.current.sequence == maxSequence || lists.remaining.count(maxSequence) == 1,
+            lists.current.sequence <= maxSequence || lists.remaining.count(maxSequence) == 1,
             "xrpl::ValidatorList::broadcastBlobs : valid sequence");
         // Can't use overlay.foreach here because we need to modify
         // the peer, and foreach provides a const&
