@@ -129,7 +129,6 @@ class TxQApplyImpl
     using AccMapIter = TxQ::AccountMap::iterator;
 
     TxQ& txq_;
-    std::optional<std::reference_wrapper<std::scoped_lock<std::mutex> const>> txqLock_;
 
     Application& app_;
     OpenView& view_;
@@ -202,7 +201,7 @@ private:
     applyImplPrelock();
 
     ApplyResult
-    applyImpl();
+    applyImpl(std::scoped_lock<std::mutex> const& lock);
 
     // Retrieve prevTxs_.
     void
@@ -225,26 +224,29 @@ private:
 
     // Returns true if require Multitxn, false if not. Returns ApplyResult in case of error.
     std::expected<bool, ApplyResult>
-    checkMultiTxn() const;
+    checkMultiTxn(std::scoped_lock<std::mutex> const& lock) const;
 
     std::optional<ApplyResult>
-    processAccountTxs();
+    processAccountTxs(std::scoped_lock<std::mutex> const& lock);
 
     std::optional<ApplyResult>
-    checkFrontTx(TxMapCIter const& prevIter, TxMapCIter const& endIter) const;
+    checkFrontTx(
+        TxMapCIter const& prevIter,
+        TxMapCIter const& endIter,
+        std::scoped_lock<std::mutex> const& lock) const;
 
     // Returns potential spend and fee of the TX
     std::pair<XRPAmount, XRPAmount>
     calcSpendAndFee() const;
 
     std::optional<ApplyResult>
-    tryClearAccountQueueUpThruTx();
+    tryClearAccountQueueUpThruTx(std::scoped_lock<std::mutex> const& lock);
 
     std::optional<ApplyResult>
-    canBeHeld() const;
+    canBeHeld(std::scoped_lock<std::mutex> const& lock) const;
 
     std::optional<ApplyResult>
-    processQueueIsFull();
+    processQueueIsFull(std::scoped_lock<std::mutex> const& lock);
 
     void
     addTxToQueue();
@@ -393,7 +395,7 @@ TxQApplyImpl::checkBlockerInAccQue() const
 }
 
 std::expected<bool, ApplyResult>
-TxQApplyImpl::checkMultiTxn() const
+TxQApplyImpl::checkMultiTxn(std::scoped_lock<std::mutex> const& lock) const
 {
     // Determine if we need a multiTxn object.  Assuming the account
     // is in the queue, there are two situations where we need to
@@ -407,14 +409,11 @@ TxQApplyImpl::checkMultiTxn() const
         // If the transaction is queueable, create the multiTxn
         // object to hold the info we need to adjust for prior txns.
 
-        // NOLINTBEGIN(bugprone-unchecked-optional-access)
         TER const ter{
-            txq_.canBeHeld(
-                *tx_, flags_, view_, accSle_, byAccountIter_, txToReplaceIter_, *txqLock_),
+            txq_.canBeHeld(*tx_, flags_, view_, accSle_, byAccountIter_, txToReplaceIter_, lock),
         };
         if (!isTesSuccess(ter))
             return std::unexpected(ApplyResult{ter, false});
-        // NOLINTEND(bugprone-unchecked-optional-access)
 
         requiresMultiTxn = true;
     }
@@ -423,7 +422,10 @@ TxQApplyImpl::checkMultiTxn() const
 }
 
 std::optional<ApplyResult>
-TxQApplyImpl::checkFrontTx(TxMapCIter const& prevIter, TxMapCIter const& endIter) const
+TxQApplyImpl::checkFrontTx(
+    TxMapCIter const& prevIter,
+    TxMapCIter const& endIter,
+    std::scoped_lock<std::mutex> const& lock) const
 {
     // Does the new transaction go to the front of the queue?
     // This can happen if:
@@ -433,7 +435,6 @@ TxQApplyImpl::checkFrontTx(TxMapCIter const& prevIter, TxMapCIter const& endIter
     //    * txSeq == acctSeq.
     // implies txIter is set
 
-    // NOLINTBEGIN(bugprone-unchecked-optional-access)
     XRPL_ASSERT(prevIter != endIter, "xrpl::TxQApplyImpl::checkFrontTx : not end");
     if (prevIter == endIter || txSeq_ < prevIter->first)
     {
@@ -454,10 +455,9 @@ TxQApplyImpl::checkFrontTx(TxMapCIter const& prevIter, TxMapCIter const& endIter
         // front of this one in the queue.  Make sure the current
         // transaction fits in proper sequence order with the
         // previous transaction or is a ticket.
-        if (txSeq_.isSeq() && txq_.nextQueuableSeqImpl(accSle_, *txqLock_) != txSeq_)
+        if (txSeq_.isSeq() && txq_.nextQueuableSeqImpl(accSle_, lock) != txSeq_)
             return ApplyResult{telCAN_NOT_QUEUE, false};
     }
-    // NOLINTEND(bugprone-unchecked-optional-access)
 
     return {};
 }
@@ -503,7 +503,7 @@ TxQApplyImpl::calcSpendAndFee() const
 }
 
 std::optional<ApplyResult>
-TxQApplyImpl::processAccountTxs()
+TxQApplyImpl::processAccountTxs(std::scoped_lock<std::mutex> const& lock)
 {
     // There are probably other transactions in the queue for this
     // account.  Make sure the new transaction can work with the others
@@ -513,7 +513,7 @@ TxQApplyImpl::processAccountTxs()
 
     {
         // Check if there are previous txs that will be applied
-        auto const requiresMultiTxn = checkMultiTxn();
+        auto const requiresMultiTxn = checkMultiTxn(lock);
         if (!requiresMultiTxn)
             return requiresMultiTxn.error();
         if (!*requiresMultiTxn)
@@ -538,7 +538,8 @@ TxQApplyImpl::processAccountTxs()
         return ApplyResult{tefINTERNAL, false};                          // LCOV_EXCL_LINE
     }
     TxQ::TxQAccount const& txQAcct = byAccountIter_->second;
-    if (auto const err = checkFrontTx(txQAcct.getPrevTx(txSeq_), prevTxs_->second); err.has_value())
+    if (auto const err = checkFrontTx(txQAcct.getPrevTx(txSeq_), prevTxs_->second, lock);
+        err.has_value())
         return err;
 
     // Sum fees and spending for all of the queued transactions
@@ -626,16 +627,14 @@ TxQApplyImpl::processAccountTxs()
     // the next queueable sequence, which is the closest approximation
     // to the most successful case.
 
-    // NOLINTBEGIN(bugprone-unchecked-optional-access)
     sleBump->at(sfSequence) =
-        txSeq_.isSeq() ? txSeq_.value() : txq_.nextQueuableSeqImpl(accSle_, *txqLock_).value();
-    // NOLINTEND(bugprone-unchecked-optional-access)
+        txSeq_.isSeq() ? txSeq_.value() : txq_.nextQueuableSeqImpl(accSle_, lock).value();
 
     return {};
 }
 
 std::optional<ApplyResult>
-TxQApplyImpl::tryClearAccountQueueUpThruTx()
+TxQApplyImpl::tryClearAccountQueueUpThruTx(std::scoped_lock<std::mutex> const& lock)
 {
     /* Quick heuristic check to see if it's worth checking that this tx has
         a high enough fee to clear all the txs in front of it in the queue.
@@ -674,7 +673,7 @@ TxQApplyImpl::tryClearAccountQueueUpThruTx()
             flags_,
             *metricsSnapshot_,
             jExt_,
-            *txqLock_);
+            lock);
         // NOLINTEND(bugprone-unchecked-optional-access)
 
         if (result.applied)
@@ -691,16 +690,14 @@ TxQApplyImpl::tryClearAccountQueueUpThruTx()
 }
 
 std::optional<ApplyResult>
-TxQApplyImpl::canBeHeld() const
+TxQApplyImpl::canBeHeld(std::scoped_lock<std::mutex> const& lock) const
 {
     // If `multiTxn` has a value, then `canBeHeld` has already been verified
     if (multiTxn_.has_value())
         return {};
 
-    // NOLINTBEGIN(bugprone-unchecked-optional-access)
     TER const ter =
-        txq_.canBeHeld(*tx_, flags_, view_, accSle_, byAccountIter_, txToReplaceIter_, *txqLock_);
-    // NOLINTEND(bugprone-unchecked-optional-access)
+        txq_.canBeHeld(*tx_, flags_, view_, accSle_, byAccountIter_, txToReplaceIter_, lock);
 
     if (!isTesSuccess(ter))
     {
@@ -713,10 +710,9 @@ TxQApplyImpl::canBeHeld() const
 }
 
 std::optional<ApplyResult>
-TxQApplyImpl::processQueueIsFull()
+TxQApplyImpl::processQueueIsFull(std::scoped_lock<std::mutex> const& lock)
 {
-    // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
-    if (!txToReplaceIter_ && txq_.isFull(*txqLock_))
+    if (!txToReplaceIter_ && txq_.isFull(lock))
     {
         auto lastRIter = txq_.byFee_.rbegin();
         while (lastRIter != txq_.byFee_.rend() && lastRIter->account == accID_)
@@ -772,8 +768,7 @@ TxQApplyImpl::processQueueIsFull()
             JLOG(j_.info()) << "Removing last item of account " << lastRIter->account
                             << " from queue with average fee of " << endEffectiveFeeLevel
                             << " in favor of " << txID_ << " with fee of " << feeLevelPaid_;
-            // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
-            txq_.erase(txq_.byFee_.iterator_to(dropRIter->second), *txqLock_);
+            txq_.erase(txq_.byFee_.iterator_to(dropRIter->second), lock);
         }
         else
         {
@@ -1496,9 +1491,8 @@ TxQApplyImpl::apply()
         return *err;
 
     std::scoped_lock const lock(txq_.mutex_);
-    txqLock_ = lock;
 
-    return applyImpl();
+    return applyImpl(lock);
 }
 
 std::optional<ApplyResult>
@@ -1533,7 +1527,7 @@ TxQApplyImpl::applyImplPrelock()
 }
 
 ApplyResult
-TxQApplyImpl::applyImpl()
+TxQApplyImpl::applyImpl(std::scoped_lock<std::mutex> const& lock)
 {
     byAccountIter_ = txq_.byAccount_.find(accID_);
 
@@ -1568,7 +1562,7 @@ TxQApplyImpl::applyImpl()
         return {computedFeeLevelPaid.error(), false};
     feeLevelPaid_ = *computedFeeLevelPaid;
     // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
-    requiredFeeLevel_ = txq_.getRequiredFeeLevel(view_, flags_, *metricsSnapshot_, *txqLock_);
+    requiredFeeLevel_ = txq_.getRequiredFeeLevel(view_, flags_, *metricsSnapshot_, lock);
 
     // Is there a blocker already in the account's queue?  If so, don't
     // allow additional transactions in the queue.
@@ -1593,7 +1587,7 @@ TxQApplyImpl::applyImpl()
         // Calculate expenses and fees
         // Create multiTxn_ test view from the current view and apply balance and accSeq to it,
         // preclaim(...) will use it.
-        if (auto const err = processAccountTxs(); err.has_value())
+        if (auto const err = processAccountTxs(lock); err.has_value())
             return *err;
     }
 
@@ -1622,23 +1616,23 @@ TxQApplyImpl::applyImpl()
 
     // Quick heuristic check to see if it's worth checking that this tx has a high enough fee to
     // clear all the txs in front of it in the queue.
-    if (auto const res = tryClearAccountQueueUpThruTx(); res.has_value())
+    if (auto const res = tryClearAccountQueueUpThruTx(lock); res.has_value())
         return *res;
 
-    if (auto const err = canBeHeld(); err.has_value())
+    if (auto const err = canBeHeld(lock); err.has_value())
         return *err;
 
     // If the queue is full, decide whether to drop the current
     // transaction or the last transaction for the account with
     // the lowest fee.
-    if (auto const err = processQueueIsFull(); err.has_value())
+    if (auto const err = processQueueIsFull(lock); err.has_value())
         return *err;
 
     // Remove existing tx (will be replaced by new in addTxToQueue).
     if (txToReplaceIter_)
     {
         // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
-        txq_.removeFromByFee(txToReplaceIter_, tx_, *txqLock_);
+        txq_.removeFromByFee(txToReplaceIter_, tx_, lock);
         txToReplaceIter_.reset();
     }
 
