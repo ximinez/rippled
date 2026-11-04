@@ -4,6 +4,7 @@
 #include <xrpl/json/json_forwards.h>
 
 #include <cstring>
+#include <iterator>
 #include <limits>
 #include <map>
 #include <string>
@@ -25,7 +26,7 @@ enum class ValueType {
     String,    ///< UTF-8 string value
     Boolean,   ///< bool value
     Array,     ///< array value (ordered list)
-    Object     ///< object value (collection of name/value pairs).
+    Object,    ///< object value (collection of name/value pairs).
 };
 
 /**
@@ -524,7 +525,8 @@ public:
 class ValueIteratorBase
 {
 public:
-    using size_t = unsigned int;
+    using iterator_category = std::bidirectional_iterator_tag;
+    using SizeT = unsigned int;
     using difference_type = int;
     using SelfType = ValueIteratorBase;
 
@@ -591,7 +593,7 @@ class ValueConstIterator : public ValueIteratorBase
     friend class Value;
 
 public:
-    using size_t = unsigned int;
+    using SizeT = unsigned int;
     using difference_type = int;
     using value_type = Value const;
     using reference = Value const&;
@@ -656,7 +658,7 @@ class ValueIterator : public ValueIteratorBase
     friend class Value;
 
 public:
-    using size_t = unsigned int;
+    using SizeT = unsigned int;
     using difference_type = int;
     using value_type = Value;
     using reference = Value&;

@@ -7,6 +7,7 @@ ignorePaths:
   - cmake/**
   - LICENSE.md
   - .clang-tidy
+  - nix/check-tools/*.txt # generated, and full of Nix store hashes
 language: en
 allowCompoundWords: true # TODO (#6334)
 ignoreRandomStrings: true
@@ -63,11 +64,13 @@ words:
   - blindings
   - bookdir
   - Bougalis
+  - bthomee
   - Britto
   - Btrfs
   - Buildx
   - canonicality
   - canonicalised
+  - cctools
   - changespq
   - checkme
   - choco
@@ -100,6 +103,7 @@ words:
   - dearmor
   - decryptor
   - dedented
+  - dedup
   - deleteme
   - demultiplexer
   - deserializaton
@@ -109,6 +113,7 @@ words:
   - disablerepo
   - distro
   - doxyfile
+  - dsymutil
   - dxrpl
   - elgamal
   - enabled
@@ -138,6 +143,7 @@ words:
   - hwrap
   - ifndef
   - inequation
+  - Injectivity
   - insuf
   - insuff
   - invasively
@@ -167,6 +173,7 @@ words:
   - LOCALGOOD
   - logwstream
   - Lombrozo
+  - lresolv
   - lseq
   - lsmf
   - ltype
@@ -191,6 +198,7 @@ words:
   - mptokens
   - mpts
   - mtgox
+  - mudhra
   - multisig
   - multisign
   - multisigned
@@ -220,6 +228,7 @@ words:
   - Nyffenegger
   - onlatest
   - ostr
+  - otool
   - oxalica
   - pargs
   - partitioner
@@ -248,12 +257,17 @@ words:
   - queuable
   - Raphson
   - rcflags
+  - reencrypted
   - replayer
+  - repodata
+  - repomd
   - rerandomize
   - rerandomization
   - rerandomized
   - rerandomizes
   - rerere
+  - retargeted
+  - retargets
   - retriable
   - RIPD
   - ripdtop
@@ -289,6 +303,7 @@ words:
   - sles
   - soci
   - socidb
+  - Sonatype
   - sponsee
   - sponsees
   - SRPMS
@@ -304,10 +319,10 @@ words:
   - sttx
   - stvar
   - stvector
-  - stxchainattestations
   - summands
   - superpeer
   - superpeers
+  - Swatinem
   - takergets
   - takerpays
   - ters
@@ -330,6 +345,7 @@ words:
   - unambiguity
   - unauthorizes
   - unauthorizing
+  - undeserializable
   - unergonomic
   - unfetched
   - unfindable
@@ -361,14 +377,17 @@ words:
   - writeme
   - wsrch
   - wthread
-  - xbridge
   - xchain
+  - xcrun
   - ximinez
   - XMACRO
+  - xored
   - xrpkuwait
   - xrpl
   - xrpld
   - xrplf
   - xxhash
   - xxhasher
+  - zstdio
   - CGNAT
+  - ungated

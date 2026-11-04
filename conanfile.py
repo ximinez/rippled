@@ -1,8 +1,12 @@
+import os
 import re
 
 from conan.tools.cmake import CMake, CMakeToolchain, cmake_layout
+from conan.tools.env import Environment
 
 from conan import ConanFile
+
+DEV_VERSION = "0.0.0-dev"
 
 
 class Xrpl(ConanFile):
@@ -28,13 +32,14 @@ class Xrpl(ConanFile):
     }
 
     requires = [
+        "corrosion/0.6.1",
         "ed25519/2015.03",
         "fast_float/8.2.10",
         "grpc/1.81.1",
-        "libarchive/3.8.7",
         "nudb/2.0.9",
         "openssl/3.6.3",
         "soci/4.0.3",
+        "xrpl-rpc-spec/0.1.29",
         "zlib/1.3.2",
     ]
 
@@ -43,7 +48,8 @@ class Xrpl(ConanFile):
     ]
 
     tool_requires = [
-        "protobuf/6.33.5",
+        "grpc/<host_version>",
+        "protobuf/<host_version>",
     ]
 
     default_options = {
@@ -76,21 +82,6 @@ class Xrpl(ConanFile):
         "grpc/*:python_plugin": False,
         "grpc/*:ruby_plugin": False,
         "grpc/*:otel_plugin": False,
-        "libarchive/*:shared": False,
-        "libarchive/*:with_acl": False,
-        "libarchive/*:with_bzip2": False,
-        "libarchive/*:with_cng": False,
-        "libarchive/*:with_expat": False,
-        "libarchive/*:with_iconv": False,
-        "libarchive/*:with_libxml2": False,
-        "libarchive/*:with_lz4": True,
-        "libarchive/*:with_lzma": False,
-        "libarchive/*:with_lzo": False,
-        "libarchive/*:with_nettle": False,
-        "libarchive/*:with_openssl": False,
-        "libarchive/*:with_pcreposix": False,
-        "libarchive/*:with_xattr": False,
-        "libarchive/*:with_zlib": False,
         "lz4/*:shared": False,
         "openssl/*:no_dtls": True,
         "openssl/*:no_ssl": True,
@@ -113,17 +104,16 @@ class Xrpl(ConanFile):
         "soci/*:shared": False,
         "soci/*:with_sqlite3": True,
         "soci/*:with_boost": True,
+        "xrpl-rpc-spec/*:server": "xrpld",
         "xxhash/*:shared": False,
     }
 
+    # default_options only reach the host context;
+    # give tool_requires (and their dependencies) the same dependency options.
+    default_build_options = {k: v for k, v in default_options.items() if "/" in k}
+
     def set_version(self):
-        if self.version is None:
-            path = f"{self.recipe_folder}/src/libxrpl/protocol/BuildInfo.cpp"
-            regex = r"versionString\s?=\s?\"(.*)\""
-            with open(path, encoding="utf-8") as file:
-                matches = (re.search(regex, line) for line in file)
-                match = next(m for m in matches if m)
-                self.version = match.group(1)
+        self.version = self.version or DEV_VERSION
 
     def configure(self):
         if self.settings.compiler == "apple-clang":
@@ -148,6 +138,7 @@ class Xrpl(ConanFile):
         self.requires("xxhash/0.8.3", transitive_headers=True)
 
     exports_sources = (
+        "bin/nix/default-loader-path.sh",
         "CMakeLists.txt",
         "cfg/*",
         "cmake/*",
@@ -165,6 +156,17 @@ class Xrpl(ConanFile):
     generators = "CMakeDeps"
 
     def generate(self):
+        # The sources in the Conan cache have no git history, so the version
+        # comes from the reference, unless it is not one, like 'develop'.
+        if not os.path.exists(os.path.join(self.source_folder, ".git")):
+            version = str(self.version)
+            env = Environment()
+            env.define(
+                "FORCE_XRPLD_VERSION",
+                version if re.match(r"\d+\.\d+\.\d+", version) else DEV_VERSION,
+            )
+            env.vars(self).save_script("xrpld_version")
+
         tc = CMakeToolchain(self)
         tc.variables["tests"] = self.options.tests
         tc.variables["benchmark"] = self.options.benchmark
@@ -214,7 +216,6 @@ class Xrpl(ConanFile):
             "ed25519::ed25519",
             "fast_float::fast_float",
             "grpc::grpc++",
-            "libarchive::libarchive",
             "lz4::lz4",
             "mpt-crypto::mpt-crypto",
             "nudb::nudb",
