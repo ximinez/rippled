@@ -1,5 +1,6 @@
 #include <test/jtx/Account.h>
 #include <test/jtx/Env.h>
+#include <test/jtx/TestHelpers.h>
 #include <test/jtx/WSClient.h>
 #include <test/jtx/amount.h>
 #include <test/jtx/balance.h>
@@ -22,6 +23,7 @@
 #include <xrpl/protocol/jss.h>
 
 #include <chrono>
+#include <string>
 #include <utility>
 
 namespace xrpl::test {
@@ -206,7 +208,7 @@ class DeliveredAmount_test : public beast::unit_test::Suite
         for (bool const afterSwitchTime : {true, false})
         {
             auto cfg = envconfig();
-            cfg->FEES.reference_fee = 10;
+            cfg->fees.referenceFee = 10;
             Env env(*this, std::move(cfg));
             env.fund(XRP(10000), alice, bob, carol, gw);
             env.trust(usd(1000), alice, bob, carol);
@@ -254,8 +256,7 @@ class DeliveredAmount_test : public beast::unit_test::Suite
                 auto jv = wsc->invoke("subscribe", stream);
                 if (wsc->version() == 2)
                 {
-                    BEAST_EXPECT(jv.isMember(jss::jsonrpc) && jv[jss::jsonrpc] == "2.0");
-                    BEAST_EXPECT(jv.isMember(jss::ripplerpc) && jv[jss::ripplerpc] == "2.0");
+                    BEAST_EXPECT(hasEnvelope2(jv));
                     BEAST_EXPECT(jv.isMember(jss::id) && jv[jss::id] == 5);
                 }
                 BEAST_EXPECT(jv[jss::result][jss::ledger_index] == 3);
@@ -297,7 +298,7 @@ class DeliveredAmount_test : public beast::unit_test::Suite
         for (bool const afterSwitchTime : {true, false})
         {
             auto cfg = envconfig();
-            cfg->FEES.reference_fee = 10;
+            cfg->fees.referenceFee = 10;
             Env env(*this, std::move(cfg));
             env.fund(XRP(10000), alice, bob, carol, gw);
             env.trust(usd(1000), alice, bob, carol);

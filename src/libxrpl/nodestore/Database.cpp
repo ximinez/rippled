@@ -1,12 +1,13 @@
 #include <xrpl/nodestore/Database.h>
 
-#include <xrpl/basics/BasicConfig.h>
 #include <xrpl/basics/Log.h>
 #include <xrpl/basics/base_uint.h>
 #include <xrpl/basics/contract.h>
 #include <xrpl/beast/core/CurrentThreadName.h>
 #include <xrpl/beast/utility/Journal.h>
 #include <xrpl/beast/utility/instrumentation.h>
+#include <xrpl/config/BasicConfig.h>
+#include <xrpl/config/Constants.h>
 #include <xrpl/json/json_forwards.h>
 #include <xrpl/json/json_value.h>
 #include <xrpl/nodestore/Backend.h>
@@ -29,7 +30,7 @@
 #include <thread>
 #include <utility>
 
-namespace xrpl::NodeStore {
+namespace xrpl::node_store {
 
 Database::Database(
     Scheduler& scheduler,
@@ -38,11 +39,11 @@ Database::Database(
     beast::Journal journal)
     : j_(journal)
     , scheduler_(scheduler)
-    , earliestLedgerSeq_(get<std::uint32_t>(config, "earliest_seq", kXrpLedgerEarliestSeq))
-    , requestBundle_(get<int>(config, "rq_bundle", 4))
+    , earliestLedgerSeq_(get<std::uint32_t>(config, Keys::kEarliestSeq, kXrpLedgerEarliestSeq))
+    , requestBundle_(get<int>(config, Keys::kRqBundle, 4))
     , readThreads_(std::max(1, readThreads))
 {
-    XRPL_ASSERT(readThreads, "xrpl::NodeStore::Database::Database : nonzero threads input");
+    XRPL_ASSERT(readThreads, "xrpl::node_store::Database::Database : nonzero threads input");
 
     if (earliestLedgerSeq_ < 1)
         Throw<std::runtime_error>("Invalid earliest_seq");
@@ -88,14 +89,14 @@ Database::Database(
                     {
                         XRPL_ASSERT(
                             !it->second.empty(),
-                            "xrpl::NodeStore::Database::Database : non-empty "
+                            "xrpl::node_store::Database::Database : non-empty "
                             "data");
 
                         auto const& hash = it->first;
                         auto const& data = it->second;
                         auto const seqn = data[0].first;
 
-                        auto obj = fetchNodeObject(hash, seqn, FetchType::Async);
+                        auto const obj = fetchNodeObject(hash, seqn, FetchType::Async);
 
                         // This could be further optimized: if there are
                         // multiple requests for sequence numbers mapping to
@@ -139,18 +140,35 @@ Database::isStopping() const
     return readStopping_.load(std::memory_order_relaxed);
 }
 
+/**
+ * Close the read queue and wait for the read threads to exit.
+ *
+ * The call that closes the queue completes every read still queued with no
+ * object before it returns, so every caller gets exactly one callback. The
+ * callbacks run on the calling thread with readLock_ released, since a
+ * callback may post or wait on other reads. A concurrent second call waits
+ * only for the read threads, so it may return while the first call is still
+ * delivering those callbacks.
+ */
 void
 Database::stop()
 {
+    decltype(read_) pending;
     {
         std::scoped_lock const lock(readLock_);
 
         if (!readStopping_.exchange(true, std::memory_order_relaxed))
         {
             JLOG(j_.debug()) << "Clearing read queue because of stop request";
-            read_.clear();
+            pending.swap(read_);
             readCondVar_.notify_all();
         }
+    }
+
+    for (auto const& [hash, requests] : pending)
+    {
+        for (auto const& request : requests)
+            request.second(nullptr);
     }
 
     JLOG(j_.debug()) << "Waiting for stop request to complete...";
@@ -163,7 +181,7 @@ Database::stop()
     {
         XRPL_ASSERT(
             steady_clock::now() - start < 30s,
-            "xrpl::NodeStore::Database::stop : maximum stop duration");
+            "xrpl::node_store::Database::stop : maximum stop duration");
         std::this_thread::yield();
     }
 
@@ -173,19 +191,34 @@ Database::stop()
         << " milliseconds";
 }
 
+/**
+ * Queue a read for the read threads, or complete it at once with no object
+ * when the queue is closed, so the caller always gets exactly one callback.
+ *
+ * @param hash The key of the object to read.
+ * @param ledgerSeq The sequence of the ledger the object belongs to.
+ * @param cb The callback that receives the object, or nullptr if the object
+ *        is not present or the database is stopping.
+ */
 void
 Database::asyncFetch(
-    uint256 const& hash,
+    UInt256 const& hash,
     std::uint32_t ledgerSeq,
     std::function<void(std::shared_ptr<NodeObject> const&)>&& cb)
 {
-    std::scoped_lock const lock(readLock_);
-
-    if (!isStopping())
     {
-        read_[hash].emplace_back(ledgerSeq, std::move(cb));
-        readCondVar_.notify_one();
+        std::scoped_lock const lock(readLock_);
+
+        if (!isStopping())
+        {
+            read_[hash].emplace_back(ledgerSeq, std::move(cb));
+            readCondVar_.notify_one();
+            return;
+        }
     }
+
+    // The queue is closed. Complete the read here, with the lock released.
+    cb(nullptr);
 }
 
 void
@@ -193,7 +226,7 @@ Database::importInternal(Backend& dstBackend, Database& srcDB)
 {
     Batch batch;
     batch.reserve(kBatchWritePreallocationSize);
-    auto storeBatch = [&, fname = __func__]() {
+    auto storeBatch = [&, fname = __func__] {
         try
         {
             dstBackend.storeBatch(batch);
@@ -212,7 +245,7 @@ Database::importInternal(Backend& dstBackend, Database& srcDB)
     };
 
     srcDB.forEach([&](std::shared_ptr<NodeObject> nodeObject) {
-        XRPL_ASSERT(nodeObject, "xrpl::NodeStore::Database::importInternal : non-null node");
+        XRPL_ASSERT(nodeObject, "xrpl::node_store::Database::importInternal : non-null node");
         if (!nodeObject)  // This should never happen
             return;
 
@@ -228,7 +261,7 @@ Database::importInternal(Backend& dstBackend, Database& srcDB)
 // Perform a fetch and report the time it took
 std::shared_ptr<NodeObject>
 Database::fetchNodeObject(
-    uint256 const& hash,
+    UInt256 const& hash,
     std::uint32_t ledgerSeq,
     FetchType fetchType,
     bool duplicate)
@@ -239,7 +272,7 @@ Database::fetchNodeObject(
     auto const begin{steady_clock::now()};
 
     auto nodeObject{fetchNodeObject(hash, ledgerSeq, fetchReport, duplicate)};
-    auto dur = steady_clock::now() - begin;
+    auto const dur = steady_clock::now() - begin;
     fetchDurationUs_ += duration_cast<microseconds>(dur).count();
     if (nodeObject)
     {
@@ -256,7 +289,7 @@ Database::fetchNodeObject(
 void
 Database::getCountsJson(json::Value& obj)
 {
-    XRPL_ASSERT(obj.isObject(), "xrpl::NodeStore::Database::getCountsJson : valid input type");
+    XRPL_ASSERT(obj.isObject(), "xrpl::node_store::Database::getCountsJson : valid input type");
 
     {
         std::unique_lock<std::mutex> const lock(readLock_);
@@ -275,4 +308,4 @@ Database::getCountsJson(json::Value& obj)
     obj[jss::node_reads_duration_us] = std::to_string(fetchDurationUs_);
 }
 
-}  // namespace xrpl::NodeStore
+}  // namespace xrpl::node_store

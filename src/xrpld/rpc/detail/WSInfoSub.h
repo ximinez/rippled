@@ -7,8 +7,11 @@
 #include <xrpl/server/InfoSub.h>
 #include <xrpl/server/WSSession.h>
 
+#include <cstddef>
 #include <memory>
 #include <string>
+#include <string_view>
+#include <utility>
 
 namespace xrpl {
 
@@ -24,10 +27,10 @@ public:
         auto const& h = ws->request();
         if (ipAllowed(
                 beast::IPAddressConversion::fromAsio(ws->remoteEndpoint()).address(),
-                ws->port().secure_gateway_nets_v4,
-                ws->port().secure_gateway_nets_v6))
+                ws->port().secureGatewayNetsV4,
+                ws->port().secureGatewayNetsV6))
         {
-            auto it = h.find("X-User");
+            auto const it = h.find("X-User");
             if (it != h.end())
                 user_ = it->value();
             fwdfor_ = std::string(::xrpl::forwardedFor(h));
@@ -49,14 +52,14 @@ public:
     void
     send(json::Value const& jv, bool) override
     {
-        auto sp = ws_.lock();
+        auto const sp = ws_.lock();
         if (!sp)
             return;
         boost::beast::multi_buffer sb;
         json::stream(jv, [&](void const* data, std::size_t n) {
             sb.commit(boost::asio::buffer_copy(sb.prepare(n), boost::asio::buffer(data, n)));
         });
-        auto m = std::make_shared<StreambufWSMsg<decltype(sb)>>(std::move(sb));
+        auto const m = std::make_shared<StreambufWSMsg<decltype(sb)>>(std::move(sb));
         sp->send(m);
     }
 };

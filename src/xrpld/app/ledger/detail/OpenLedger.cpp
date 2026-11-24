@@ -2,7 +2,6 @@
 
 #include <xrpld/app/main/Application.h>
 #include <xrpld/app/misc/TxQ.h>
-#include <xrpld/core/TimeKeeper.h>
 #include <xrpld/overlay/Overlay.h>
 
 #include <xrpl/basics/Log.h>
@@ -14,7 +13,7 @@
 #include <xrpl/ledger/OpenView.h>
 #include <xrpl/ledger/ReadView.h>
 #include <xrpl/protocol/Rules.h>
-#include <xrpl/protocol/SField.h>
+#include <xrpl/protocol/SField.h>  // IWYU pragma: keep
 #include <xrpl/protocol/STObject.h>
 #include <xrpl/protocol/STTx.h>
 #include <xrpl/protocol/Serializer.h>
@@ -32,6 +31,7 @@
 #include <mutex>
 #include <sstream>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -48,26 +48,26 @@ OpenLedger::OpenLedger(
 bool
 OpenLedger::empty() const
 {
-    std::scoped_lock const lock(modify_mutex_);
+    std::scoped_lock const lock(modifyMutex_);
     return current_->txCount() == 0;
 }
 
 std::shared_ptr<OpenView const>
 OpenLedger::current() const
 {
-    std::scoped_lock const lock(current_mutex_);
+    std::scoped_lock const lock(currentMutex_);
     return current_;
 }
 
 bool
-OpenLedger::modify(modify_type const& f)
+OpenLedger::modify(ModifyType const& f)
 {
-    std::scoped_lock const lock1(modify_mutex_);
+    std::scoped_lock const lock1(modifyMutex_);
     auto next = std::make_shared<OpenView>(*current_);
     auto const changed = f(*next, j_);
     if (changed)
     {
-        std::scoped_lock const lock2(current_mutex_);
+        std::scoped_lock const lock2(currentMutex_);
         current_ = std::move(next);
     }
     return changed;
@@ -82,21 +82,21 @@ OpenLedger::accept(
     bool retriesFirst,
     OrderedTxs& retries,
     ApplyFlags flags,
-    std::string const& suffix,
-    modify_type const& f)
+    std::string_view suffix,
+    ModifyType const& f)
 {
     JLOG(j_.trace()) << "accept ledger " << ledger->seq() << " " << suffix;
     auto next = create(rules, ledger);
     if (retriesFirst)
     {
         // Handle disputed tx, outside lock
-        using empty = std::vector<std::shared_ptr<STTx const>>;
-        apply(app, *next, *ledger, empty{}, retries, flags, j_);
+        using Empty = std::vector<std::shared_ptr<STTx const>>;
+        apply(app, *next, *ledger, Empty{}, retries, flags, j_);
     }
     // Block calls to modify, otherwise
     // new tx going into the open ledger
     // would get lost.
-    std::scoped_lock const lock1(modify_mutex_);
+    std::scoped_lock const lock1(modifyMutex_);
     // Apply tx from the current open view
     if (!current_->txs.empty())
     {
@@ -148,13 +148,12 @@ OpenLedger::accept(
             tx->add(s);
             msg.set_rawtransaction(s.data(), s.size());
             msg.set_status(protocol::tsNEW);
-            msg.set_receivetimestamp(app.getTimeKeeper().now().time_since_epoch().count());
-            app.getOverlay().relay(txId, msg, *toSkip);
+            app.getOverlay().relay(*tx, msg, *toSkip);
         }
     }
 
     // Switch to the new open view
-    std::scoped_lock const lock2(current_mutex_);
+    std::scoped_lock const lock2(currentMutex_);
     current_ = std::move(next);
 }
 
