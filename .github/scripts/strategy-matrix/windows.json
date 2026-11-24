@@ -1,12 +1,30 @@
 {
   "platform": "windows/amd64",
-  "runner": ["self-hosted", "Windows", "devbox"],
+  "runner": ["self-hosted", "Windows", "dev-box-windows-2026"],
   "configs": [
-    { "build_type": "Release" },
+    {
+      "build_type": "Release",
+      "events": [
+        "pull_request",
+        "ready_to_merge",
+        "merge_group",
+        "push",
+        "schedule",
+        "tag",
+        "workflow_dispatch"
+      ]
+    },
     {
       "build_type": "Debug",
       "build_only": true,
-      "exclude_event_types": ["pull_request"]
+      "events": [
+        "ready_to_merge",
+        "merge_group",
+        "push",
+        "schedule",
+        "tag",
+        "workflow_dispatch"
+      ]
     }
   ]
 }

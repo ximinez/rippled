@@ -5,8 +5,11 @@
 #include <test/jtx/acctdelete.h>
 #include <test/jtx/amount.h>
 #include <test/jtx/balance.h>
+#include <test/jtx/batch.h>
 #include <test/jtx/delegate.h>
+#include <test/jtx/delivermin.h>
 #include <test/jtx/did.h>
+#include <test/jtx/domain.h>
 #include <test/jtx/fee.h>
 #include <test/jtx/flags.h>
 #include <test/jtx/mpt.h>
@@ -15,24 +18,30 @@
 #include <test/jtx/offer.h>
 #include <test/jtx/paths.h>
 #include <test/jtx/pay.h>
+#include <test/jtx/permissioned_domains.h>
 #include <test/jtx/rate.h>
 #include <test/jtx/regkey.h>
 #include <test/jtx/sendmax.h>
 #include <test/jtx/sig.h>
+#include <test/jtx/sponsor.h>
 #include <test/jtx/ter.h>
 #include <test/jtx/trust.h>
 #include <test/jtx/txflags.h>
+#include <test/jtx/vault.h>
 
+#include <xrpl/basics/Number.h>
 #include <xrpl/basics/Slice.h>
 #include <xrpl/basics/base_uint.h>
 #include <xrpl/basics/strHex.h>
 #include <xrpl/beast/unit_test/suite.h>
+#include <xrpl/core/ServiceRegistry.h>
 #include <xrpl/json/json_value.h>
 #include <xrpl/json/to_string.h>
-#include <xrpl/ledger/Dir.h>
 #include <xrpl/ledger/helpers/DelegateHelpers.h>
+#include <xrpl/protocol/ErrorCodes.h>
 #include <xrpl/protocol/Feature.h>
 #include <xrpl/protocol/Indexes.h>
+#include <xrpl/protocol/Issue.h>
 #include <xrpl/protocol/KeyType.h>
 #include <xrpl/protocol/Permissions.h>
 #include <xrpl/protocol/SField.h>
@@ -41,11 +50,14 @@
 #include <xrpl/protocol/SecretKey.h>
 #include <xrpl/protocol/TER.h>
 #include <xrpl/protocol/TxFlags.h>
+#include <xrpl/protocol/TxSettings.h>
+#include <xrpl/protocol/XRPAmount.h>
 #include <xrpl/protocol/jss.h>
 
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 #include <memory>
 #include <string>
 #include <tuple>
@@ -69,7 +81,8 @@ class Delegate_test : public beast::unit_test::Suite
         env.fund(XRP(1000000), gw, alice, bob);
         env.close();
 
-        auto res = features[featurePermissionDelegationV1_1] ? Ter(tesSUCCESS) : Ter(temDISABLED);
+        auto const res =
+            features[featurePermissionDelegationV1_1] ? Ter(tesSUCCESS) : Ter(temDISABLED);
 
         // can not set Delegate when feature disabled
         env(delegate::set(gw, alice, {"Payment"}), res);
@@ -97,16 +110,21 @@ class Delegate_test : public beast::unit_test::Suite
         env.close();
 
         auto const permissions = std::vector<std::string>{
-            "Payment", "EscrowCreate", "EscrowFinish", "TrustlineAuthorize", "CheckCreate"};
+            "Payment",
+            "EscrowCreate",
+            "EscrowFinish",
+            "TrustlineAuthorize",
+            "CheckCreate",
+        };
         env(delegate::set(gw, alice, permissions));
         env.close();
 
         // this lambda function is used to compare the json value of ledger
         // entry response with the given vector of permissions.
-        auto comparePermissions = [&](json::Value const& jle,
-                                      std::vector<std::string> const& permissions,
-                                      Account const& account,
-                                      Account const& authorize) {
+        auto const comparePermissions = [&](json::Value const& jle,
+                                            std::vector<std::string> const& permissions,
+                                            Account const& account,
+                                            Account const& authorize) {
             BEAST_EXPECT(
                 !jle[jss::result].isMember(jss::error) && jle[jss::result].isMember(jss::node));
             BEAST_EXPECT(jle[jss::result][jss::node]["LedgerEntryType"] == jss::Delegate);
@@ -142,6 +160,8 @@ class Delegate_test : public beast::unit_test::Suite
         env.close();
         auto const jle = delegate::entry(env, gw, alice);
         BEAST_EXPECT(jle[jss::result][jss::error] == "entryNotFound");
+        BEAST_EXPECT(jle[jss::result][jss::error_code] == RpcEntryNotFound);
+        BEAST_EXPECT(jle[jss::result][jss::error_message] == "Entry not found.");
 
         // alice can delegate permissions to gw as well
         env(delegate::set(alice, gw, permissions));
@@ -150,6 +170,8 @@ class Delegate_test : public beast::unit_test::Suite
         auto const response = delegate::entry(env, gw, alice);
         // alice has not been granted any permissions by gw
         BEAST_EXPECT(response[jss::result][jss::error] == "entryNotFound");
+        BEAST_EXPECT(response[jss::result][jss::error_code] == RpcEntryNotFound);
+        BEAST_EXPECT(response[jss::result][jss::error_message] == "Entry not found.");
     }
 
     void
@@ -171,17 +193,19 @@ class Delegate_test : public beast::unit_test::Suite
             env(delegate::set(
                     gw,
                     alice,
-                    {"Payment",
-                     "EscrowCreate",
-                     "EscrowFinish",
-                     "EscrowCancel",
-                     "CheckCreate",
-                     "CheckCash",
-                     "CheckCancel",
-                     "DepositPreauth",
-                     "TrustSet",
-                     "NFTokenMint",
-                     "NFTokenBurn"}),
+                    {
+                        "Payment",
+                        "EscrowCreate",
+                        "EscrowFinish",
+                        "EscrowCancel",
+                        "CheckCreate",
+                        "CheckCash",
+                        "CheckCancel",
+                        "DepositPreauth",
+                        "TrustSet",
+                        "NFTokenMint",
+                        "NFTokenBurn",
+                    }),
                 Ter(temARRAY_TOO_LARGE));
         }
 
@@ -213,12 +237,14 @@ class Delegate_test : public beast::unit_test::Suite
             env(delegate::set(
                     gw,
                     alice,
-                    {"Payment",
-                     "EscrowCreate",
-                     "EscrowFinish",
-                     "TrustlineAuthorize",
-                     "CheckCreate",
-                     "TrustlineAuthorize"}),
+                    {
+                        "Payment",
+                        "EscrowCreate",
+                        "EscrowFinish",
+                        "TrustlineAuthorize",
+                        "CheckCreate",
+                        "TrustlineAuthorize",
+                    }),
                 Ter(temMALFORMED));
         }
 
@@ -226,6 +252,19 @@ class Delegate_test : public beast::unit_test::Suite
         // tecNO_TARGET
         {
             env(delegate::set(gw, Account("unknown"), {"Payment"}), Ter(tecNO_TARGET));
+        }
+
+        // Delegating to a pseudo-account is not allowed, should return tecPSEUDO_ACCOUNT
+        {
+            Vault const vault{env};
+            auto [tx, keylet] = vault.create({.owner = gw, .asset = xrpIssue()});
+            env(tx);
+            env.close();
+
+            auto const sleVault = env.le(keylet);
+            BEAST_EXPECT(sleVault);
+            Account const vaultPseudo{"vault", sleVault->at(sfAccount)};
+            env(delegate::set(gw, vaultPseudo, {"Payment"}), Ter(tecPSEUDO_ACCOUNT));
         }
 
         // non-delegable transaction
@@ -254,7 +293,7 @@ class Delegate_test : public beast::unit_test::Suite
             Account const bob{"bob"};
 
             auto const txFee = env.current()->fees().base;
-            env.fund(env.current()->fees().accountReserve(0) + txFee, alice);
+            env.fund(env.current()->fees().accountReserve(0, 1) + txFee, alice);
             env.fund(XRP(100000), bob);
             env.close();
 
@@ -271,7 +310,7 @@ class Delegate_test : public beast::unit_test::Suite
 
             auto const txFee = env.current()->fees().base;
 
-            env.fund(env.current()->fees().accountReserve(1) + (txFee * 4), alice);
+            env.fund(env.current()->fees().accountReserve(1, 1) + (txFee * 4), alice);
             env.fund(XRP(100000), bob, carol);
             env.close();
 
@@ -297,8 +336,8 @@ class Delegate_test : public beast::unit_test::Suite
             Account const alice{"alice"};
             Account const bob{"bob"};
 
-            env.fund(drops(env.current()->fees().accountReserve(1)), alice);
-            env.fund(drops(env.current()->fees().accountReserve(2)), bob);
+            env.fund(drops(env.current()->fees().accountReserve(1, 1)), alice);
+            env.fund(drops(env.current()->fees().accountReserve(2, 1)), bob);
             env.close();
 
             // alice gives bob permission
@@ -322,7 +361,7 @@ class Delegate_test : public beast::unit_test::Suite
         using namespace jtx;
 
         // Common setup: fund alice, bob, carol with 1000 XRP.
-        auto setup = [&](Env& env) {
+        auto const setup = [&](Env& env) {
             Account const alice{"alice"};
             Account const bob{"bob"};
             Account const carol{"carol"};
@@ -395,13 +434,13 @@ class Delegate_test : public beast::unit_test::Suite
             // the DelegateSet tx cost, leaving Alice with exactly (paymentAmount + reserve).
             // highFee = reserve + baseFee, strictly greater than reserve, so that
             // max(reserve, highFee) = highFee — making the direct payment check fail.
-            auto setup = [&](Env& env) {
+            auto const setup = [&](Env& env) {
                 Account const alice{"alice"};
                 Account const bob{"bob"};
                 Account const carol{"carol"};
 
                 auto const baseFee = env.current()->fees().base;
-                auto const reserve = env.current()->fees().accountReserve(1);
+                auto const reserve = env.current()->fees().accountReserve(1, 1);
                 auto const paymentAmount = XRP(1);
                 auto const highFee = reserve + baseFee;
                 BEAST_EXPECT(highFee > reserve);
@@ -467,9 +506,9 @@ class Delegate_test : public beast::unit_test::Suite
             Account const carol{"carol"};
 
             auto const baseFee = env.current()->fees().base;
-            auto const baseReserve = env.current()->fees().accountReserve(0);
+            auto const baseReserve = env.current()->fees().accountReserve(0, 1);
 
-            env.fund(env.current()->fees().accountReserve(1) + baseFee + XRP(1), alice);
+            env.fund(env.current()->fees().accountReserve(1, 1) + baseFee + XRP(1), alice);
             env.fund(baseReserve, bob);
             env.fund(XRP(1000), carol);
             env.close();
@@ -502,7 +541,7 @@ class Delegate_test : public beast::unit_test::Suite
             Account const carol{"carol"};
 
             auto const baseFee = env.current()->fees().base;
-            auto const reserve = env.current()->fees().accountReserve(1);
+            auto const reserve = env.current()->fees().accountReserve(1, 1);
 
             // Alice is funded with (reserve + baseFee): after DelegateSet she has
             // exactly 'reserve', which is insufficient to send XRP(10) while keeping
@@ -603,16 +642,14 @@ class Delegate_test : public beast::unit_test::Suite
             auto const delegateKey = keylet::delegate(alice.id(), bob.id());
             BEAST_EXPECT(env.closed()->exists(delegateKey));
 
-            auto hasKey = [](xrpl::Dir const& dir, uint256 const& key) {
+            auto const hasKey = [](std::vector<SLE::const_pointer> const& dir, UInt256 const& key) {
                 return std::any_of(  // NOLINT(modernize-use-ranges)
                     dir.begin(), dir.end(), [&](auto const& sle) { return sle->key() == key; });
             };
 
             // Delegate object should appear in both alice's and bob's directories
-            BEAST_EXPECT(
-                hasKey(xrpl::Dir(*env.closed(), keylet::ownerDir(alice.id())), delegateKey.key));
-            BEAST_EXPECT(
-                hasKey(xrpl::Dir(*env.closed(), keylet::ownerDir(bob.id())), delegateKey.key));
+            BEAST_EXPECT(hasKey(ownerDirEntries(*env.closed(), alice), delegateKey.key));
+            BEAST_EXPECT(hasKey(ownerDirEntries(*env.closed(), bob), delegateKey.key));
 
             for (std::uint32_t i = 0; i < 256; ++i)
                 env.close();
@@ -630,8 +667,7 @@ class Delegate_test : public beast::unit_test::Suite
             BEAST_EXPECT(!env.closed()->exists(keylet::ownerDir(alice.id())));
             BEAST_EXPECT(!env.closed()->exists(delegateKey));
             // bob's directory should no longer reference the Delegate object
-            BEAST_EXPECT(
-                !hasKey(xrpl::Dir(*env.closed(), keylet::ownerDir(bob.id())), delegateKey.key));
+            BEAST_EXPECT(!hasKey(ownerDirEntries(*env.closed(), bob), delegateKey.key));
             BEAST_EXPECT(env.balance(carol) == carolBalance + aliceBalance - deleteFee);
         }
 
@@ -652,15 +688,13 @@ class Delegate_test : public beast::unit_test::Suite
             auto const delegateKey = keylet::delegate(alice.id(), bob.id());
             BEAST_EXPECT(env.closed()->exists(delegateKey));
 
-            auto hasKey = [](xrpl::Dir const& dir, uint256 const& key) {
+            auto const hasKey = [](std::vector<SLE::const_pointer> const& dir, UInt256 const& key) {
                 return std::any_of(  // NOLINT(modernize-use-ranges)
                     dir.begin(), dir.end(), [&](auto const& sle) { return sle->key() == key; });
             };
 
-            BEAST_EXPECT(
-                hasKey(xrpl::Dir(*env.closed(), keylet::ownerDir(alice.id())), delegateKey.key));
-            BEAST_EXPECT(
-                hasKey(xrpl::Dir(*env.closed(), keylet::ownerDir(bob.id())), delegateKey.key));
+            BEAST_EXPECT(hasKey(ownerDirEntries(*env.closed(), alice), delegateKey.key));
+            BEAST_EXPECT(hasKey(ownerDirEntries(*env.closed(), bob), delegateKey.key));
 
             // The Delegate entry counts against alice's ownerCount.
             auto const sleAlice = env.closed()->read(keylet::account(alice.id()));
@@ -685,8 +719,7 @@ class Delegate_test : public beast::unit_test::Suite
             BEAST_EXPECT(!env.closed()->exists(keylet::ownerDir(bob.id())));
             BEAST_EXPECT(!env.closed()->exists(delegateKey));
             // alice's directory should no longer reference the Delegate object
-            BEAST_EXPECT(
-                !hasKey(xrpl::Dir(*env.closed(), keylet::ownerDir(alice.id())), delegateKey.key));
+            BEAST_EXPECT(!hasKey(ownerDirEntries(*env.closed(), alice), delegateKey.key));
             BEAST_EXPECT(env.balance(carol) == carolBalance + bobBalance - deleteFee);
 
             // alice's ownerCount is now 0; she can delete her own account.
@@ -721,7 +754,7 @@ class Delegate_test : public beast::unit_test::Suite
             auto const aliceBobKey = keylet::delegate(alice.id(), bob.id());
             auto const carolBobKey = keylet::delegate(carol.id(), bob.id());
 
-            auto hasKey = [](xrpl::Dir const& dir, uint256 const& key) {
+            auto const hasKey = [](std::vector<SLE::const_pointer> const& dir, UInt256 const& key) {
                 return std::any_of(  // NOLINT(modernize-use-ranges)
                     dir.begin(), dir.end(), [&](auto const& sle) { return sle->key() == key; });
             };
@@ -729,10 +762,8 @@ class Delegate_test : public beast::unit_test::Suite
             // Both Delegate objects exist and are in bob's directory
             BEAST_EXPECT(env.closed()->exists(aliceBobKey));
             BEAST_EXPECT(env.closed()->exists(carolBobKey));
-            BEAST_EXPECT(
-                hasKey(xrpl::Dir(*env.closed(), keylet::ownerDir(bob.id())), aliceBobKey.key));
-            BEAST_EXPECT(
-                hasKey(xrpl::Dir(*env.closed(), keylet::ownerDir(bob.id())), carolBobKey.key));
+            BEAST_EXPECT(hasKey(ownerDirEntries(*env.closed(), bob), aliceBobKey.key));
+            BEAST_EXPECT(hasKey(ownerDirEntries(*env.closed(), bob), carolBobKey.key));
 
             for (std::uint32_t i = 0; i < 256; ++i)
                 env.close();
@@ -753,10 +784,8 @@ class Delegate_test : public beast::unit_test::Suite
             BEAST_EXPECT(!env.closed()->exists(carolBobKey));
 
             // alice's and carol's directories no longer reference the objects
-            BEAST_EXPECT(
-                !hasKey(xrpl::Dir(*env.closed(), keylet::ownerDir(alice.id())), aliceBobKey.key));
-            BEAST_EXPECT(
-                !hasKey(xrpl::Dir(*env.closed(), keylet::ownerDir(carol.id())), carolBobKey.key));
+            BEAST_EXPECT(!hasKey(ownerDirEntries(*env.closed(), alice), aliceBobKey.key));
+            BEAST_EXPECT(!hasKey(ownerDirEntries(*env.closed(), carol), carolBobKey.key));
 
             BEAST_EXPECT(env.balance(dave) == daveBalance + bobBalance - deleteFee);
         }
@@ -953,8 +982,8 @@ class Delegate_test : public beast::unit_test::Suite
 
             XRPAmount const baseFee{env.current()->fees().base};
 
-            auto aliceBalance = env.balance(alice, XRP);
-            auto bobBalance = env.balance(bob, XRP);
+            auto const aliceBalance = env.balance(alice, XRP);
+            auto const bobBalance = env.balance(bob, XRP);
             auto gwBalance = env.balance(gw, XRP);
 
             // gw gives bob PaymentBurn permission
@@ -1013,6 +1042,15 @@ class Delegate_test : public beast::unit_test::Suite
                 env(delegate::set(gw, bob, {"PaymentMint"}));
                 env.close();
 
+                // Cross-currency sfSendMax without any flag passes the granular
+                // template and is rejected by the granular semantic check, because
+                // the sfSendMax asset (XRP) is not the same as the sfAmount asset (USD).
+                env(pay(gw, alice, usd(500)),
+                    Sendmax(XRP(1001)),
+                    delegate::As(bob),
+                    Ter(terNO_DELEGATE_PERMISSION));
+                BEAST_EXPECT(expectOffers(env, carol, 1));
+
                 // bob can not send cross currency payment on behalf of the gw,
                 // even with PaymentMint permission and gw being the issuer.
                 env(pay(gw, alice, usd(5000)),
@@ -1041,6 +1079,15 @@ class Delegate_test : public beast::unit_test::Suite
                 env(delegate::set(alice, bob, {"PaymentBurn"}));
                 env.close();
 
+                // Cross-currency sfSendMax without any flag passes the granular
+                // template and is rejected by the granular semantic check, because
+                // the sfSendMax asset (XRP) is not the same as the sfAmount asset (USD).
+                env(pay(alice, gw, usd(500)),
+                    Sendmax(XRP(1001)),
+                    delegate::As(bob),
+                    Ter(terNO_DELEGATE_PERMISSION));
+                BEAST_EXPECT(expectOffers(env, bob, 1));
+
                 // bob can not send cross currency payment on behalf of alice,
                 // even with PaymentBurn permission and gw being the issuer.
                 env(pay(alice, gw, usd(5000)),
@@ -1063,6 +1110,236 @@ class Delegate_test : public beast::unit_test::Suite
             }
         }
 
+        // PaymentMint/PaymentBurn with sfSendMax of the same asset is allowed,
+        // same-asset SendMax is still a direct payment, not cross-currency.
+        {
+            Env env(*this, features);
+            Account const alice{"alice"};
+            Account const bob{"bob"};
+            Account const gw{"gw"};
+            auto const usd = gw["USD"];
+            env.fund(XRP(10000), alice, bob, gw);
+            env.trust(usd(200), alice);
+            env.close();
+
+            env(delegate::set(gw, bob, {"PaymentMint"}));
+            env.close();
+
+            // sfSendMax with same asset as sfAmount, still a direct payment
+            env(pay(gw, alice, usd(50)), Sendmax(usd(50)), delegate::As(bob));
+            env.require(Balance(alice, usd(50)));
+
+            env(delegate::set(alice, bob, {"PaymentBurn"}));
+            env.close();
+
+            env(pay(alice, gw, usd(30)), delegate::As(bob));
+            env.require(Balance(alice, usd(20)));
+        }
+
+        // PaymentBurn is authorized by balance direction, not trust limit.
+        // holder is allowed to burn even if trust limit is 0.
+        {
+            Env env(*this);
+            Account const alice{"alice"};
+            Account const bob{"bob"};
+            Account const gw{"gateway"};
+            auto const gwUSD = gw["USD"];
+            auto const aliceUSD = alice["USD"];
+
+            env.fund(XRP(10000), alice, bob, gw);
+            env.trust(gwUSD(200), alice);
+            env.close();
+
+            env(pay(gw, alice, gwUSD(50)));
+            env.require(Balance(alice, gwUSD(50)));
+            env.close();
+
+            env(delegate::set(alice, bob, {"PaymentBurn"}));
+            env.close();
+
+            env.trust(gwUSD(0), alice);
+            env.close();
+            BEAST_EXPECT(env.limit(alice, gwUSD.issue()) == gwUSD(0));
+
+            env(trust(gw, aliceUSD(200)));
+            env.close();
+
+            env(pay(alice, gw, gwUSD(30)), delegate::As(bob));
+            env.require(Balance(alice, gwUSD(20)));
+            env.require(Balance(gw, aliceUSD(-20)));
+        }
+
+        // PaymentBurn must not exceed the balance the account holds. Redeeming past
+        // zero makes the payment engine issue the account's own IOUs, which is a mint.
+        {
+            Env env(*this, features);
+            Account const alice{"alice"};
+            Account const bob{"bob"};
+            Account const gw{"gateway"};
+            auto const gwUSD = gw["USD"];
+            auto const aliceUSD = alice["USD"];
+
+            env.fund(XRP(10000), alice, bob, gw);
+            env.trust(gwUSD(200), alice);
+            env.close();
+
+            env(pay(gw, alice, gwUSD(50)));
+            env.close();
+            env.require(Balance(alice, gwUSD(50)));
+
+            // gw accepts alice-issued USD, so the engine has issuing liquidity
+            // available once the trustline reaches zero.
+            env(trust(gw, aliceUSD(200)));
+            env.close();
+
+            env(delegate::set(alice, bob, {"PaymentBurn"}));
+            env.close();
+
+            if (!features[fixCleanup3_4_0])
+            {
+                // Pre-fixCleanup3_4_0: the balance direction alone authorizes the payment, so it
+                // redeems alice's 50 and then mints 50 alice-issued USD.
+                env(pay(alice, gw, gwUSD(100)), delegate::As(bob));
+                env.require(Balance(alice, gwUSD(-50)));
+                env.require(Balance(gw, aliceUSD(50)));
+            }
+            else
+            {
+                // Post-fixCleanup3_4_0: Rejected because it exceeds what alice holds.
+                env(pay(alice, gw, gwUSD(100)), delegate::As(bob), Ter(terNO_DELEGATE_PERMISSION));
+                env.require(Balance(alice, gwUSD(50)));
+                env.require(Balance(gw, aliceUSD(-50)));
+
+                // Allowed because it is less than what alice holds.
+                env(pay(alice, gw, gwUSD(20)), delegate::As(bob));
+                env.require(Balance(alice, gwUSD(30)));
+                env.close();
+
+                // Exactly what alice holds: allowed, and settles at zero.
+                env(pay(alice, gw, gwUSD(30)), delegate::As(bob));
+                env.require(Balance(alice, gwUSD(0)));
+                env.close();
+
+                // Nothing left to burn: rejected.
+                env(pay(alice, gw, gwUSD(1)), delegate::As(bob), Ter(terNO_DELEGATE_PERMISSION));
+                env.require(Balance(gw, aliceUSD(0)));
+            }
+        }
+
+        // A delegate holding both PaymentMint and PaymentBurn may cross zero.
+        {
+            Env env(*this, features);
+            Account const alice{"alice"};
+            Account const bob{"bob"};
+            Account const gw{"gateway"};
+            auto const gwUSD = gw["USD"];
+            auto const aliceUSD = alice["USD"];
+
+            env.fund(XRP(10000), alice, bob, gw);
+            env.trust(gwUSD(200), alice);
+            env.close();
+
+            env(pay(gw, alice, gwUSD(50)));
+            env(trust(gw, aliceUSD(200)));
+            env.close();
+
+            env(delegate::set(alice, bob, {"PaymentBurn", "PaymentMint"}));
+            env.close();
+
+            env(pay(alice, gw, gwUSD(100)), delegate::As(bob));
+            env.require(Balance(alice, gwUSD(-50)));
+            env.require(Balance(gw, aliceUSD(50)));
+        }
+
+        // Test invalid fields or flags not allowed in granular permission template
+        {
+            Env env(*this, features);
+            Account const alice{"alice"};
+            Account const bob{"bob"};
+            Account const gw{"gw"};
+            auto const usd = gw["USD"];
+            env.fund(XRP(10000), alice, bob, gw);
+            env.trust(usd(200), alice);
+            env.close();
+
+            env(delegate::set(gw, bob, {"PaymentMint"}));
+            env(delegate::set(alice, bob, {"PaymentBurn"}));
+            env.close();
+
+            // sfDeliverMin (with tfPartialPayment) is not in the PaymentMint
+            // or PaymentBurn template.
+            env(pay(gw, alice, usd(100)),
+                DeliverMin(usd(50)),
+                Txflags(tfPartialPayment),
+                delegate::As(bob),
+                Ter(terNO_DELEGATE_PERMISSION));
+            env(pay(alice, gw, usd(50)),
+                DeliverMin(usd(25)),
+                Txflags(tfPartialPayment),
+                delegate::As(bob),
+                Ter(terNO_DELEGATE_PERMISSION));
+
+            // sfDomainID is not in the PaymentMint or PaymentBurn template.
+            env(pay(gw, alice, usd(100)),
+                Domain(UInt256{1}),
+                delegate::As(bob),
+                Ter(terNO_DELEGATE_PERMISSION));
+            env(pay(alice, gw, usd(50)),
+                Domain(UInt256{1}),
+                delegate::As(bob),
+                Ter(terNO_DELEGATE_PERMISSION));
+
+            // sfPaths is not in the PaymentMint or PaymentBurn template.
+            env(pay(gw, alice, usd(100)),
+                Path(~XRP),
+                delegate::As(bob),
+                Ter(terNO_DELEGATE_PERMISSION));
+            env(pay(alice, gw, usd(50)),
+                Path(~XRP),
+                delegate::As(bob),
+                Ter(terNO_DELEGATE_PERMISSION));
+
+            // Valid Payment flags that are not in the PaymentMint or PaymentBurn template.
+            for (auto const flag : {tfPartialPayment, tfNoRippleDirect, tfLimitQuality})
+            {
+                env(pay(gw, alice, usd(100)),
+                    Txflags(flag),
+                    delegate::As(bob),
+                    Ter(terNO_DELEGATE_PERMISSION));
+                env(pay(alice, gw, usd(50)),
+                    Txflags(flag),
+                    delegate::As(bob),
+                    Ter(terNO_DELEGATE_PERMISSION));
+            }
+
+            // The same payments without the extra field or flag succeed.
+            env(pay(gw, alice, usd(100)), delegate::As(bob));
+            env(pay(alice, gw, usd(50)), delegate::As(bob));
+            env.require(Balance(alice, usd(50)));
+        }
+
+        // Delegate account holds no granular permissions for the tx type:
+        // getGranularPermission returns empty set.
+        {
+            Env env(*this, features);
+            Account const alice{"alice"};
+            Account const bob{"bob"};
+            Account const gw{"gw"};
+            auto const usd = gw["USD"];
+            env.fund(XRP(10000), alice, bob, gw);
+            env.trust(usd(200), alice);
+            env.close();
+
+            // Bob holds only an AccountSet granular permission.
+            env(delegate::set(alice, bob, {"AccountDomainSet"}));
+            env.close();
+
+            // Payment has granular permissions defined in permissions.macro,
+            // but bob only holds AccountSet's granular permission,
+            // getGranularPermission returns empty.
+            env(pay(alice, gw, usd(50)), delegate::As(bob), Ter(terNO_DELEGATE_PERMISSION));
+        }
+
         // PaymentMint and PaymentBurn for MPT
         {
             std::string logs;
@@ -1077,22 +1354,22 @@ class Delegate_test : public beast::unit_test::Suite
             mpt.authorize({.account = alice});
             mpt.authorize({.account = bob});
 
-            auto const MPT = mpt["MPT"];  // NOLINT(readability-identifier-naming)
-            env(pay(gw, alice, MPT(500)));
-            env(pay(gw, bob, MPT(500)));
+            auto const gwMPT = mpt["MPT"];
+            env(pay(gw, alice, gwMPT(500)));
+            env(pay(gw, bob, gwMPT(500)));
             env.close();
-            auto aliceMPT = env.balance(alice, MPT);
-            auto bobMPT = env.balance(bob, MPT);
+            auto aliceMPT = env.balance(alice, gwMPT);
+            auto const bobMPT = env.balance(bob, gwMPT);
 
             // PaymentMint
             {
                 env(delegate::set(gw, bob, {"PaymentMint"}));
                 env.close();
 
-                env(pay(gw, alice, MPT(50)), delegate::As(bob));
-                BEAST_EXPECT(env.balance(alice, MPT) == aliceMPT + MPT(50));
-                BEAST_EXPECT(env.balance(bob, MPT) == bobMPT);
-                aliceMPT = env.balance(alice, MPT);
+                env(pay(gw, alice, gwMPT(50)), delegate::As(bob));
+                BEAST_EXPECT(env.balance(alice, gwMPT) == aliceMPT + gwMPT(50));
+                BEAST_EXPECT(env.balance(bob, gwMPT) == bobMPT);
+                aliceMPT = env.balance(alice, gwMPT);
             }
 
             // PaymentBurn
@@ -1100,24 +1377,267 @@ class Delegate_test : public beast::unit_test::Suite
                 env(delegate::set(alice, bob, {"PaymentBurn"}));
                 env.close();
 
-                env(pay(alice, gw, MPT(50)), delegate::As(bob));
-                BEAST_EXPECT(env.balance(alice, MPT) == aliceMPT - MPT(50));
-                BEAST_EXPECT(env.balance(bob, MPT) == bobMPT);
-                aliceMPT = env.balance(alice, MPT);
+                env(pay(alice, gw, gwMPT(50)), delegate::As(bob));
+                BEAST_EXPECT(env.balance(alice, gwMPT) == aliceMPT - gwMPT(50));
+                BEAST_EXPECT(env.balance(bob, gwMPT) == bobMPT);
+                aliceMPT = env.balance(alice, gwMPT);
             }
 
             // Grant both granular permissions and tx level permission.
             {
                 env(delegate::set(alice, bob, {"PaymentBurn", "PaymentMint", "Payment"}));
                 env.close();
-                env(pay(alice, gw, MPT(50)), delegate::As(bob));
-                BEAST_EXPECT(env.balance(alice, MPT) == aliceMPT - MPT(50));
-                BEAST_EXPECT(env.balance(bob, MPT) == bobMPT);
-                aliceMPT = env.balance(alice, MPT);
-                env(pay(alice, bob, MPT(100)), delegate::As(bob));
-                BEAST_EXPECT(env.balance(alice, MPT) == aliceMPT - MPT(100));
-                BEAST_EXPECT(env.balance(bob, MPT) == bobMPT + MPT(100));
+                env(pay(alice, gw, gwMPT(50)), delegate::As(bob));
+                BEAST_EXPECT(env.balance(alice, gwMPT) == aliceMPT - gwMPT(50));
+                BEAST_EXPECT(env.balance(bob, gwMPT) == bobMPT);
+                aliceMPT = env.balance(alice, gwMPT);
+                env(pay(alice, bob, gwMPT(100)), delegate::As(bob));
+                BEAST_EXPECT(env.balance(alice, gwMPT) == aliceMPT - gwMPT(100));
+                BEAST_EXPECT(env.balance(bob, gwMPT) == bobMPT + gwMPT(100));
             }
+        }
+
+        // PaymentMint/PaymentBurn must not trust IOU issuer aliases.
+        // In a direct IOU payment, sfAmount.issuer may be encoded as either
+        // endpoint, and PaySteps normalizes those aliases to the same execution.
+        // These cases ensure a delegate cannot flip the encoded issuer to turn a
+        // mint into an apparent burn, or a burn into an apparent mint.
+        {
+            Env env(*this);
+            Account const alice{"alice"};
+            Account const bob{"bob"};
+            Account const gw{"gateway"};
+            auto const gwUSD = gw["USD"];
+            auto const aliceUSD = alice["USD"];
+
+            env.fund(XRP(10000), alice, bob, gw);
+            env.trust(gwUSD(200), alice);
+            env.close();
+
+            // Alice holds 100 USD issued by gw.
+            env(pay(gw, alice, gwUSD(100)));
+            env.close();
+            env.require(Balance(alice, gwUSD(100)));
+
+            // Delegate with only PaymentBurn tries to mint by encoding
+            // Amount.issuer as the destination alias, alice. The actual issuer
+            // is gw, so this requires PaymentMint and must be rejected.
+            {
+                env(delegate::set(gw, bob, {"PaymentBurn"}));
+                env.close();
+
+                // Amount.issuer = alice (destination), rejected because gw is
+                // the actual issuer and PaymentMint is required.
+                env(pay(gw, alice, aliceUSD(50)),
+                    delegate::As(bob),
+                    Ter(terNO_DELEGATE_PERMISSION));
+                env.require(Balance(alice, gwUSD(100)));
+
+                // Fails because bob holds PaymentBurn, not PaymentMint.
+                env(pay(gw, alice, gwUSD(50)), delegate::As(bob), Ter(terNO_DELEGATE_PERMISSION));
+                env.require(Balance(alice, gwUSD(100)));
+            }
+
+            // Delegate with only PaymentMint tries to burn by encoding
+            // Amount.issuer as the source alias, alice. The actual issuer is
+            // gw, so this requires PaymentBurn and must be rejected.
+            {
+                env(delegate::set(alice, bob, {"PaymentMint"}));
+                env.close();
+
+                // Amount.issuer = alice (account), rejected because gw is the
+                // actual issuer and PaymentBurn is required.
+                env(pay(alice, gw, aliceUSD(50)),
+                    delegate::As(bob),
+                    Ter(terNO_DELEGATE_PERMISSION));
+                env.require(Balance(alice, gwUSD(100)));
+
+                // Fails because bob holds PaymentMint, not PaymentBurn.
+                env(pay(alice, gw, gwUSD(50)), delegate::As(bob), Ter(terNO_DELEGATE_PERMISSION));
+                env.require(Balance(alice, gwUSD(100)));
+            }
+        }
+
+        // Neither account nor destination is issuer.
+        // PaymentMint and PaymentBurn do not authorize these payments.
+        {
+            // IOU
+            {
+                Env env(*this);
+                Account const alice{"alice"};
+                Account const bob{"bob"};
+                Account const gw{"gateway"};
+                Account const gw2{"gateway2"};
+                auto const gwUSD = gw["USD"];
+
+                env.fund(XRP(10000), alice, bob, gw, gw2);
+                env.close();
+
+                env.trust(gwUSD(200), alice);
+                env.close();
+
+                env(pay(gw, alice, gwUSD(100)));
+                env.close();
+
+                env(delegate::set(alice, bob, {"PaymentMint", "PaymentBurn"}));
+                env.close();
+
+                env(pay(alice, gw, gw2["USD"](50)),
+                    delegate::As(bob),
+                    Ter(terNO_DELEGATE_PERMISSION));
+            }
+
+            // MPT
+            {
+                Env env(*this, features);
+                Account const alice{"alice"};
+                Account const bob{"bob"};
+                Account const gw{"gateway"};
+                Account const gw2{"gateway2"};
+
+                env.fund(XRP(10000), gw2);
+                env.close();
+
+                MPTTester mpt(env, gw, {.holders = {alice, bob}});
+                mpt.create({.ownerCount = 1, .flags = tfMPTCanTransfer});
+
+                mpt.authorize({.account = alice});
+                mpt.authorize({.account = bob});
+
+                auto const gwMPT = mpt["MPT"];
+                env(pay(gw, alice, gwMPT(500)));
+                env(pay(gw, bob, gwMPT(500)));
+                env.close();
+
+                env(delegate::set(alice, bob, {"PaymentMint", "PaymentBurn"}));
+                env.close();
+
+                env(pay(alice, gw2, gwMPT(50)), delegate::As(bob), Ter(terNO_DELEGATE_PERMISSION));
+            }
+        }
+
+        // IOU issuer is an endpoint, but no trustline exists.
+        {
+            Env env(*this);
+            Account const alice{"alice"};
+            Account const bob{"bob"};
+            Account const gw{"gateway"};
+
+            env.fund(XRP(10000), alice, bob, gw);
+            env.close();
+
+            env(delegate::set(alice, bob, {"PaymentMint", "PaymentBurn"}));
+            env.close();
+
+            env(pay(alice, gw, alice["USD"](50)),
+                delegate::As(bob),
+                Ter(terNO_DELEGATE_PERMISSION));
+        }
+
+        // Both trust limits (who is the designated issuer) and balance direction
+        // (which way DirectStepI executes) must be checked. Neither alone is sufficient.
+        {
+            Env env(*this);
+            Account const alice{"alice"};
+            Account const bob{"bob"};
+            Account const gw{"gateway"};
+            auto const gwUSD = gw["USD"];
+            auto const aliceUSD = alice["USD"];
+
+            env.fund(XRP(10000), alice, bob, gw);
+
+            // Alice trusts gw but holds zero gw-issued USD. With balance == 0,
+            // DirectStepI would issue rather than redeem, so PaymentBurn must
+            // be rejected even though Alice's trust limit to gw is positive.
+            {
+                env.trust(gwUSD(200), alice);
+                env.close();
+
+                // Alice has nothing to burn.
+                env(delegate::set(alice, bob, {"PaymentBurn"}));
+                env.close();
+
+                env(pay(alice, gw, gwUSD(50)), delegate::As(bob), Ter(terNO_DELEGATE_PERMISSION));
+                env(pay(alice, gw, aliceUSD(50)),
+                    delegate::As(bob),
+                    Ter(terNO_DELEGATE_PERMISSION));
+            }
+
+            // Set up a trust line where gw holds alice-issued USD. DirectStepI
+            // would redeem rather than issue, so PaymentMint must be rejected
+            // even though the endpoint identity matches.
+            {
+                // Gw sets trust to accept alice-issued USD.
+                env(trust(gw, aliceUSD(200)));
+                env.close();
+
+                // Alice issues her own USD to gw; now gw holds alice's IOUs.
+                env(pay(alice, gw, aliceUSD(100)));
+                env.close();
+
+                // In gw's view, accountHolds(gw, USD, alice) > 0, so DirectStepI redeems.
+                // PaymentMint must be rejected because the step would redeem, not issue.
+                env(delegate::set(gw, bob, {"PaymentMint"}));
+                env.close();
+
+                env(pay(gw, alice, gwUSD(50)), delegate::As(bob), Ter(terNO_DELEGATE_PERMISSION));
+                env(pay(gw, alice, aliceUSD(50)),
+                    delegate::As(bob),
+                    Ter(terNO_DELEGATE_PERMISSION));
+            }
+        }
+
+        // Alice trusts gw but gw is not willing to hold alice's IOU (destLimit == 0).
+        {
+            Env env(*this);
+            Account const alice{"alice"};
+            Account const bob{"bob"};
+            Account const gw{"gateway"};
+            env.fund(XRP(10000), alice, bob, gw);
+            env.trust(gw["USD"](200), alice);
+            env.close();
+
+            env(delegate::set(alice, bob, {"PaymentMint"}));
+            env.close();
+
+            env(pay(alice, gw, gw["USD"](50)), delegate::As(bob), Ter(terNO_DELEGATE_PERMISSION));
+            env(pay(alice, gw, alice["USD"](50)),
+                delegate::As(bob),
+                Ter(terNO_DELEGATE_PERMISSION));
+        }
+
+        // Verify granular permissions of different tx types in the same SLE are scoped
+        // correctly. AccountSet permissions don't apply to Payment and vice versa
+        {
+            Env env(*this);
+            Account const alice{"alice"};
+            Account const bob{"bob"};
+            Account const gw{"gw"};
+            auto const usd = gw["USD"];
+            env.fund(XRP(10000), alice, bob, gw);
+            env.trust(usd(200), alice);
+            env.close();
+
+            // Alice granted bob with both AccountDomainSet and PaymentMint.
+            env(delegate::set(alice, bob, {"AccountDomainSet", "PaymentMint"}));
+            env.close();
+
+            // PaymentMint fails at granular semantic check because alice is not the issuer.
+            env(pay(alice, gw, usd(50)), delegate::As(bob), Ter(terNO_DELEGATE_PERMISSION));
+
+            // AccountDomainSet applies correctly to AccountSet
+            std::string const domain = "example.com";
+            auto jt = noop(alice);
+            jt[sfDomain] = strHex(domain);
+            jt[sfDelegate] = bob.human();
+            env(jt);
+            BEAST_EXPECT((*env.le(alice))[sfDomain] == makeSlice(domain));
+
+            // gw gives bob PaymentMint and bob can mint on gw's behalf
+            env(delegate::set(gw, bob, {"PaymentMint"}));
+            env.close();
+            env(pay(gw, alice, usd(50)), delegate::As(bob));
+            env.require(Balance(alice, usd(50)));
         }
     }
 
@@ -1301,6 +1821,34 @@ class Delegate_test : public beast::unit_test::Suite
             env(trust(gw, gw["USD"](0), alice, tfSetfAuth | tfFullyCanonicalSig),
                 delegate::As(bob));
         }
+
+        {
+            Env env(*this);
+            Account const gw{"gw"};
+            Account const alice{"alice"};
+            Account const bob{"bob"};
+            env.fund(XRP(10000), gw, alice, bob);
+
+            env(fset(gw, asfRequireAuth));
+            env.close();
+            env(trust(alice, gw["USD"](50)));
+            env.close();
+            env(delegate::set(gw, bob, {"TrustlineAuthorize"}));
+            env.close();
+
+            env(trust(gw, gw["USD"](0), alice, tfSetfAuth), delegate::As(bob));
+            env.close();
+
+            // sfQualityOut is a valid TrustSet field, but not permitted in granular template
+            json::Value txJson = trust(gw, gw["USD"](0), alice, tfSetfAuth);
+            txJson[sfQualityOut.jsonName] = 100;
+            env(txJson, delegate::As(bob), Ter(terNO_DELEGATE_PERMISSION));
+
+            // tfSetNoRipple is a valid flag for TrustSet, but not permitted in granular template
+            env(trust(gw, gw["USD"](0), alice, tfSetfAuth | tfSetNoRipple),
+                delegate::As(bob),
+                Ter(terNO_DELEGATE_PERMISSION));
+        }
     }
 
     void
@@ -1396,10 +1944,12 @@ class Delegate_test : public beast::unit_test::Suite
             env(delegate::set(
                 alice,
                 bob,
-                {"AccountDomainSet",
-                 "AccountEmailHashSet",
-                 "AccountMessageKeySet",
-                 "AccountTransferRateSet"}));
+                {
+                    "AccountDomainSet",
+                    "AccountEmailHashSet",
+                    "AccountMessageKeySet",
+                    "AccountTransferRateSet",
+                }));
             env.close();
             auto jtRate = rate(alice, 2.0);
             jtRate[sfDelegate] = bob.human();
@@ -1414,11 +1964,13 @@ class Delegate_test : public beast::unit_test::Suite
             env(delegate::set(
                 alice,
                 bob,
-                {"AccountDomainSet",
-                 "AccountEmailHashSet",
-                 "AccountMessageKeySet",
-                 "AccountTransferRateSet",
-                 "AccountTickSizeSet"}));
+                {
+                    "AccountDomainSet",
+                    "AccountEmailHashSet",
+                    "AccountMessageKeySet",
+                    "AccountTransferRateSet",
+                    "AccountTickSizeSet",
+                }));
             env.close();
             env(jt);
             BEAST_EXPECT((*env.le(alice))[sfTickSize] == 8);
@@ -1456,7 +2008,9 @@ class Delegate_test : public beast::unit_test::Suite
             env(jv2, Ter(terNO_DELEGATE_PERMISSION));
         }
 
-        // can not set AccountSet flags on behalf of other account
+        // can not set AccountSet flags on behalf of other account,
+        // in permissions.macro, the template for AccountSet does
+        // not allow any flag set or clear.
         {
             Env env(*this);
             auto const alice = Account{"alice"};
@@ -1464,7 +2018,7 @@ class Delegate_test : public beast::unit_test::Suite
             env.fund(XRP(10000), alice, bob);
             env.close();
 
-            auto testSetClearFlag = [&](std::uint32_t flag) {
+            auto const testSetClearFlag = [&](std::uint32_t flag) {
                 // bob can not set flag on behalf of alice
                 env(fset(alice, flag), delegate::As(bob), Ter(terNO_DELEGATE_PERMISSION));
                 // alice set by herself
@@ -1552,6 +2106,71 @@ class Delegate_test : public beast::unit_test::Suite
             env(jt);
             BEAST_EXPECT((*env.le(alice))[sfDomain] == makeSlice(domain));
         }
+
+        // setting invalid field not in permissions.macro template will be rejected.
+        {
+            Env env(*this);
+            auto const alice = Account{"alice"};
+            auto const bob = Account{"bob"};
+            env.fund(XRP(10000), alice, bob);
+            env.close();
+
+            // Alice gives Bob permission to set her Domain
+            env(delegate::set(alice, bob, {"AccountDomainSet"}));
+            env.close();
+
+            std::string const domain = "example.com";
+            auto txJson = noop(alice);
+            txJson[sfDomain] = strHex(domain);
+            txJson[sfDelegate] = bob.human();
+
+            // sfNFTokenMinter is a valid field in AccountSet tx, but
+            // it is not permitted for granular template
+            txJson[sfNFTokenMinter] = bob.human();
+
+            env(txJson, Ter(terNO_DELEGATE_PERMISSION));
+        }
+
+        // Delegated AccountSet with no fields and no flags is allowed,
+        // because it is allowed in the non-delegated case as well.
+        {
+            Env env(*this);
+            Account const alice{"alice"};
+            Account const bob{"bob"};
+            env.fund(XRP(10000), alice, bob);
+            env.close();
+
+            env(delegate::set(alice, bob, {"AccountDomainSet"}));
+            env.close();
+
+            auto jt = noop(alice);
+            jt[sfDelegate] = bob.human();
+            env(jt);
+        }
+
+        // Revoking all permissions deletes the SLE and subsequent attempts are rejected.
+        {
+            Env env(*this);
+            Account const alice{"alice"};
+            Account const bob{"bob"};
+            env.fund(XRP(10000), alice, bob);
+            env.close();
+
+            env(delegate::set(alice, bob, {"AccountDomainSet"}));
+            env.close();
+
+            std::string const domain = "example.com";
+            auto jt = noop(alice);
+            jt[sfDomain] = strHex(domain);
+            jt[sfDelegate] = bob.human();
+            env(jt);
+
+            // empty DelegateSet deletes the SLE
+            env(delegate::set(alice, bob, {}));
+            env.close();
+
+            env(jt, Ter(terNO_DELEGATE_PERMISSION));
+        }
     }
 
     void
@@ -1574,30 +2193,33 @@ class Delegate_test : public beast::unit_test::Suite
             env.close();
 
             // delegate ledger object is not created yet
-            mpt.set(
-                {.account = alice,
-                 .flags = tfMPTLock,
-                 .delegate = bob,
-                 .err = terNO_DELEGATE_PERMISSION});
+            mpt.set({
+                .account = alice,
+                .flags = tfMPTLock,
+                .delegate = bob,
+                .err = terNO_DELEGATE_PERMISSION,
+            });
 
             // alice gives granular permission to bob of MPTokenIssuanceUnlock
             env(delegate::set(alice, bob, {"MPTokenIssuanceUnlock"}));
             env.close();
             // bob does not have lock permission
-            mpt.set(
-                {.account = alice,
-                 .flags = tfMPTLock,
-                 .delegate = bob,
-                 .err = terNO_DELEGATE_PERMISSION});
+            mpt.set({
+                .account = alice,
+                .flags = tfMPTLock,
+                .delegate = bob,
+                .err = terNO_DELEGATE_PERMISSION,
+            });
             // bob now has lock permission, but does not have unlock permission
             env(delegate::set(alice, bob, {"MPTokenIssuanceLock"}));
             env.close();
             mpt.set({.account = alice, .flags = tfMPTLock, .delegate = bob});
-            mpt.set(
-                {.account = alice,
-                 .flags = tfMPTUnlock,
-                 .delegate = bob,
-                 .err = terNO_DELEGATE_PERMISSION});
+            mpt.set({
+                .account = alice,
+                .flags = tfMPTUnlock,
+                .delegate = bob,
+                .err = terNO_DELEGATE_PERMISSION,
+            });
 
             // now bob can lock and unlock
             env(delegate::set(alice, bob, {"MPTokenIssuanceLock", "MPTokenIssuanceUnlock"}));
@@ -1625,22 +2247,24 @@ class Delegate_test : public beast::unit_test::Suite
             env.close();
             mpt.set({.account = alice, .flags = tfMPTLock, .delegate = bob});
             // bob does not have unlock permission
-            mpt.set(
-                {.account = alice,
-                 .flags = tfMPTUnlock,
-                 .delegate = bob,
-                 .err = terNO_DELEGATE_PERMISSION});
+            mpt.set({
+                .account = alice,
+                .flags = tfMPTUnlock,
+                .delegate = bob,
+                .err = terNO_DELEGATE_PERMISSION,
+            });
 
             // alice gives bob some unrelated permission with
             // MPTokenIssuanceLock
             env(delegate::set(alice, bob, {"NFTokenMint", "MPTokenIssuanceLock", "NFTokenBurn"}));
             env.close();
             // bob can not unlock
-            mpt.set(
-                {.account = alice,
-                 .flags = tfMPTUnlock,
-                 .delegate = bob,
-                 .err = terNO_DELEGATE_PERMISSION});
+            mpt.set({
+                .account = alice,
+                .flags = tfMPTUnlock,
+                .delegate = bob,
+                .err = terNO_DELEGATE_PERMISSION,
+            });
 
             // alice add MPTokenIssuanceSet to permissions
             env(delegate::set(
@@ -1672,6 +2296,140 @@ class Delegate_test : public beast::unit_test::Suite
             env.close();
             mpt.set({.account = alice, .flags = tfMPTLock | tfFullyCanonicalSig, .delegate = bob});
         }
+
+        // field not permitted to exist in granular delegation
+        {
+            Env env(*this);
+            Account const alice{"alice"};
+            Account const bob{"bob"};
+            env.fund(XRP(100000), alice, bob);
+
+            MPTTester mpt(env, alice, {.fund = false});
+            mpt.create({.flags = tfMPTCanLock});
+            env.close();
+
+            // alice gives granular permission to bob for MPTokenIssuanceLock
+            env(delegate::set(alice, bob, {"MPTokenIssuanceLock"}));
+            env.close();
+
+            // tfMPTSetCanLock is a valid MPTokenIssuanceSet flag but is not
+            // covered by the MPTokenIssuanceLock granular permission, so a
+            // delegate holding only that permission cannot set it.
+            mpt.set({
+                .account = alice,
+                .flags = tfMPTSetCanLock,
+                .delegate = bob,
+                .err = terNO_DELEGATE_PERMISSION,
+            });
+
+            // Notice: flags not defined in permissions.macro are not permitted for delegation.
+            // Since preflight will check invalid flag for the tx, it is not reachable.
+            // If any new flag is defined into the transaction in the future,
+            // but is not allowed for delegation, the transaction will be rejected with
+            // terNO_DELEGATE_PERMISSION. The set of permitted flags for delegation is defined in
+            // permissions.macro.
+        }
+
+        // Fields and flags not in permissions.macro template are not permitted for delegation.
+        {
+            Env env(*this);
+            Account const alice{"alice"};
+            Account const bob{"bob"};
+            Account const credIssuer{"credIssuer"};
+            env.fund(XRP(100000), alice, bob, credIssuer);
+            env.close();
+
+            env(pdomain::setTx(credIssuer, {{.issuer = credIssuer, .credType = "credential"}}));
+            auto const domainID = pdomain::getNewDomain(env.meta());
+            env.close();
+
+            MPTTester mpt(env, alice, {.fund = false});
+            mpt.create({.flags = tfMPTCanLock | tfMPTCanTransfer});
+            env.close();
+
+            // bob holds every granular permission defined for MPTokenIssuanceSet
+            env(delegate::set(alice, bob, {"MPTokenIssuanceLock", "MPTokenIssuanceUnlock"}));
+            env.close();
+
+            // Any of those fields or flags not defined in permissions.macro are not permitted for
+            // delegation.
+            std::vector<MPTSet> const args = {
+                {.transferFee = 100},
+                {.metadata = "test"},
+                {.domainID = domainID},
+                {.flags = tfMPTSetCanTrade},
+                {.flags = tfMPTSetCanClawback},
+                {.immutableFlags = tifMPTTransferFee},
+                // a permitted flag does not unlock the extra fields
+                {.flags = tfMPTLock, .domainID = domainID},
+            };
+
+            for (auto arg : args)
+            {
+                arg.account = alice;
+                arg.delegate = bob;
+                arg.err = terNO_DELEGATE_PERMISSION;
+                mpt.set(arg);
+                env.close();
+            }
+        }
+    }
+
+    void
+    testGranularPermissionWithSponsorCommonFields()
+    {
+        testcase("test granular permission with sponsor common fields");
+        using namespace jtx;
+
+        Account const alice{"alice"};
+        Account const bob{"bob"};
+        Account const gw{"gw"};
+        Account const sponsor{"sponsor"};
+        auto const usd = gw["USD"];
+        auto const feeAmt = XRP(10);
+
+        // Sponsor fields are common fields, so they are permitted in every granular template.
+        // Fee sponsorship is allowed for a granular delegated transaction.
+        Env env(*this);
+        env.fund(XRP(10000), alice, bob, gw, sponsor);
+        env.trust(usd(200), alice);
+        env.close();
+
+        env(delegate::set(gw, bob, {"PaymentMint"}));
+        env.close();
+
+        // Co-signed: the sponsor account pays the fee.
+        auto const gwBalance = env.balance(gw);
+        auto const bobBalance = env.balance(bob);
+        auto const sponsorBalance = env.balance(sponsor);
+        env(pay(gw, alice, usd(50)),
+            delegate::As(bob),
+            Fee(feeAmt),
+            sponsor::As(sponsor, spfSponsorFee),
+            Sig(sfSponsorSignature, sponsor));
+        env.close();
+        env.require(Balance(alice, usd(50)));
+        BEAST_EXPECT(env.balance(gw) == gwBalance);
+        BEAST_EXPECT(env.balance(bob) == bobBalance);
+        BEAST_EXPECT(env.balance(sponsor) == sponsorBalance - feeAmt);
+
+        // Pre-funded: sponsorship(sponsor, bob) pays the fee, bob is sfDelegate.
+        env(sponsor::set_fee(sponsor, 0, XRP(100)), sponsor::SponseeAcc(bob));
+        env.close();
+        auto const sponsorFee = sponsor::sponsorshipFeeBalance(env, sponsor, bob);
+        env(pay(gw, alice, usd(50)),
+            delegate::As(bob),
+            Fee(feeAmt),
+            sponsor::As(sponsor, spfSponsorFee));
+        env.close();
+        env.require(Balance(alice, usd(100)));
+        BEAST_EXPECT(env.balance(gw) == gwBalance);
+        BEAST_EXPECT(env.balance(bob) == bobBalance);
+        BEAST_EXPECT(sponsor::sponsorshipFeeBalance(env, sponsor, bob) == sponsorFee - feeAmt);
+
+        // Reserve sponsorship is not tested here: checkSponsor rejects it with temINVALID for any
+        // delegated transaction before the permission check, regardless of the delegate's
+        // permissions. It is covered by testDelegateBlockReserveSponsor in Sponsor_test.
     }
 
     void
@@ -1690,9 +2448,9 @@ class Delegate_test : public beast::unit_test::Suite
         env(delegate::set(alice, bob, {"Payment"}));
         env.close();
 
-        auto aliceBalance = env.balance(alice);
-        auto bobBalance = env.balance(bob);
-        auto carolBalance = env.balance(carol);
+        auto const aliceBalance = env.balance(alice);
+        auto const bobBalance = env.balance(bob);
+        auto const carolBalance = env.balance(carol);
 
         env(pay(alice, carol, XRP(100)), Fee(XRP(10)), delegate::As(bob), Sig(bob));
         env.close();
@@ -1718,9 +2476,9 @@ class Delegate_test : public beast::unit_test::Suite
             env(delegate::set(alice, bob, {"Payment"}));
             env.close();
 
-            auto aliceBalance = env.balance(alice);
-            auto bobBalance = env.balance(bob);
-            auto carolBalance = env.balance(carol);
+            auto const aliceBalance = env.balance(alice);
+            auto const bobBalance = env.balance(bob);
+            auto const carolBalance = env.balance(carol);
 
             env(pay(alice, carol, XRP(100)),
                 Fee(XRP(10)),
@@ -1744,9 +2502,9 @@ class Delegate_test : public beast::unit_test::Suite
             env(delegate::set(alice, bob, {"TrustSet"}));
             env.close();
 
-            auto aliceBalance = env.balance(alice);
-            auto bobBalance = env.balance(bob);
-            auto carolBalance = env.balance(carol);
+            auto const aliceBalance = env.balance(alice);
+            auto const bobBalance = env.balance(bob);
+            auto const carolBalance = env.balance(carol);
 
             env(pay(alice, carol, XRP(100)),
                 Fee(XRP(10)),
@@ -1777,9 +2535,9 @@ class Delegate_test : public beast::unit_test::Suite
             env.fund(XRP(100000), alice, bob, carol);
             env.close();
 
-            auto aliceBalance = env.balance(alice);
-            auto bobBalance = env.balance(bob);
-            auto carolBalance = env.balance(carol);
+            auto const aliceBalance = env.balance(alice);
+            auto const bobBalance = env.balance(bob);
+            auto const carolBalance = env.balance(carol);
 
             env(pay(alice, carol, XRP(100)),
                 Fee(XRP(10)),
@@ -1824,11 +2582,11 @@ class Delegate_test : public beast::unit_test::Suite
         env(delegate::set(alice, bob, {"Payment"}));
         env.close();
 
-        auto aliceBalance = env.balance(alice);
-        auto bobBalance = env.balance(bob);
-        auto carolBalance = env.balance(carol);
-        auto dariaBalance = env.balance(daria);
-        auto edwardBalance = env.balance(edward);
+        auto const aliceBalance = env.balance(alice);
+        auto const bobBalance = env.balance(bob);
+        auto const carolBalance = env.balance(carol);
+        auto const dariaBalance = env.balance(daria);
+        auto const edwardBalance = env.balance(edward);
 
         env(pay(alice, carol, XRP(100)), Fee(XRP(10)), delegate::As(bob), Msig(daria, edward));
         env.close();
@@ -1861,11 +2619,11 @@ class Delegate_test : public beast::unit_test::Suite
         env(delegate::set(alice, bob, {"Payment"}));
         env.close();
 
-        auto aliceBalance = env.balance(alice);
-        auto bobBalance = env.balance(bob);
-        auto carolBalance = env.balance(carol);
-        auto dariaBalance = env.balance(daria);
-        auto edwardBalance = env.balance(edward);
+        auto const aliceBalance = env.balance(alice);
+        auto const bobBalance = env.balance(bob);
+        auto const carolBalance = env.balance(carol);
+        auto const dariaBalance = env.balance(daria);
+        auto const edwardBalance = env.balance(edward);
 
         env(pay(alice, carol, XRP(100)),
             Fee(XRP(10)),
@@ -1966,7 +2724,7 @@ class Delegate_test : public beast::unit_test::Suite
         auto const baseFee = env.current()->fees().base;
 
         auto const sendAmt = 1'000'000;
-        auto makeDelegateTx = [&]() -> json::Value {
+        auto const makeDelegateTx = [&] -> json::Value {
             json::Value jv;
             jv[jss::tx_json][jss::Account] = alice.human();
             jv[jss::tx_json][sfDelegate.jsonName] = bob.human();
@@ -2017,9 +2775,11 @@ class Delegate_test : public beast::unit_test::Suite
             jv[jss::secret] = bob.name();
             auto jrr = env.rpc("json", "sign_for", to_string(jv))[jss::result];
             BEAST_EXPECT(jrr[jss::status] == "error");
+            BEAST_EXPECT(jrr[jss::error] == "invalidParams");
+            BEAST_EXPECT(jrr[jss::error_code] == RpcInvalidParams);
             BEAST_EXPECT(
-                jrr[jss::error_message].asString().contains(
-                    "A Signer may not be the transaction's Account"));
+                jrr[jss::error_message] ==
+                "A Signer may not be the transaction's Account (" + bob.human() + ").");
         }
     }
 
@@ -2036,7 +2796,7 @@ class Delegate_test : public beast::unit_test::Suite
         env.fund(XRP(100000), alice, bob);
         env.close();
 
-        auto buildRequest = [&](auto value) -> json::Value {
+        auto const buildRequest = [&](auto value) -> json::Value {
             json::Value jv;
             jv[jss::TransactionType] = jss::DelegateSet;
             jv[jss::Account] = alice.human();
@@ -2055,9 +2815,9 @@ class Delegate_test : public beast::unit_test::Suite
 
         // invalid permission value.
         // neither granular permission nor transaction level permission
-        for (auto value : {0, 100000, 54321})
+        for (auto const value : {0, 100000, 54321})
         {
-            auto jv = buildRequest(value);
+            auto const jv = buildRequest(value);
             env(jv, Ter(temMALFORMED));
         }
     }
@@ -2072,23 +2832,8 @@ class Delegate_test : public beast::unit_test::Suite
         // non-delegable tx are not included.
         // NFTokenMint, NFTokenBurn, NFTokenCreateOffer, NFTokenCancelOffer,
         // NFTokenAcceptOffer are not included, they are tested separately.
-        std::unordered_map<std::string, uint256> txRequiredFeatures{
-            {"Clawback", featureClawback},
+        std::unordered_map<std::string, UInt256> txRequiredFeatures{
             {"AMMClawback", featureAMMClawback},
-            {"AMMCreate", featureAMM},
-            {"AMMDeposit", featureAMM},
-            {"AMMWithdraw", featureAMM},
-            {"AMMVote", featureAMM},
-            {"AMMBid", featureAMM},
-            {"AMMDelete", featureAMM},
-            {"XChainCreateClaimID", featureXChainBridge},
-            {"XChainCommit", featureXChainBridge},
-            {"XChainClaim", featureXChainBridge},
-            {"XChainAccountCreateCommit", featureXChainBridge},
-            {"XChainAddClaimAttestation", featureXChainBridge},
-            {"XChainAddAccountCreateAttestation", featureXChainBridge},
-            {"XChainModifyBridge", featureXChainBridge},
-            {"XChainCreateBridge", featureXChainBridge},
             {"DIDSet", featureDID},
             {"DIDDelete", featureDID},
             {"OracleSet", featurePriceOracle},
@@ -2103,11 +2848,13 @@ class Delegate_test : public beast::unit_test::Suite
             {"CredentialDelete", featureCredentials},
             {"NFTokenModify", featureDynamicNFT},
             {"PermissionedDomainSet", featurePermissionedDomains},
-            {"PermissionedDomainDelete", featurePermissionedDomains}};
+            {"PermissionedDomainDelete", featurePermissionedDomains},
+            {"SponsorshipSet", featureSponsor},
+        };
 
         // Can not delegate tx if any required feature disabled.
         {
-            auto txAmendmentDisabled = [&](FeatureBitset features, std::string const& tx) {
+            auto const txAmendmentDisabled = [&](FeatureBitset features, std::string const& tx) {
                 BEAST_EXPECT(txRequiredFeatures.contains(tx));
 
                 Env env(*this, features - txRequiredFeatures[tx]);
@@ -2127,7 +2874,7 @@ class Delegate_test : public beast::unit_test::Suite
         // if all the required features in txRequiredFeatures are enabled, will
         // succeed
         {
-            auto txAmendmentEnabled = [&](std::string const& tx) {
+            auto const txAmendmentEnabled = [&](std::string const& tx) {
                 Env env(*this, features);
 
                 Account const alice{"alice"};
@@ -2141,6 +2888,62 @@ class Delegate_test : public beast::unit_test::Suite
             for (auto const& tx : txRequiredFeatures)
                 txAmendmentEnabled(tx.first);
         }
+
+        // Granular permissions also require the amendment for their underlying
+        // transaction type.
+        {
+            for (auto const permission : {"MPTokenIssuanceLock", "MPTokenIssuanceUnlock"})
+            {
+                Env env(*this, features - featureMPTokensV1);
+
+                Account const alice{"alice"};
+                Account const bob{"bob"};
+                env.fund(XRP(100000), alice, bob);
+                env.close();
+
+                env(delegate::set(alice, bob, {permission}), Ter(temMALFORMED));
+            }
+        }
+    }
+
+    void
+    testGranularSandboxCheckOrder()
+    {
+        testcase("Make sure GranularSandbox is checked after transaction-level permission");
+
+        using namespace jtx;
+
+        Env env(*this);
+        Account const gw{"gw"};
+        Account const alice{"alice"};
+        Account const bob{"bob"};
+        env.fund(XRP(10000), gw, alice, bob);
+
+        env(fset(gw, asfRequireAuth));
+        env.close();
+        env(trust(alice, gw["USD"](50)));
+        env.close();
+        env(delegate::set(gw, bob, {"TrustlineAuthorize"}));
+        env.close();
+
+        env(trust(gw, gw["USD"](0), alice, tfSetfAuth), delegate::As(bob));
+        env.close();
+
+        // sfQualityOut is a valid TrustSet field, but not permitted in granular template
+        json::Value txJson = trust(gw, gw["USD"](0), alice, tfSetfAuth);
+        txJson[sfQualityOut.jsonName] = 100;
+        env(txJson, delegate::As(bob), Ter(terNO_DELEGATE_PERMISSION));
+
+        // Now Alice grants Bob with transaction level permission
+        env(delegate::set(gw, bob, {"TrustlineAuthorize", "TrustSet"}));
+        env.close();
+
+        // NOTE: This case is to ensure that if a delegate possesses a
+        // transaction-level permission (e.g., TrustSet), the granular sandbox must not incorrectly
+        // block the transaction. The function checkGranularSandbox MUST be called after the
+        // transaction-level permission check. This test case is to avoid future refactor mistakes,
+        // modifying the order will fail here.
+        env(txJson, delegate::As(bob));
     }
 
     void
@@ -2150,19 +2953,24 @@ class Delegate_test : public beast::unit_test::Suite
 
         std::size_t delegableCount = 0;
 
+#pragma push_macro("UNWRAP")
+#undef UNWRAP
 #pragma push_macro("TRANSACTION")
 #undef TRANSACTION
 
-#define TRANSACTION(tag, value, name, txDelegable, ...) \
-    if (txDelegable == xrpl::Delegable)                 \
-    {                                                   \
-        delegableCount++;                               \
+#define UNWRAP(...) __VA_ARGS__
+#define TRANSACTION(tag, value, name, settings, ...)                                 \
+    if ((xrpl::TxSettings UNWRAP settings).delegable == xrpl::Delegation::Delegable) \
+    {                                                                                \
+        delegableCount++;                                                            \
     }
 
 #include <xrpl/protocol/detail/transactions.macro>
 
 #undef TRANSACTION
 #pragma pop_macro("TRANSACTION")
+#undef UNWRAP
+#pragma pop_macro("UNWRAP")
 
         // ====================================================================
         // IMPORTANT NOTICE:
@@ -2182,7 +2990,7 @@ class Delegate_test : public beast::unit_test::Suite
         // DO NOT modify expectedDelegableCount unless all scenarios, including
         // edge cases, have been fully tested and verified.
         // ====================================================================
-        std::size_t const expectedDelegableCount = 51;
+        std::size_t const expectedDelegableCount = 49;
 
         BEAST_EXPECTS(
             delegableCount == expectedDelegableCount,
@@ -2194,6 +3002,94 @@ class Delegate_test : public beast::unit_test::Suite
     }
 
     void
+    testNonDelegableTxWithDelegate(FeatureBitset features)
+    {
+        testcase("non-delegable tx with sfDelegate is rejected at preflight");
+        using namespace jtx;
+
+        Env env(*this, features);
+        Account const alice{"alice"};
+        Account const bob{"bob"};
+        env.fund(XRP(10000), alice, bob);
+        env.close();
+
+        // Transactions that are notDelegable and have no granular permissions
+        // will be rejected with temINVALID at preflight.
+        // Note: pseudo-transactions (EnableAmendment, SetFee and UNLModify) are also
+        // notDelegable but are excluded here — passesLocalChecks() blocks them
+        // before preflight1 is ever reached.
+        {
+            // SetRegularKey, SignerListSet, AccountDelete, DelegateSet.
+            env(regkey(alice, bob), delegate::As(bob), Ter(temINVALID));
+            env(signers(alice, 1, {{bob, 1}}), delegate::As(bob), Ter(temINVALID));
+            env(acctdelete(alice, bob), delegate::As(bob), Ter(temINVALID));
+            env(delegate::set(alice, bob, {"Payment"}), delegate::As(bob), Ter(temINVALID));
+
+            // SAV transactions.
+            {
+                Vault const vault{env};
+                auto [createTx, keylet] = vault.create({.owner = alice, .asset = xrpIssue()});
+                env(createTx, delegate::As(bob), Ter(temINVALID));
+
+                env(vault.set({.owner = alice, .id = keylet.key}),
+                    delegate::As(bob),
+                    Ter(temINVALID));
+                env(vault.del({.owner = alice, .id = keylet.key}),
+                    delegate::As(bob),
+                    Ter(temINVALID));
+                env(vault.deposit({.depositor = alice, .id = keylet.key, .amount = XRP(1)}),
+                    delegate::As(bob),
+                    Ter(temINVALID));
+                env(vault.withdraw({.depositor = alice, .id = keylet.key, .amount = XRP(1)}),
+                    delegate::As(bob),
+                    Ter(temINVALID));
+                env(vault.clawback({.issuer = alice, .id = keylet.key, .holder = bob}),
+                    delegate::As(bob),
+                    Ter(temINVALID));
+            }
+
+            // Batch transaction: the outer Batch itself is non-delegable.
+            {
+                auto const seq = env.seq(alice);
+                auto const batchFee = batch::calcBatchFee(env, 0, 1);
+                env(batch::outer(alice, seq, batchFee, tfAllOrNothing),
+                    batch::Inner(pay(alice, bob, XRP(1)), seq + 1),
+                    delegate::As(bob),
+                    Ter(temINVALID));
+            }
+
+            // Lending protocol transactions
+            {
+                Vault const vault{env};
+                auto [createTx, keylet] = vault.create({.owner = alice, .asset = xrpIssue()});
+                env(createTx);
+
+                env(loan_broker::set(alice, keylet.key), delegate::As(bob), Ter(temINVALID));
+                env(loan_broker::del(alice, keylet.key), delegate::As(bob), Ter(temINVALID));
+                env(loan_broker::coverDeposit(alice, keylet.key, XRP(1)),
+                    delegate::As(bob),
+                    Ter(temINVALID));
+                env(loan_broker::coverWithdraw(alice, keylet.key, XRP(1)),
+                    delegate::As(bob),
+                    Ter(temINVALID));
+                env(loan_broker::coverClawback(alice), delegate::As(bob), Ter(temINVALID));
+
+                env(loan::set(alice, keylet.key, Number(100)), delegate::As(bob), Ter(temINVALID));
+                env(loan::manage(alice, keylet.key, 0), delegate::As(bob), Ter(temINVALID));
+                env(loan::del(alice, keylet.key), delegate::As(bob), Ter(temINVALID));
+                env(loan::pay(alice, keylet.key, XRP(1)), delegate::As(bob), Ter(temINVALID));
+            }
+        }
+
+        // AccountSet is notDelegable at tx level but has granular permissions,
+        // so sfDelegate passes preflight and is rejected at invokeCheckPermission with
+        // terNO_DELEGATE_PERMISSION.
+        {
+            env(fset(alice, asfDefaultRipple), delegate::As(bob), Ter(terNO_DELEGATE_PERMISSION));
+        }
+    }
+
+    void
     testDelegateUtilsNullptrCheck()
     {
         testcase("DelegateUtils nullptr check");
@@ -2202,10 +3098,41 @@ class Delegate_test : public beast::unit_test::Suite
         STTx const tx{ttPAYMENT, [](STObject&) {}};
         BEAST_EXPECT(checkTxPermission(nullptr, tx) == terNO_DELEGATE_PERMISSION);
 
-        // loadGranularPermission nullptr check
-        std::unordered_set<GranularPermissionType> granularPermissions;
-        loadGranularPermission(nullptr, ttPAYMENT, granularPermissions);
+        // getGranularPermission nullptr check
+        auto const granularPermissions = getGranularPermission(nullptr, ttPAYMENT);
         BEAST_EXPECT(granularPermissions.empty());
+    }
+
+    void
+    testPermissionToTxType()
+    {
+        testcase("test Permission to Tx type");
+
+        // 0 is not a valid permission value
+        BEAST_EXPECT(!Permission::permissionToTxType(0));
+
+        // 1 maps to Payment transaction
+        BEAST_EXPECT(Permission::permissionToTxType(1) == ttPAYMENT);
+
+        // UINT16_MAX+1 is the maximum possible tx-level permission value
+        constexpr uint32_t maxTxPermission = std::numeric_limits<uint16_t>::max() + 1u;
+        BEAST_EXPECT(Permission::permissionToTxType(maxTxPermission).has_value());
+
+        // exceeding maximum value should return nullopt
+        BEAST_EXPECT(!Permission::permissionToTxType(maxTxPermission + 1));
+
+        // All granular permission values should return nullopt since they do not map to a TxType.
+        for (auto const gp : {
+#pragma push_macro("GRANULAR_PERMISSION")
+#undef GRANULAR_PERMISSION
+#define GRANULAR_PERMISSION(type, txType, value, ...) GranularPermissionType::type,
+#include <xrpl/protocol/detail/permissions.macro>
+#undef GRANULAR_PERMISSION
+#pragma pop_macro("GRANULAR_PERMISSION")
+             })
+        {
+            BEAST_EXPECT(!Permission::permissionToTxType(static_cast<uint32_t>(gp)));
+        }
     }
 
     void
@@ -2223,9 +3150,11 @@ class Delegate_test : public beast::unit_test::Suite
         testAccountDelete();
         testDelegateTransaction();
         testPaymentGranular(all);
+        testPaymentGranular(all - fixCleanup3_4_0);
         testTrustSetGranular();
         testAccountSetGranular();
         testMPTokenIssuanceSetGranular();
+        testGranularPermissionWithSponsorCommonFields();
         testSingleSign();
         testSingleSignBadSecret();
         testMultiSign();
@@ -2234,8 +3163,11 @@ class Delegate_test : public beast::unit_test::Suite
         testSignForDelegated();
         testPermissionValue(all);
         testTxRequireFeatures(all);
+        testGranularSandboxCheckOrder();
         testTxDelegableCount();
+        testNonDelegableTxWithDelegate(all);
         testDelegateUtilsNullptrCheck();
+        testPermissionToTxType();
     }
 };
 BEAST_DEFINE_TESTSUITE(Delegate, app, xrpl);

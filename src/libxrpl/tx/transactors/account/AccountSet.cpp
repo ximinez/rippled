@@ -6,7 +6,6 @@
 #include <xrpl/basics/base_uint.h>
 #include <xrpl/ledger/ApplyView.h>
 #include <xrpl/ledger/ReadView.h>
-#include <xrpl/ledger/helpers/DelegateHelpers.h>
 #include <xrpl/ledger/helpers/DirectoryHelpers.h>
 #include <xrpl/protocol/Feature.h>
 #include <xrpl/protocol/Indexes.h>
@@ -20,13 +19,11 @@
 #include <xrpl/protocol/STTx.h>
 #include <xrpl/protocol/TER.h>
 #include <xrpl/protocol/TxFlags.h>
-#include <xrpl/protocol/TxFormats.h>
 #include <xrpl/protocol/XRPAmount.h>
 #include <xrpl/tx/Transactor.h>
 #include <xrpl/tx/applySteps.h>
 
 #include <cstdint>
-#include <unordered_set>
 
 namespace xrpl {
 
@@ -35,7 +32,7 @@ AccountSet::makeTxConsequences(PreflightContext const& ctx)
 {
     // The AccountSet may be a blocker, but only if it sets or clears
     // specific account flags.
-    auto getTxConsequencesCategory = [](STTx const& tx) {
+    auto const getTxConsequencesCategory = [](STTx const& tx) {
         if (std::uint32_t const uTxFlags = tx.getFlags();
             uTxFlags & (tfRequireAuth | tfOptionalAuth))
             return TxConsequences::Category::Blocker;
@@ -134,7 +131,7 @@ AccountSet::preflight(PreflightContext const& ctx)
     // TickSize
     if (tx.isFieldPresent(sfTickSize))
     {
-        auto uTickSize = tx[sfTickSize];
+        auto const uTickSize = tx[sfTickSize];
         if ((uTickSize != 0u) &&
             ((uTickSize < Quality::kMinTickSize) || (uTickSize > Quality::kMaxTickSize)))
         {
@@ -168,54 +165,6 @@ AccountSet::preflight(PreflightContext const& ctx)
     return tesSUCCESS;
 }
 
-NotTEC
-AccountSet::checkPermission(ReadView const& view, STTx const& tx)
-{
-    // AccountSet is prohibited to be granted on a transaction level,
-    // but some granular permissions are allowed.
-    auto const delegate = tx[~sfDelegate];
-    if (!delegate)
-        return tesSUCCESS;
-
-    auto const delegateKey = keylet::delegate(tx[sfAccount], *delegate);
-    auto const sle = view.read(delegateKey);
-
-    if (!sle)
-        return terNO_DELEGATE_PERMISSION;
-
-    std::unordered_set<GranularPermissionType> granularPermissions;
-    loadGranularPermission(sle, ttACCOUNT_SET, granularPermissions);
-
-    auto const uSetFlag = tx.getFieldU32(sfSetFlag);
-    auto const uClearFlag = tx.getFieldU32(sfClearFlag);
-    // We don't support any flag based granular permission under
-    // AccountSet transaction. If any delegated account is trying to
-    // update the flag on behalf of another account, it is not
-    // authorized.
-    if (uSetFlag != 0 || uClearFlag != 0 || ((tx.getFlags() & tfUniversalMask) != 0u))
-        return terNO_DELEGATE_PERMISSION;
-
-    if (tx.isFieldPresent(sfEmailHash) && !granularPermissions.contains(AccountEmailHashSet))
-        return terNO_DELEGATE_PERMISSION;
-
-    if (tx.isFieldPresent(sfWalletLocator) || tx.isFieldPresent(sfNFTokenMinter))
-        return terNO_DELEGATE_PERMISSION;
-
-    if (tx.isFieldPresent(sfMessageKey) && !granularPermissions.contains(AccountMessageKeySet))
-        return terNO_DELEGATE_PERMISSION;
-
-    if (tx.isFieldPresent(sfDomain) && !granularPermissions.contains(AccountDomainSet))
-        return terNO_DELEGATE_PERMISSION;
-
-    if (tx.isFieldPresent(sfTransferRate) && !granularPermissions.contains(AccountTransferRateSet))
-        return terNO_DELEGATE_PERMISSION;
-
-    if (tx.isFieldPresent(sfTickSize) && !granularPermissions.contains(AccountTickSizeSet))
-        return terNO_DELEGATE_PERMISSION;
-
-    return tesSUCCESS;
-}
-
 TER
 AccountSet::preclaim(PreclaimContext const& ctx)
 {
@@ -245,30 +194,27 @@ AccountSet::preclaim(PreclaimContext const& ctx)
     //
     // Clawback
     //
-    if (ctx.view.rules().enabled(featureClawback))
+    if (uSetFlag == asfAllowTrustLineClawback)
     {
-        if (uSetFlag == asfAllowTrustLineClawback)
+        if (sle->isFlag(lsfNoFreeze))
         {
-            if (sle->isFlag(lsfNoFreeze))
-            {
-                JLOG(ctx.j.trace()) << "Can't set Clawback if NoFreeze is set";
-                return tecNO_PERMISSION;
-            }
-
-            if (!dirIsEmpty(ctx.view, keylet::ownerDir(id)))
-            {
-                JLOG(ctx.j.trace()) << "Owner directory not empty.";
-                return tecOWNERS;
-            }
+            JLOG(ctx.j.trace()) << "Can't set Clawback if NoFreeze is set";
+            return tecNO_PERMISSION;
         }
-        else if (uSetFlag == asfNoFreeze)
+
+        if (!dirIsEmpty(ctx.view, keylet::ownerDir(id)))
         {
-            // Cannot set NoFreeze if clawback is enabled
-            if (sle->isFlag(lsfAllowTrustLineClawback))
-            {
-                JLOG(ctx.j.trace()) << "Can't set NoFreeze if clawback is enabled";
-                return tecNO_PERMISSION;
-            }
+            JLOG(ctx.j.trace()) << "Owner directory not empty.";
+            return tecOWNERS;
+        }
+    }
+    else if (uSetFlag == asfNoFreeze)
+    {
+        // Cannot set NoFreeze if clawback is enabled
+        if (sle->isFlag(lsfAllowTrustLineClawback))
+        {
+            JLOG(ctx.j.trace()) << "Can't set NoFreeze if clawback is enabled";
+            return tecNO_PERMISSION;
         }
     }
 
@@ -297,18 +243,20 @@ AccountSet::doApply()
     bool const bSetDisallowXRP{tx.isFlag(tfDisallowXRP) || (uSetFlag == asfDisallowXRP)};
     bool const bClearDisallowXRP{tx.isFlag(tfAllowXRP) || (uClearFlag == asfDisallowXRP)};
 
-    bool const sigWithMaster{[&tx, &acct = accountID_]() {
-        auto const spk = tx.getSigningPubKey();
+    bool const sigWithMaster{
+        [&tx, &acct = accountID_] {
+            auto const spk = tx.getSigningPubKey();
 
-        if (publicKeyType(makeSlice(spk)))
-        {
-            PublicKey const signingPubKey(makeSlice(spk));
+            if (publicKeyType(makeSlice(spk)))
+            {
+                PublicKey const signingPubKey(makeSlice(spk));
 
-            if (calcAccountID(signingPubKey) == acct)
-                return true;
-        }
-        return false;
-    }()};
+                if (calcAccountID(signingPubKey) == acct)
+                    return true;
+            }
+            return false;
+        }(),
+    };
 
     //
     // RequireAuth
@@ -366,7 +314,7 @@ AccountSet::doApply()
             return tecNEED_MASTER_KEY;
         }
 
-        if ((!sle->isFieldPresent(sfRegularKey)) && (!view().peek(keylet::signers(accountID_))))
+        if ((!sle->isFieldPresent(sfRegularKey)) && (!view().peek(keylet::signerList(accountID_))))
         {
             // Account has no regular key or multi-signer signer list.
             return tecNO_ALTERNATIVE_KEY;
@@ -462,7 +410,7 @@ AccountSet::doApply()
     //
     if (tx.isFieldPresent(sfEmailHash))
     {
-        uint128 const uHash = tx.getFieldH128(sfEmailHash);
+        UInt128 const uHash = tx.getFieldH128(sfEmailHash);
 
         if (!uHash)
         {
@@ -481,7 +429,7 @@ AccountSet::doApply()
     //
     if (tx.isFieldPresent(sfWalletLocator))
     {
-        uint256 const uHash = tx.getFieldH256(sfWalletLocator);
+        UInt256 const uHash = tx.getFieldH256(sfWalletLocator);
 
         if (!uHash)
         {
@@ -557,7 +505,7 @@ AccountSet::doApply()
     //
     if (tx.isFieldPresent(sfTickSize))
     {
-        auto uTickSize = tx[sfTickSize];
+        auto const uTickSize = tx[sfTickSize];
         if ((uTickSize == 0) || (uTickSize == Quality::kMaxTickSize))
         {
             JLOG(j_.trace()) << "unset tick size";
@@ -627,7 +575,7 @@ AccountSet::doApply()
     }
 
     // Set flag for clawback
-    if (ctx_.view().rules().enabled(featureClawback) && uSetFlag == asfAllowTrustLineClawback)
+    if (uSetFlag == asfAllowTrustLineClawback)
     {
         JLOG(j_.trace()) << "set allow clawback";
         uFlagsOut |= lsfAllowTrustLineClawback;
@@ -642,7 +590,7 @@ AccountSet::doApply()
 }
 
 void
-AccountSet::visitInvariantEntry(bool, SLE::const_ref, SLE::const_ref)
+AccountSet::visitInvariantEntry(bool, SLE::ConstRef, SLE::ConstRef)
 {
     // No transaction-specific invariants yet (future work).
 }

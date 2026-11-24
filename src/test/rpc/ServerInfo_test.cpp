@@ -6,11 +6,12 @@
 
 #include <xrpl/beast/unit_test/suite.h>
 #include <xrpl/config/Constants.h>
+#include <xrpl/json/json_value.h>
+#include <xrpl/json/to_string.h>
 #include <xrpl/protocol/jss.h>
 #include <xrpl/server/NetworkOPs.h>
 
-#include <boost/format/free_funcs.hpp>
-
+#include <format>
 #include <memory>
 
 namespace xrpl::test {
@@ -36,12 +37,13 @@ public:
     makeValidatorConfig()
     {
         auto p = std::make_unique<Config>();
-        boost::format toLoad(R"xrpldConfig(
+        auto const toLoad = std::format(
+            R"xrpldConfig(
 [validator_token]
-%1%
+{}
 
 [validators]
-%2%
+{}
 
 [port_grpc]
 ip = 0.0.0.0
@@ -52,9 +54,11 @@ ip = 0.0.0.0
 port = 50052
 protocol = wss2
 admin = 127.0.0.1
-)xrpldConfig");
+)xrpldConfig",
+            validator_data::kToken,
+            validator_data::kPublicKey);
 
-        p->loadFromString(boost::str(toLoad % validator_data::kToken % validator_data::kPublicKey));
+        p->loadFromString(toLoad);
 
         setupConfigForUnitTests(*p);
 
@@ -150,11 +154,35 @@ admin = 127.0.0.1
             }
         }
     }
+    void
+    testLogLevelParameterTypes()
+    {
+        testcase("log_level parameter types");
 
+        using namespace test::jtx;
+
+        Env env(*this);
+
+        auto const testInvalidParams = [&](json::Value const& params) {
+            auto const result = env.rpc("json", "log_level", to_string(params))[jss::result];
+
+            BEAST_EXPECT(result[jss::error] == "invalidParams");
+        };
+
+        json::Value invalidSeverity(json::ValueType::Object);
+        invalidSeverity[jss::severity] = 5;
+        testInvalidParams(invalidSeverity);
+
+        json::Value invalidPartition(json::ValueType::Object);
+        invalidPartition[jss::severity] = "warn";
+        invalidPartition[jss::partition] = 5;
+        testInvalidParams(invalidPartition);
+    }
     void
     run() override
     {
         testServerInfo();
+        testLogLevelParameterTypes();
     }
 };
 

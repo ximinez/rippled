@@ -1,16 +1,23 @@
+#if XRPL_ROCKSDB_AVAILABLE
+#include <xrpl/basics/ByteUtilities.h>
 #include <xrpl/basics/Log.h>
 #include <xrpl/basics/base_uint.h>
+#include <xrpl/basics/contract.h>
+#include <xrpl/basics/safe_cast.h>
+#include <xrpl/beast/core/CurrentThreadName.h>
 #include <xrpl/beast/utility/Journal.h>
 #include <xrpl/beast/utility/instrumentation.h>
 #include <xrpl/config/BasicConfig.h>
 #include <xrpl/config/Constants.h>
 #include <xrpl/nodestore/Backend.h>
+#include <xrpl/nodestore/Factory.h>
+#include <xrpl/nodestore/Manager.h>
 #include <xrpl/nodestore/NodeObject.h>
 #include <xrpl/nodestore/Scheduler.h>
 #include <xrpl/nodestore/Types.h>
-
-#include <boost/filesystem/operations.hpp>
-#include <boost/filesystem/path.hpp>
+#include <xrpl/nodestore/detail/BatchWriter.h>
+#include <xrpl/nodestore/detail/DecodedBlob.h>
+#include <xrpl/nodestore/detail/EncodedBlob.h>
 
 #include <rocksdb/advanced_options.h>
 #include <rocksdb/cache.h>
@@ -25,27 +32,16 @@
 #include <rocksdb/table.h>
 #include <rocksdb/write_batch.h>
 
-#include <bit>
+#include <atomic>
 #include <cstddef>
+#include <filesystem>
+#include <format>
 #include <functional>
+#include <memory>
 #include <stdexcept>
 #include <string>
 
-#if XRPL_ROCKSDB_AVAILABLE
-#include <xrpl/basics/ByteUtilities.h>
-#include <xrpl/basics/contract.h>
-#include <xrpl/basics/safe_cast.h>
-#include <xrpl/beast/core/CurrentThreadName.h>
-#include <xrpl/nodestore/Factory.h>
-#include <xrpl/nodestore/Manager.h>
-#include <xrpl/nodestore/detail/BatchWriter.h>
-#include <xrpl/nodestore/detail/DecodedBlob.h>
-#include <xrpl/nodestore/detail/EncodedBlob.h>
-
-#include <atomic>
-#include <memory>
-
-namespace xrpl::NodeStore {
+namespace xrpl::node_store {
 
 class RocksDBEnv : public rocksdb::EnvWrapper
 {
@@ -83,7 +79,7 @@ public:
     void
     StartThread(void (*f)(void*), void* a) override
     {
-        ThreadParams* const p(new ThreadParams(f, a));
+        auto* const p = new ThreadParams(f, a);
         EnvWrapper::StartThread(&RocksDBEnv::threadEntry, p);
     }
 };
@@ -198,7 +194,7 @@ public:
             if (!s.ok())
             {
                 Throw<std::runtime_error>(
-                    std::string("Unable to set RocksDB bbt_options: ") + s.ToString());
+                    std::format("Unable to set RocksDB bbt_options: {}", s.ToString()));
             }
         }
 
@@ -211,7 +207,7 @@ public:
             if (!s.ok())
             {
                 Throw<std::runtime_error>(
-                    std::string("Unable to set RocksDB options: ") + s.ToString());
+                    std::format("Unable to set RocksDB options: {}", s.ToString()));
             }
         }
 
@@ -234,7 +230,7 @@ public:
         {
             // LCOV_EXCL_START
             UNREACHABLE(
-                "xrpl::NodeStore::RocksDBBackend::open : database is already "
+                "xrpl::node_store::RocksDBBackend::open : database is already "
                 "open");
             JLOG(journal.error()) << "database is already open";
             return;
@@ -246,7 +242,7 @@ public:
         if (!status.ok() || (localDb == nullptr))
         {
             Throw<std::runtime_error>(
-                std::string("Unable to open/create RocksDB: ") + status.ToString());
+                std::format("Unable to open/create RocksDB: {}", status.ToString()));
         }
         db.reset(localDb);
     }
@@ -265,8 +261,8 @@ public:
             db.reset();
             if (deletePath_)
             {
-                boost::filesystem::path const dir = name;
-                boost::filesystem::remove_all(dir);
+                std::filesystem::path const dir = name;
+                std::filesystem::remove_all(dir);
             }
         }
     }
@@ -280,15 +276,15 @@ public:
     //--------------------------------------------------------------------------
 
     Status
-    fetch(uint256 const& hash, std::shared_ptr<NodeObject>* pObject) override
+    fetch(UInt256 const& hash, std::shared_ptr<NodeObject>* pObject) override
     {
-        XRPL_ASSERT(db, "xrpl::NodeStore::RocksDBBackend::fetch : non-null database");
+        XRPL_ASSERT(db, "xrpl::node_store::RocksDBBackend::fetch : non-null database");
         pObject->reset();
 
         Status status = Status::Ok;
 
         rocksdb::ReadOptions const options;
-        rocksdb::Slice const slice(std::bit_cast<char const*>(hash.data()), keyBytes);
+        rocksdb::Slice const slice(reinterpret_cast<char const*>(hash.data()), keyBytes);
 
         std::string string;
 
@@ -342,7 +338,7 @@ public:
     {
         XRPL_ASSERT(
             db,
-            "xrpl::NodeStore::RocksDBBackend::storeBatch : non-null "
+            "xrpl::node_store::RocksDBBackend::storeBatch : non-null "
             "database");
         rocksdb::WriteBatch wb;
 
@@ -351,16 +347,17 @@ public:
             EncodedBlob const encoded(e);
 
             wb.Put(
-                rocksdb::Slice(std::bit_cast<char const*>(encoded.getKey()), keyBytes),
-                rocksdb::Slice(std::bit_cast<char const*>(encoded.getData()), encoded.getSize()));
+                rocksdb::Slice(reinterpret_cast<char const*>(encoded.getKey()), keyBytes),
+                rocksdb::Slice(
+                    reinterpret_cast<char const*>(encoded.getData()), encoded.getSize()));
         }
 
         rocksdb::WriteOptions const options;
 
-        auto ret = db->Write(options, &wb);
+        auto const ret = db->Write(options, &wb);
 
         if (!ret.ok())
-            Throw<std::runtime_error>("storeBatch failed: " + ret.ToString());
+            Throw<std::runtime_error>(std::format("storeBatch failed: {}", ret.ToString()));
     }
 
     void
@@ -371,7 +368,7 @@ public:
     void
     forEach(std::function<void(std::shared_ptr<NodeObject>)> f) override
     {
-        XRPL_ASSERT(db, "xrpl::NodeStore::RocksDBBackend::forEach : non-null database");
+        XRPL_ASSERT(db, "xrpl::node_store::RocksDBBackend::forEach : non-null database");
         rocksdb::ReadOptions const options;
 
         std::unique_ptr<rocksdb::Iterator> it(db->NewIterator(options));
@@ -421,7 +418,9 @@ public:
         storeBatch(batch);
     }
 
-    /** Returns the number of file descriptors the backend expects to need */
+    /**
+     * Returns the number of file descriptors the backend expects to need
+     */
     [[nodiscard]] int
     fdRequired() const override
     {
@@ -468,6 +467,6 @@ registerRocksDBFactory(Manager& manager)
     static RocksDBFactory const kInstance{manager};
 }
 
-}  // namespace xrpl::NodeStore
+}  // namespace xrpl::node_store
 
 #endif

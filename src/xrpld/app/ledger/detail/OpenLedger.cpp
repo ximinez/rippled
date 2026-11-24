@@ -2,7 +2,6 @@
 
 #include <xrpld/app/main/Application.h>
 #include <xrpld/app/misc/TxQ.h>
-#include <xrpld/core/TimeKeeper.h>
 #include <xrpld/overlay/Overlay.h>
 
 #include <xrpl/basics/Log.h>
@@ -14,7 +13,7 @@
 #include <xrpl/ledger/OpenView.h>
 #include <xrpl/ledger/ReadView.h>
 #include <xrpl/protocol/Rules.h>
-#include <xrpl/protocol/SField.h>
+#include <xrpl/protocol/SField.h>  // IWYU pragma: keep
 #include <xrpl/protocol/STObject.h>
 #include <xrpl/protocol/STTx.h>
 #include <xrpl/protocol/Serializer.h>
@@ -61,7 +60,7 @@ OpenLedger::current() const
 }
 
 bool
-OpenLedger::modify(modify_type const& f)
+OpenLedger::modify(ModifyType const& f)
 {
     std::scoped_lock const lock1(modifyMutex_);
     auto next = std::make_shared<OpenView>(*current_);
@@ -84,15 +83,15 @@ OpenLedger::accept(
     OrderedTxs& retries,
     ApplyFlags flags,
     std::string_view suffix,
-    modify_type const& f)
+    ModifyType const& f)
 {
     JLOG(j_.trace()) << "accept ledger " << ledger->seq() << " " << suffix;
     auto next = create(rules, ledger);
     if (retriesFirst)
     {
         // Handle disputed tx, outside lock
-        using empty = std::vector<std::shared_ptr<STTx const>>;
-        apply(app, *next, *ledger, empty{}, retries, flags, j_);
+        using Empty = std::vector<std::shared_ptr<STTx const>>;
+        apply(app, *next, *ledger, Empty{}, retries, flags, j_);
     }
     // Block calls to modify, otherwise
     // new tx going into the open ledger
@@ -149,8 +148,7 @@ OpenLedger::accept(
             tx->add(s);
             msg.set_rawtransaction(s.data(), s.size());
             msg.set_status(protocol::tsNEW);
-            msg.set_receivetimestamp(app.getTimeKeeper().now().time_since_epoch().count());
-            app.getOverlay().relay(txId, msg, *toSkip);
+            app.getOverlay().relay(*tx, msg, *toSkip);
         }
     }
 
