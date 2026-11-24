@@ -72,15 +72,15 @@ PathRequest::PathRequest(
 
 PathRequest::PathRequest(
     Application& app,
-    std::function<void(void)> const& completion,
-    Resource::Consumer& consumer,
+    std::function<void()> completion,
+    resource::Consumer& consumer,
     int id,
     PathRequestManager& owner,
     beast::Journal journal)
     : app_(app)
     , journal_(journal)
     , owner_(owner)
-    , fCompletion_(completion)
+    , fCompletion_(std::move(completion))
     , consumer_(consumer)
     , jvStatus_(json::ValueType::Object)
     , lastIndex_(0)
@@ -96,21 +96,21 @@ PathRequest::PathRequest(
 PathRequest::~PathRequest()
 {
     using namespace std::chrono;
-    auto stream = journal_.info();
+    auto const stream = journal_.info();
     if (!stream)
         return;
 
     std::string fast, full;
-    if (quick_reply_ != steady_clock::time_point{})
+    if (quickReply_ != steady_clock::time_point{})
     {
         fast = " fast:";
-        fast += std::to_string(duration_cast<milliseconds>(quick_reply_ - created_).count());
+        fast += std::to_string(duration_cast<milliseconds>(quickReply_ - created_).count());
         fast += "ms";
     }
-    if (full_reply_ != steady_clock::time_point{})
+    if (fullReply_ != steady_clock::time_point{})
     {
         full = " full:";
-        full += std::to_string(duration_cast<milliseconds>(full_reply_ - created_).count());
+        full += std::to_string(duration_cast<milliseconds>(fullReply_ - created_).count());
         full += "ms";
     }
     stream << iIdentifier_ << " complete:" << fast << full
@@ -170,7 +170,7 @@ PathRequest::updateComplete()
     if (fCompletion_)
     {
         fCompletion_();
-        fCompletion_ = std::function<void(void)>();
+        fCompletion_ = std::function<void()>();
     }
 }
 
@@ -180,7 +180,7 @@ PathRequest::isValid(std::shared_ptr<AssetCache> const& crCache)
     if (!raSrcAccount_ || !raDstAccount_)
         return false;
 
-    if (!convert_all_ && (saSendMax_ || saDstAmount_ <= beast::kZero))
+    if (!convertAll_ && (saSendMax_ || saDstAmount_ <= beast::kZero))
     {
         // If send max specified, dst amt must be -1.
         jvStatus_ = rpcError(RpcDstAmtMalformed);
@@ -210,7 +210,7 @@ PathRequest::isValid(std::shared_ptr<AssetCache> const& crCache)
             return false;
         }
 
-        if (!convert_all_ && saDstAmount_ < STAmount(lrLedger->fees().reserve))
+        if (!convertAll_ && saDstAmount_ < STAmount(lrLedger->fees().reserve))
         {
             // Payment must meet reserve.
             jvStatus_ = rpcError(RpcDstAmtMalformed);
@@ -255,10 +255,11 @@ PathRequest::doCreate(std::shared_ptr<AssetCache> const& cache, json::Value cons
             doUpdate(cache, true);
     }
 
-    if (auto stream = journal_.debug())
+    if (auto const stream = journal_.debug())
     {
         if (valid)
         {
+            // NOLINTNEXTLINE(bugprone-unchecked-optional-access) isValid() ensures it is set
             stream << iIdentifier_ << " valid: " << toBase58(*raSrcAccount_);
             stream << iIdentifier_ << " deliver: " << saDstAmount_.getFullText();
         }
@@ -312,9 +313,9 @@ PathRequest::parseJson(json::Value const& jvParams)
         return PFR_PJ_INVALID;
     }
 
-    convert_all_ = saDstAmount_ == STAmount(saDstAmount_.asset(), 1u, 0, true);
+    convertAll_ = saDstAmount_ == STAmount(saDstAmount_.asset(), 1u, 0, true);
 
-    if (!validAsset(saDstAmount_.asset()) || (!convert_all_ && saDstAmount_ <= beast::kZero))
+    if (!validAsset(saDstAmount_.asset()) || (!convertAll_ && saDstAmount_ <= beast::kZero))
     {
         jvStatus_ = rpcError(RpcDstAmtMalformed);
         return PFR_PJ_INVALID;
@@ -323,7 +324,7 @@ PathRequest::parseJson(json::Value const& jvParams)
     if (jvParams.isMember(jss::send_max))
     {
         // Send_max requires destination amount to be -1.
-        if (!convert_all_)
+        if (!convertAll_)
         {
             jvStatus_ = rpcError(RpcDstAmtMalformed);
             return PFR_PJ_INVALID;
@@ -344,7 +345,7 @@ PathRequest::parseJson(json::Value const& jvParams)
     {
         json::Value const& jvSrcCurrencies = jvParams[jss::source_currencies];
         if (!jvSrcCurrencies.isArray() || jvSrcCurrencies.size() == 0 ||
-            jvSrcCurrencies.size() > RPC::Tuning::kMaxSrcCur)
+            jvSrcCurrencies.size() > rpc::tuning::kMaxSrcCur)
         {
             jvStatus_ = rpcError(RpcSrcCurMalformed);
             return PFR_PJ_INVALID;
@@ -375,7 +376,7 @@ PathRequest::parseJson(json::Value const& jvParams)
             }
             else
             {
-                uint192 u;
+                UInt192 u;
                 if (!c[jss::mpt_issuance_id].isString() ||
                     !u.parseHex(c[jss::mpt_issuance_id].asString()))
                 {
@@ -416,20 +417,22 @@ PathRequest::parseJson(json::Value const& jvParams)
                 // If the assets don't match, ignore the source asset.
                 if (srcPathAsset == saSendMax_->asset())
                 {
-                    // If neither is the source and they are not equal, then the
-                    // source issuer is illegal.
-                    if (srcIssuerID != *raSrcAccount_ &&
-                        saSendMax_->getIssuer() != *raSrcAccount_ &&
-                        srcIssuerID != saSendMax_->getIssuer())
-                    {
-                        jvStatus_ = rpcError(RpcSrcIsrMalformed);
-                        return PFR_PJ_INVALID;
-                    }
-
-                    // If both are the source, use the source.
-                    // Otherwise, use the one that's not the source.
-                    srcPathAsset.visit(
+                    auto const status = srcPathAsset.visit(
                         [&](Currency const& currency) {
+                            // If neither is the source and they are not equal,
+                            // then the source issuer is illegal. srcIssuerID
+                            // comes from the optional IOU source_currencies
+                            // issuer field, so this reconciliation is IOU-only.
+                            if (srcIssuerID != *raSrcAccount_ &&
+                                saSendMax_->getIssuer() != *raSrcAccount_ &&
+                                srcIssuerID != saSendMax_->getIssuer())
+                            {
+                                jvStatus_ = rpcError(RpcSrcIsrMalformed);
+                                return PFR_PJ_INVALID;
+                            }
+
+                            // If both are the source, use the source.
+                            // Otherwise, use the one that's not the source.
                             if (srcIssuerID != *raSrcAccount_)
                             {
                                 sciSourceAssets_.insert(Issue{currency, srcIssuerID});
@@ -438,11 +441,18 @@ PathRequest::parseJson(json::Value const& jvParams)
                             {
                                 sciSourceAssets_.insert(Issue{currency, saSendMax_->getIssuer()});
                             }
+                            else
                             {
                                 sciSourceAssets_.insert(Issue{currency, *raSrcAccount_});
                             }
+                            return PFR_PJ_NOCHANGE;
                         },
-                        [&](MPTID const& mpt) { sciSourceAssets_.insert(mpt); });
+                        [&](MPTID const& mpt) {
+                            sciSourceAssets_.insert(mpt);
+                            return PFR_PJ_NOCHANGE;
+                        });
+                    if (status == PFR_PJ_INVALID)
+                        return status;
                 }
             }
             else
@@ -461,7 +471,7 @@ PathRequest::parseJson(json::Value const& jvParams)
 
     if (jvParams.isMember(jss::domain))
     {
-        uint256 num;
+        UInt256 num;
         if (!jvParams[jss::domain].isString() || !num.parseHex(jvParams[jss::domain].asString()))
         {
             jvStatus_ = rpcError(RpcDomainMalformed);
@@ -500,13 +510,13 @@ PathRequest::doAborting() const
 std::unique_ptr<Pathfinder> const&
 PathRequest::getPathFinder(
     std::shared_ptr<AssetCache> const& cache,
-    hash_map<PathAsset, std::unique_ptr<Pathfinder>>& currencyMap,
+    HashMap<PathAsset, std::unique_ptr<Pathfinder>>& currencyMap,
     PathAsset const& currency,
     STAmount const& dstAmount,
     int const level,
-    std::function<bool(void)> const& continueCallback)
+    std::function<bool()> const& continueCallback)
 {
-    auto i = currencyMap.find(currency);
+    auto const i = currencyMap.find(currency);
     if (i != currencyMap.end())
         return i->second;
     // NOLINTBEGIN(bugprone-unchecked-optional-access) isValid() ensures both are set
@@ -537,7 +547,7 @@ PathRequest::findPaths(
     std::shared_ptr<AssetCache> const& cache,
     int const level,
     json::Value& jvArray,
-    std::function<bool(void)> const& continueCallback)
+    std::function<bool()> const& continueCallback)
 {
     auto sourceAssets = sciSourceAssets_;
     if (sourceAssets.empty() && saSendMax_)
@@ -547,7 +557,7 @@ PathRequest::findPaths(
     if (sourceAssets.empty())
     {
         // NOLINTBEGIN(bugprone-unchecked-optional-access) isValid() ensures both are set
-        auto assets = accountSourceAssets(*raSrcAccount_, cache, true);
+        auto const assets = accountSourceAssets(*raSrcAccount_, cache, true);
         bool const sameAccount = *raSrcAccount_ == *raDstAccount_;
         // NOLINTEND(bugprone-unchecked-optional-access)
         for (auto const& asset : assets)
@@ -556,7 +566,7 @@ PathRequest::findPaths(
                     [&]<typename TAsset>(TAsset const& a) {
                         if (!sameAccount || a != saDstAmount_.asset())
                         {
-                            if (sourceAssets.size() >= RPC::Tuning::kMaxAutoSrcCur)
+                            if (sourceAssets.size() >= rpc::tuning::kMaxAutoSrcCur)
                                 return false;
                             if constexpr (std::is_same_v<TAsset, Currency>)
                             {
@@ -577,8 +587,8 @@ PathRequest::findPaths(
         }
     }
 
-    auto const dstAmount = convertAmount(saDstAmount_, convert_all_);
-    hash_map<PathAsset, std::unique_ptr<Pathfinder>> currencyMap;
+    auto const dstAmount = convertAmount(saDstAmount_, convertAll_);
+    HashMap<PathAsset, std::unique_ptr<Pathfinder>> currencyMap;
     for (auto const& asset : sourceAssets)
     {
         if (continueCallback && !continueCallback())
@@ -609,7 +619,7 @@ PathRequest::findPaths(
             return *raSrcAccount_;
         }();
 
-        STAmount const saMaxAmount = [&]() {
+        STAmount const saMaxAmount = [&] {
             if (saSendMax_)
                 return *saSendMax_;
             return asset.visit(
@@ -622,7 +632,7 @@ PathRequest::findPaths(
         JLOG(journal_.debug()) << iIdentifier_ << " Paths found, calling rippleCalc";
 
         path::RippleCalc::Input rcInput;
-        if (convert_all_)
+        if (convertAll_)
             rcInput.partialPaymentAllowed = true;
         auto sandbox = std::make_unique<PaymentSandbox>(&*cache->getLedger(), TapNone);
         auto rc = path::RippleCalc::rippleCalculate(
@@ -639,7 +649,7 @@ PathRequest::findPaths(
             app_,
             &rcInput);
 
-        if (!convert_all_ && !fullLiquidityPath.empty() &&
+        if (!convertAll_ && !fullLiquidityPath.empty() &&
             (rc.result() == terNO_LINE || rc.result() == tecPATH_PARTIAL))
         {
             JLOG(journal_.debug()) << iIdentifier_ << " Trying with an extra path element";
@@ -679,7 +689,7 @@ PathRequest::findPaths(
             jvEntry[jss::source_amount] = rc.actualAmountIn.getJson(JsonOptions::Values::None);
             jvEntry[jss::paths_computed] = ps.getJson(JsonOptions::Values::None);
 
-            if (convert_all_)
+            if (convertAll_)
             {
                 jvEntry[jss::destination_amount] =
                     rc.actualAmountOut.getJson(JsonOptions::Values::None);
@@ -713,7 +723,7 @@ json::Value
 PathRequest::doUpdate(
     std::shared_ptr<AssetCache> const& cache,
     bool fast,
-    std::function<bool(void)> const& continueCallback)
+    std::function<bool()> const& continueCallback)
 {
     using namespace std::chrono;
     JLOG(journal_.debug()) << iIdentifier_ << " update " << (fast ? "fast" : "normal");
@@ -754,33 +764,33 @@ PathRequest::doUpdate(
         // first pass
         if (loaded || fast)
         {
-            iLevel_ = app_.config().PATH_SEARCH_FAST;
+            iLevel_ = app_.config().pathSearchFast;
         }
         else
         {
-            iLevel_ = app_.config().PATH_SEARCH;
+            iLevel_ = app_.config().pathSearch;
         }
     }
-    else if ((iLevel_ == app_.config().PATH_SEARCH_FAST) && !fast)
+    else if ((iLevel_ == app_.config().pathSearchFast) && !fast)
     {
         // leaving fast pathfinding
-        iLevel_ = app_.config().PATH_SEARCH;
-        if (loaded && (iLevel_ > app_.config().PATH_SEARCH_FAST))
+        iLevel_ = app_.config().pathSearch;
+        if (loaded && (iLevel_ > app_.config().pathSearchFast))
             --iLevel_;
     }
     else if (bLastSuccess_)
     {
         // decrement, if possible
-        if (iLevel_ > app_.config().PATH_SEARCH ||
-            (loaded && (iLevel_ > app_.config().PATH_SEARCH_FAST)))
+        if (iLevel_ > app_.config().pathSearch ||
+            (loaded && (iLevel_ > app_.config().pathSearchFast)))
             --iLevel_;
     }
     else
     {
         // adjust as needed
-        if (!loaded && (iLevel_ < app_.config().PATH_SEARCH_MAX))
+        if (!loaded && (iLevel_ < app_.config().pathSearchMax))
             ++iLevel_;
-        if (loaded && (iLevel_ > app_.config().PATH_SEARCH_FAST))
+        if (loaded && (iLevel_ > app_.config().pathSearchFast))
             --iLevel_;
     }
 
@@ -798,15 +808,15 @@ PathRequest::doUpdate(
         newStatus = rpcError(RpcInternal);
     }
 
-    if (fast && quick_reply_ == steady_clock::time_point{})
+    if (fast && quickReply_ == steady_clock::time_point{})
     {
-        quick_reply_ = steady_clock::now();
-        owner_.reportFast(duration_cast<milliseconds>(quick_reply_ - created_));
+        quickReply_ = steady_clock::now();
+        owner_.reportFast(duration_cast<milliseconds>(quickReply_ - created_));
     }
-    else if (!fast && full_reply_ == steady_clock::time_point{})
+    else if (!fast && fullReply_ == steady_clock::time_point{})
     {
-        full_reply_ = steady_clock::now();
-        owner_.reportFull(duration_cast<milliseconds>(full_reply_ - created_));
+        fullReply_ = steady_clock::now();
+        owner_.reportFull(duration_cast<milliseconds>(fullReply_ - created_));
     }
 
     {

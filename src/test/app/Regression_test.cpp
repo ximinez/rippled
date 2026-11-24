@@ -25,6 +25,7 @@
 #include <xrpl/basics/StringUtilities.h>
 #include <xrpl/basics/base_uint.h>
 #include <xrpl/beast/unit_test/suite.h>
+#include <xrpl/config/Constants.h>
 #include <xrpl/json/json_reader.h>
 #include <xrpl/json/json_value.h>
 #include <xrpl/ledger/ApplyView.h>
@@ -84,11 +85,11 @@ struct Regression_test : public beast::unit_test::Suite
         // The low balance scenario can not deterministically
         // be reproduced against an open ledger. Make a local
         // closed ledger and work with it directly.
-        auto closed = std::make_shared<Ledger>(
+        auto const closed = std::make_shared<Ledger>(
             kCreateGenesis,
             Rules{env.app().config().features},
-            env.app().config().FEES.toFees(),
-            std::vector<uint256>{},
+            env.app().config().fees.toFees(),
+            std::vector<UInt256>{},
             env.app().getNodeFamily());
         auto expectedDrops = kInitialXrp;
         BEAST_EXPECT(closed->header().drops == expectedDrops);
@@ -96,7 +97,7 @@ struct Regression_test : public beast::unit_test::Suite
         auto const aliceXRP = 400;
         auto const aliceAmount = XRP(aliceXRP);
 
-        auto next = std::make_shared<Ledger>(*closed, env.app().getTimeKeeper().closeTime());
+        auto const next = std::make_shared<Ledger>(*closed, env.app().getTimeKeeper().closeTime());
         {
             // Fund alice
             auto const jt = env.jt(pay(env.master, "alice", aliceAmount));
@@ -113,7 +114,7 @@ struct Regression_test : public beast::unit_test::Suite
         {
             auto const sle = next->read(keylet::account(Account("alice").id()));
             BEAST_EXPECT(sle);
-            auto balance = sle->getFieldAmount(sfBalance);
+            auto const balance = sle->getFieldAmount(sfBalance);
 
             BEAST_EXPECT(balance == aliceAmount);
         }
@@ -134,7 +135,7 @@ struct Regression_test : public beast::unit_test::Suite
         {
             auto const sle = next->read(keylet::account(Account("alice").id()));
             BEAST_EXPECT(sle);
-            auto balance = sle->getFieldAmount(sfBalance);
+            auto const balance = sle->getFieldAmount(sfBalance);
 
             BEAST_EXPECT(balance == XRP(0));
         }
@@ -150,7 +151,7 @@ struct Regression_test : public beast::unit_test::Suite
         Env env(*this);
 
         // Test case we'll use.
-        auto test256r1key = [&env](Account const& acct) {
+        auto const test256r1key = [&env](Account const& acct) {
             auto const baseFee = env.current()->fees().base;
             std::uint32_t const acctSeq = env.seq(acct);
             json::Value const jsonNoOp =
@@ -169,7 +170,7 @@ struct Regression_test : public beast::unit_test::Suite
             jt.jv["SigningPubKey"] = secp256r1PubKey;
 
             // Set the same key in the STTx.
-            auto secp256r1Sig = std::make_unique<STTx>(*(jt.stx));
+            auto secp256r1Sig = std::make_unique<STTx>(*jt.stx);
             auto pubKeyBlob = strUnHex(secp256r1PubKey);
             assert(pubKeyBlob);  // Hex for public key must be valid
             secp256r1Sig->setFieldVL(sfSigningPubKey, *pubKeyBlob);
@@ -193,8 +194,8 @@ struct Regression_test : public beast::unit_test::Suite
         testcase("Autofilled fee should use the escalated fee");
         using namespace jtx;
         Env env(*this, envconfig([](std::unique_ptr<Config> cfg) {
-            cfg->section("transaction_queue").set("minimum_txn_in_ledger_standalone", "3");
-            cfg->FEES.reference_fee = 10;
+            cfg->section(Sections::kTransactionQueue).set(Keys::kMinimumTxnInLedgerStandalone, "3");
+            cfg->fees.referenceFee = 10;
             return cfg;
         }));
         EnvSs envs(env);
@@ -213,7 +214,7 @@ struct Regression_test : public beast::unit_test::Suite
         {
             envs(noop(alice), Fee(kNone), Seq(kNone))(params);
 
-            auto tx = env.tx();
+            auto const tx = env.tx();
             if (BEAST_EXPECT(tx))
             {
                 BEAST_EXPECT(tx->getAccountID(sfAccount) == alice.id());
@@ -228,16 +229,16 @@ struct Regression_test : public beast::unit_test::Suite
     testFeeEscalationExtremeConfig()
     {
         testcase("Fee escalation shouldn't allocate extreme memory");
-        using clock_type = std::chrono::steady_clock;
+        using ClockType = std::chrono::steady_clock;
         using namespace jtx;
         using namespace std::chrono_literals;
 
         Env env(*this, envconfig([](std::unique_ptr<Config> cfg) {
-            auto& s = cfg->section("transaction_queue");
-            s.set("minimum_txn_in_ledger_standalone", "4294967295");
-            s.set("minimum_txn_in_ledger", "4294967295");
-            s.set("target_txn_in_ledger", "4294967295");
-            s.set("normal_consensus_increase_percent", "4294967295");
+            auto& s = cfg->section(Sections::kTransactionQueue);
+            s.set(Keys::kMinimumTxnInLedgerStandalone, "4294967295");
+            s.set(Keys::kMinimumTxnInLedger, "4294967295");
+            s.set(Keys::kTargetTxnInLedger, "4294967295");
+            s.set(Keys::kNormalConsensusIncreasePercent, "4294967295");
 
             return cfg;
         }));
@@ -245,9 +246,9 @@ struct Regression_test : public beast::unit_test::Suite
         env(noop(env.master));
         // This test will probably fail if any breakpoints are encountered,
         // but should pass on even the slowest machines.
-        auto const start = clock_type::now();
+        auto const start = ClockType::now();
         env.close();
-        BEAST_EXPECT(clock_type::now() - start < 1s);
+        BEAST_EXPECT(ClockType::now() - start < 1s);
     }
 
     void
@@ -294,7 +295,7 @@ struct Regression_test : public beast::unit_test::Suite
         {
             auto const bobIndex = keylet::account(bob).key;
 
-            auto const digest = [&]() -> std::optional<uint256> {
+            auto const digest = [&] -> std::optional<UInt256> {
                 auto const& state = env.app().getLedgerMaster().getClosedLedger()->stateMap();
                 SHAMapHash digest;
                 if (!state.peekItem(bobIndex, digest))

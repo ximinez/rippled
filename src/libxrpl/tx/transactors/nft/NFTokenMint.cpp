@@ -1,9 +1,9 @@
 #include <xrpl/tx/transactors/nft/NFTokenMint.h>
 
-#include <xrpl/basics/Expected.h>
 #include <xrpl/basics/base_uint.h>
 #include <xrpl/beast/utility/instrumentation.h>
 #include <xrpl/ledger/View.h>
+#include <xrpl/ledger/helpers/AccountRootHelpers.h>
 #include <xrpl/ledger/helpers/NFTokenHelpers.h>
 #include <xrpl/protocol/AccountID.h>
 #include <xrpl/protocol/Feature.h>
@@ -26,8 +26,8 @@
 #include <array>
 #include <cstdint>
 #include <cstring>
+#include <expected>
 #include <iterator>  // IWYU pragma: keep
-#include <memory>
 #include <utility>
 
 namespace xrpl {
@@ -67,7 +67,7 @@ NFTokenMint::getFlagsMask(PreflightContext const& ctx)
     // The fixRemoveNFTokenAutoTrustLine amendment disables minting with the
     // tfTrustLine flag as a way to prevent the attack.  But until the
     // amendment passes we still need to keep the old behavior available.
-    std::uint32_t const nfTokenMintMask = [&]() -> std::uint32_t {
+    std::uint32_t const nfTokenMintMask = [&] -> std::uint32_t {
         if (ctx.rules.enabled(fixRemoveNFTokenAutoTrustLine))
         {
             // if featureDynamicNFT enabled then new flag allowing mutable URI available
@@ -96,7 +96,7 @@ NFTokenMint::preflight(PreflightContext const& ctx)
     }
 
     // An issuer must only be set if the tx is executed by the minter
-    if (auto iss = ctx.tx[~sfIssuer]; iss == ctx.tx[sfAccount])
+    if (auto const iss = ctx.tx[~sfIssuer]; iss == ctx.tx[sfAccount])
         return temMALFORMED;
 
     if (auto uri = ctx.tx[~sfURI])
@@ -131,7 +131,7 @@ NFTokenMint::preflight(PreflightContext const& ctx)
     return tesSUCCESS;
 }
 
-uint256
+UInt256
 NFTokenMint::createNFTokenID(
     std::uint16_t flags,
     std::uint16_t fee,
@@ -146,7 +146,7 @@ NFTokenMint::createNFTokenID(
     taxon = nft::cipheredTaxon(tokenSeq, taxon);
 
     // The values are packed inside a 32-byte buffer, so we need to make sure
-    // that the endianess is fixed.
+    // that the endianness is fixed.
     flags = boost::endian::native_to_big(flags);
     fee = boost::endian::native_to_big(fee);
     taxon = nft::toTaxon(boost::endian::native_to_big(nft::toUInt32(taxon)));
@@ -176,7 +176,7 @@ NFTokenMint::createNFTokenID(
         std::distance(buf.data(), ptr) == buf.size(),
         "xrpl::NFTokenMint::createNFTokenID : data size matches the buffer");
 
-    return uint256::fromVoid(buf.data());
+    return UInt256::fromVoid(buf.data());
 }
 
 TER
@@ -224,12 +224,12 @@ NFTokenMint::doApply()
 {
     auto const issuer = ctx_.tx[~sfIssuer].value_or(accountID_);
 
-    auto const tokenSeq = [this, &issuer]() -> Expected<std::uint32_t, TER> {
+    auto const tokenSeq = [this, &issuer] -> std::expected<std::uint32_t, TER> {
         auto const root = view().peek(keylet::account(issuer));
         if (root == nullptr)
         {
             // Should not happen.  Checked in preclaim.
-            return Unexpected(tecNO_ISSUER);
+            return std::unexpected(tecNO_ISSUER);
         }
 
         // If the issuer hasn't minted an NFToken before we must add a
@@ -260,7 +260,7 @@ NFTokenMint::doApply()
 
         (*root)[sfMintedNFTokens] = mintedNftCnt + 1u;
         if ((*root)[sfMintedNFTokens] == 0u)
-            return Unexpected(tecMAX_SEQUENCE_REACHED);
+            return std::unexpected(tecMAX_SEQUENCE_REACHED);
 
         // Get the unique sequence number of this token by
         // sfFirstNFTokenSequence + sfMintedNFTokens
@@ -269,14 +269,14 @@ NFTokenMint::doApply()
 
         // Check for more overflow cases
         if (tokenSeq + 1u == 0u || tokenSeq < offset)
-            return Unexpected(tecMAX_SEQUENCE_REACHED);
+            return std::unexpected(tecMAX_SEQUENCE_REACHED);
 
         ctx_.view().update(root);
         return tokenSeq;
     }();
 
     if (!tokenSeq.has_value())
-        return (tokenSeq.error());
+        return tokenSeq.error();
 
     std::uint32_t const ownerCountBefore =
         view().read(keylet::account(accountID_))->getFieldU32(sfOwnerCount);
@@ -332,22 +332,21 @@ NFTokenMint::doApply()
     // allows NFTs to be added to the page (and burn fees) without
     // requiring the reserve to be met each time.  The reserve is
     // only managed when a new NFT page or sell offer is added.
-    if (auto const ownerCountAfter =
-            view().read(keylet::account(accountID_))->getFieldU32(sfOwnerCount);
+    auto const sleAccount = view().read(keylet::account(accountID_));
+    if (!sleAccount)
+        return tefINTERNAL;  // LCOV_EXCL_LINE
+
+    if (auto const ownerCountAfter = sleAccount->getFieldU32(sfOwnerCount);
         ownerCountAfter > ownerCountBefore)
     {
-        if (auto const reserve = view().fees().accountReserve(ownerCountAfter);
-            preFeeBalance_ < reserve)
+        if (preFeeBalance_ < accountReserve(view(), sleAccount, j_))
             return tecINSUFFICIENT_RESERVE;
     }
     return tesSUCCESS;
 }
 
 void
-NFTokenMint::visitInvariantEntry(
-    bool,
-    std::shared_ptr<SLE const> const&,
-    std::shared_ptr<SLE const> const&)
+NFTokenMint::visitInvariantEntry(bool, SLE::ConstRef, SLE::ConstRef)
 {
     // No transaction-specific invariants yet (future work).
 }
