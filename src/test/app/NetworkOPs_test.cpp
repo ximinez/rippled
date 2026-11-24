@@ -44,7 +44,7 @@ public:
 
             auto const jtx = env.jt(ticket::create(alice, 1), Seq(1), Fee(10));
 
-            auto transactionId = jtx.stx->getTransactionID();
+            auto const transactionId = jtx.stx->getTransactionID();
             env.app().getHashRouter().setFlags(transactionId, HashRouterFlags::HELD);
 
             env(jtx, Json(jss::Sequence, 1), Ter(terNO_ACCOUNT));
@@ -54,7 +54,7 @@ public:
             env.close();
         }
 
-        BEAST_EXPECT(logs.find("No transaction to process!") != std::string::npos);
+        BEAST_EXPECT(logs.contains("No transaction to process!"));
     }
 };
 

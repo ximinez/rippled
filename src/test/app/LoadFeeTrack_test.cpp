@@ -15,9 +15,9 @@ public:
         Config d;  // get a default configuration object
         LoadFeeTrack const l;
         {
-            Fees const fees = [&]() {
+            Fees const fees = [&] {
                 Fees f;
-                f.base = d.FEES.reference_fee;
+                f.base = d.fees.referenceFee;
                 f.reserve = 200 * kDropsPerXrp;
                 f.increment = 50 * kDropsPerXrp;
                 return f;
@@ -28,9 +28,9 @@ public:
             BEAST_EXPECT(scaleFeeLoad(XRPAmount{1}, l, fees, false) == XRPAmount{1});
         }
         {
-            Fees const fees = [&]() {
+            Fees const fees = [&] {
                 Fees f;
-                f.base = d.FEES.reference_fee * 10;
+                f.base = d.fees.referenceFee * 10;
                 f.reserve = 200 * kDropsPerXrp;
                 f.increment = 50 * kDropsPerXrp;
                 return f;
@@ -41,9 +41,9 @@ public:
             BEAST_EXPECT(scaleFeeLoad(XRPAmount{1}, l, fees, false) == XRPAmount{1});
         }
         {
-            Fees const fees = [&]() {
+            Fees const fees = [&] {
                 Fees f;
-                f.base = d.FEES.reference_fee;
+                f.base = d.fees.referenceFee;
                 f.reserve = 200 * kDropsPerXrp;
                 f.increment = 50 * kDropsPerXrp;
                 return f;

@@ -13,8 +13,6 @@
 #include <xrpl/tx/Transactor.h>
 
 #include <cstddef>
-#include <memory>
-
 namespace xrpl {
 
 NotTEC
@@ -26,7 +24,7 @@ NFTokenBurn::preflight(PreflightContext const& ctx)
 TER
 NFTokenBurn::preclaim(PreclaimContext const& ctx)
 {
-    auto const owner = [&ctx]() {
+    auto const owner = [&ctx] {
         if (ctx.tx.isFieldPresent(sfOwner))
             return ctx.tx.getAccountID(sfOwner);
 
@@ -70,7 +68,7 @@ NFTokenBurn::doApply()
     if (!isTesSuccess(ret))
         return ret;
 
-    if (auto issuer = view().peek(keylet::account(nft::getIssuer(ctx_.tx[sfNFTokenID]))))
+    if (auto const issuer = view().peek(keylet::account(nft::getIssuer(ctx_.tx[sfNFTokenID]))))
     {
         (*issuer)[~sfBurnedNFTokens] = (*issuer)[~sfBurnedNFTokens].valueOr(0) + 1;
         view().update(issuer);
@@ -95,10 +93,7 @@ NFTokenBurn::doApply()
 }
 
 void
-NFTokenBurn::visitInvariantEntry(
-    bool,
-    std::shared_ptr<SLE const> const&,
-    std::shared_ptr<SLE const> const&)
+NFTokenBurn::visitInvariantEntry(bool, SLE::ConstRef, SLE::ConstRef)
 {
     // No transaction-specific invariants yet (future work).
 }
