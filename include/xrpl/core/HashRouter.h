@@ -34,7 +34,10 @@ enum class HashRouterFlags : std::uint16_t {
     PRIVATE4 = 0x0800,
     // Used in EscrowFinish.cpp
     PRIVATE5 = 0x1000,
-    PRIVATE6 = 0x2000
+    PRIVATE6 = 0x2000,
+    // Used in apply.cpp
+    PRIVATE7 = 0x4000,
+    PRIVATE8 = 0x8000,
 };
 
 constexpr HashRouterFlags
@@ -67,6 +70,13 @@ operator&=(HashRouterFlags& lhs, HashRouterFlags rhs)
     return lhs;
 }
 
+constexpr HashRouterFlags
+operator~(HashRouterFlags flags)
+{
+    return static_cast<HashRouterFlags>(
+        ~static_cast<std::underlying_type_t<HashRouterFlags>>(flags));
+}
+
 constexpr bool
 any(HashRouterFlags flags)
 {
@@ -85,7 +95,7 @@ class Config;
 class HashRouter
 {
 public:
-    // The type here *MUST* match the type of Peer::id_t
+    // The type here *MUST* match the type of Peer::ID
     using PeerShortID = std::uint32_t;
 
     /**
@@ -104,17 +114,17 @@ public:
          */
         explicit Setup() = default;
 
-        using seconds = std::chrono::seconds;
+        using Seconds = std::chrono::seconds;
 
         /**
          * Expiration time for a hash entry
          */
-        seconds holdTime{300};
+        Seconds holdTime{300};
 
         /**
          * Amount of time required before a relayed item will be relayed again.
          */
-        seconds relayTime{30};
+        Seconds relayTime{30};
     };
 
 private:
@@ -143,6 +153,17 @@ private:
         setFlags(HashRouterFlags flagsToSet)
         {
             flags_ |= flagsToSet;
+        }
+
+        /**
+         * Clear the given flags, leaving every other flag as it is.
+         *
+         * @param flags The flags to clear.
+         */
+        void
+        clearFlags(HashRouterFlags flags)
+        {
+            flags_ &= ~flags;
         }
 
         /**
@@ -210,10 +231,10 @@ public:
     // VFALCO TODO Replace "Suppression" terminology with something more
     // semantically meaningful.
     void
-    addSuppression(uint256 const& key);
+    addSuppression(UInt256 const& key);
 
     bool
-    addSuppressionPeer(uint256 const& key, PeerShortID peer);
+    addSuppressionPeer(UInt256 const& key, PeerShortID peer);
 
     /**
      * Add a suppression peer and get message's relay status.
@@ -223,15 +244,15 @@ public:
      * is unseated if has not relayed yet.
      */
     std::pair<bool, std::optional<Stopwatch::time_point>>
-    addSuppressionPeerWithStatus(uint256 const& key, PeerShortID peer);
+    addSuppressionPeerWithStatus(UInt256 const& key, PeerShortID peer);
 
     bool
-    addSuppressionPeer(uint256 const& key, PeerShortID peer, HashRouterFlags& flags);
+    addSuppressionPeer(UInt256 const& key, PeerShortID peer, HashRouterFlags& flags);
 
     // Add a peer suppression and return whether the entry should be processed
     bool
     shouldProcess(
-        uint256 const& key,
+        UInt256 const& key,
         PeerShortID peer,
         HashRouterFlags& flags,
         std::chrono::seconds txInterval);
@@ -242,10 +263,24 @@ public:
      * @return `true` if the flags were changed. `false` if unchanged.
      */
     bool
-    setFlags(uint256 const& key, HashRouterFlags flags);
+    setFlags(UInt256 const& key, HashRouterFlags flags);
+
+    /**
+     * Clear flags on a hash.
+     *
+     * A hash without an entry is left without one, so clearing never creates
+     * or refreshes an entry.
+     *
+     * @param key The hash whose flags to clear.
+     * @param flags The flags to clear.
+     * @return `true` if at least one of the flags was set and is now clear,
+     *         `false` if nothing changed.
+     */
+    bool
+    clearFlags(UInt256 const& key, HashRouterFlags flags);
 
     HashRouterFlags
-    getFlags(uint256 const& key);
+    getFlags(UInt256 const& key);
 
     /**
      * Determines whether the hashed item should be relayed.
@@ -261,12 +296,12 @@ public:
      *     _not_ be relayed.
      */
     std::optional<std::set<PeerShortID>>
-    shouldRelay(uint256 const& key);
+    shouldRelay(UInt256 const& key);
 
 private:
     // pair.second indicates whether the entry was created
     std::pair<Entry&, bool>
-    emplace(uint256 const&);
+    emplace(UInt256 const&);
 
     std::mutex mutable mutex_;
 
@@ -274,7 +309,7 @@ private:
     Setup const setup_;
 
     // Stores all suppressed hashes and their expiration time
-    beast::aged_unordered_map<uint256, Entry, Stopwatch::clock_type, HardenedHash<strong_hash>>
+    beast::AgedUnorderedMap<UInt256, Entry, Stopwatch::ClockType, HardenedHash<StrongHash>>
         suppressionMap_;
 };
 

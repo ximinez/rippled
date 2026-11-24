@@ -7,7 +7,6 @@
 #include <xrpl/core/ServiceRegistry.h>
 #include <xrpl/ledger/Ledger.h>
 #include <xrpl/ledger/OpenView.h>
-#include <xrpl/ledger/ReadView.h>
 #include <xrpl/protocol/AccountID.h>
 #include <xrpl/protocol/Feature.h>
 #include <xrpl/protocol/LedgerFormats.h>
@@ -200,7 +199,7 @@ public:
      * @return True if the feature is enabled.
      */
     [[nodiscard]] bool
-    isEnabled(uint256 const& feature) const;
+    isEnabled(UInt256 const& feature) const;
 
     /**
      * @brief Get the current rules.
@@ -227,7 +226,7 @@ public:
         submit(T&& builder, Account const& signer)
     {
         auto const& obj = builder.getSTObject();
-        auto accountId = obj[sfAccount];
+        auto const accountId = obj[sfAccount];
         // Only set sequence if not using a ticket (ticket sets sequence to 0)
         if (!obj.isFieldPresent(sfTicketSequence))
         {
@@ -299,7 +298,7 @@ public:
      * @brief Get the closed (base) ledger view.
      * @return A const reference to the closed ledger.
      */
-    [[nodiscard]] ReadView const&
+    [[nodiscard]] Ledger const&
     getClosedLedger() const;
 
     /**
@@ -355,7 +354,7 @@ public:
 
 private:
     TestServiceRegistry registry_;
-    std::unordered_set<uint256, beast::Uhash<>> featureSet_;
+    std::unordered_set<UInt256, beast::Uhash<>> featureSet_;
     std::optional<Rules> rules_;
     std::shared_ptr<Ledger const> closedLedger_;
     std::shared_ptr<OpenView> openLedger_;

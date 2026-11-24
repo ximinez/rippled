@@ -9,6 +9,7 @@
 #include <xrpl/ledger/ReadView.h>
 #include <xrpl/ledger/helpers/SponsorHelpers.h>
 #include <xrpl/protocol/AccountID.h>
+#include <xrpl/protocol/Feature.h>
 #include <xrpl/protocol/Protocol.h>
 #include <xrpl/protocol/SField.h>
 #include <xrpl/protocol/STAccount.h>  // IWYU pragma: keep
@@ -22,18 +23,31 @@
 #include <xrpl/tx/Transactor.h>
 #include <xrpl/tx/applySteps.h>
 
+#include <boost/container/small_vector.hpp>
+
 #include <algorithm>
 #include <bit>
 #include <cstddef>
 #include <cstdint>
+#include <flat_set>
+#include <functional>
 #include <limits>
 #include <optional>
-#include <unordered_map>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
 namespace xrpl {
+
+namespace {
+
+// A sorted set with inline storage for up to kMaxBatchTxCount keys. Because the
+// inner transaction count is enforced during STTx construction, we should never
+// exceed the inline storage during preflight, but if we do, it would be safe.
+template <class Key>
+using InlineSet =
+    std::flat_set<Key, std::less<>, boost::container::small_vector<Key, kMaxBatchTxCount>>;
+
+}  // namespace
 
 /**
  * @brief Calculates the total base fee for a batch transaction.
@@ -73,14 +87,23 @@ Batch::calculateBaseFeeImpl(ReadView const& view, STTx const& tx)
     for (auto const& stx : tx.getBatchTransactions())
     {
         auto const fee = xrpl::calculateBaseFee(view, *stx);
-        // LCOV_EXCL_START
-        if (txnFees > maxAmount - fee)
+        if (!fee)
         {
+            JLOG(debugLog().error())
+                << "BatchTrace: base fee of inner transaction " << stx->getTransactionID()
+                << " could not be computed: " << transToken(fee.error());
+            return std::nullopt;
+        }
+
+        // LCOV_EXCL_START
+        if (txnFees > maxAmount - *fee)
+        {
+            UNREACHABLE("XRPAmount overflow in txnFees calculation");
             JLOG(debugLog().error()) << "BatchTrace: XRPAmount overflow in txnFees calculation.";
             return std::nullopt;
         }
         // LCOV_EXCL_STOP
-        txnFees += fee;
+        txnFees += *fee;
     }
 
     // Calculate the Signers/BatchSigners Fees
@@ -185,6 +208,7 @@ Batch::getFlagsMask(PreflightContext const& ctx)
  * - The batch must contain at least two and no more than the maximum allowed
  * inner transactions.
  * - Each inner transaction must:
+ *   - Be wrapped in a RawTransaction object (with fixBatchV1_2).
  *   - Be unique within the batch.
  *   - Not itself be a Batch transaction.
  *   - Have the tfInnerBatchTxn flag set.
@@ -244,11 +268,9 @@ Batch::preflight(PreflightContext const& ctx)
     }
 
     // Validation Inner Batch Txns
-    std::unordered_set<uint256> uniqueHashes;
-    std::unordered_map<AccountID, std::unordered_set<std::uint32_t>> accountSeqTicket;
-    auto checkSignatureFields =
+    auto const checkSignatureFields =
         [&parentBatchId, &j = ctx.j](
-            STObject const& sig, uint256 const& hash, char const* label = "") -> NotTEC {
+            STObject const& sig, UInt256 const& hash, char const* label = "") -> NotTEC {
         if (sig.isFieldPresent(sfTxnSignature))
         {
             JLOG(j.debug()) << "BatchTrace[" << parentBatchId << "]: "
@@ -275,10 +297,23 @@ Batch::preflight(PreflightContext const& ctx)
 
         return tesSUCCESS;
     };
+
+    InlineSet<std::pair<AccountID, std::uint32_t>> accountSeqTicket;
+    InlineSet<UInt256> uniqueHashes;
+
     for (auto const& stxPtr : ctx.tx.getBatchTransactions())
     {
         STTx const& stx = *stxPtr;
+
+        if (ctx.rules.enabled(fixBatchV1_2) && stx.getFName() != sfRawTransaction)
+        {
+            JLOG(ctx.j.debug()) << "BatchTrace[" << parentBatchId << "]:"
+                                << "txns array may contain only RawTransaction objects.";
+            return temMALFORMED;
+        }
+
         auto const hash = stx.getTransactionID();
+
         if (!uniqueHashes.emplace(hash).second)
         {
             JLOG(ctx.j.debug()) << "BatchTrace[" << parentBatchId << "]: "
@@ -288,11 +323,13 @@ Batch::preflight(PreflightContext const& ctx)
         }
 
         auto const txType = stx.getFieldU16(sfTransactionType);
-        if (std::ranges::any_of(
-                kDisabledTxTypes, [txType](auto const& disabled) { return txType == disabled; }))
-        {
+        // Pre-LendingProtocolV1_2: SAV and Lending transactions cannot be Batch inners.
+        // Post-LendingProtocolV1_2: they continue through the normal Batch checks.
+        bool const rejectedPreV12 = !ctx.rules.enabled(featureLendingProtocolV1_2) &&
+            std::ranges::any_of(
+                kDisabledTxTypes, [txType](auto const& disabled) { return txType == disabled; });
+        if (rejectedPreV12)
             return temINVALID_INNER_BATCH;
-        }
 
         if (!stx.isFlag(tfInnerBatchTxn))
         {
@@ -339,8 +376,20 @@ Batch::preflight(PreflightContext const& ctx)
             return temINVALID_FLAG;
 
         auto const innerAccount = stx.getAccountID(sfAccount);
+        // TransactionProposalCreate preflights a proposed Batch with
+        // TapDryRun | TapProposal so signature-presence checks are deferred
+        // to collection time (On-Chain Cosigner spec §5.3.1.2). Inner
+        // preflight used to pass only TapBatch, so those bits never reached
+        // the inners: an unsigned account-reserve SponsorshipTransfer then
+        // demanded sfSponsorSignature and the Create failed with
+        // temINVALID_INNER_BATCH. Spec §6.1.1 names an inner Sponsor as a
+        // collectable slot, so forward TapProposal/TapDryRun. Always OR in
+        // TapBatch — PreflightContext with a parentBatchId requires it.
+        // LoanSet already short-circuits on tfInnerBatchTxn; it is also in
+        // kDisabledTxTypes, so it never reaches this call.
+        ApplyFlags const innerFlags = TapBatch | (ctx.flags & (TapProposal | TapDryRun));
         if (auto const preflightResult =
-                xrpl::preflight(ctx.registry, ctx.rules, parentBatchId, stx, TapBatch, ctx.j);
+                xrpl::preflight(ctx.registry, ctx.rules, parentBatchId, stx, innerFlags, ctx.j);
             !isTesSuccess(preflightResult.ter))
         {
             JLOG(ctx.j.debug()) << "BatchTrace[" << parentBatchId << "]: "
@@ -370,30 +419,18 @@ Batch::preflight(PreflightContext const& ctx)
             return temSEQ_AND_TICKET;
         }
 
-        // Duplicate sequence and ticket checks
+        // Duplicate sequence and ticket checks. Note that sequences and tickets share a
+        // single key space per account for purposes of this check.
         if ((flags & (tfAllOrNothing | tfUntilFailure)) != 0u)
         {
-            if (auto const seq = stx.getFieldU32(sfSequence); seq != 0)
+            if (auto const seq = stx.getSeqProxy();
+                !accountSeqTicket.emplace(innerAccount, seq.value()).second)
             {
-                if (!accountSeqTicket[innerAccount].insert(seq).second)
-                {
-                    JLOG(ctx.j.debug()) << "BatchTrace[" << parentBatchId << "]: "
-                                        << "duplicate sequence found: "
-                                        << "txID: " << hash;
-                    return temREDUNDANT;
-                }
-            }
-
-            if (stx.isFieldPresent(sfTicketSequence))
-            {
-                if (auto const ticket = stx.getFieldU32(sfTicketSequence);
-                    !accountSeqTicket[innerAccount].insert(ticket).second)
-                {
-                    JLOG(ctx.j.debug()) << "BatchTrace[" << parentBatchId << "]: "
-                                        << "duplicate ticket found: "
-                                        << "txID: " << hash;
-                    return temREDUNDANT;
-                }
+                JLOG(ctx.j.debug())
+                    << "BatchTrace[" << parentBatchId << "]: "
+                    << "duplicate " << (seq.isTicket() ? "ticket" : "sequence") << " found: "
+                    << "txID: " << hash;
+                return temREDUNDANT;
             }
         }
     }
@@ -406,6 +443,13 @@ Batch::preflightSigValidated(PreflightContext const& ctx)
 {
     XRPL_ASSERT(
         ctx.tx.getTxnType() == ttBATCH, "xrpl::Batch::preflightSigValidated : batch transaction");
+
+    // A proposed Batch is stored unsigned; its BatchSigners are collected
+    // on-ledger afterward, so the signer-presence match belongs to submission
+    // time, not proposal creation (On-Chain Cosigner spec §5.3.1.2).
+    if ((ctx.flags & TapProposal) != 0)
+        return tesSUCCESS;
+
     auto const parentBatchId = ctx.tx.getTransactionID();
     auto const outerAccount = ctx.tx.getAccountID(sfAccount);
     // Accounts that must sign the batch: each inner authorizer and counterparty
@@ -571,7 +615,7 @@ Batch::doApply()
 }
 
 void
-Batch::visitInvariantEntry(bool, SLE::const_ref, SLE::const_ref)
+Batch::visitInvariantEntry(bool, SLE::ConstRef, SLE::ConstRef)
 {
     // No transaction-specific invariants yet (future work).
 }

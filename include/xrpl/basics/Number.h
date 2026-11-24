@@ -110,10 +110,10 @@ static_assert(
  *
  * However, it does not have sufficient precision to represent the full integer
  * range of int64_t values (-2^63 to 2^63-1), which are needed for XRP and MPT
- * values. The implementation of SingleAssetVault, and LendingProtocol need to
- * represent those integer values accurately and precisely, both for the
- * STNumber field type, and for internal calculations. That necessitated the
- * "large" scale.
+ * values. The implementation of SingleAssetVault, LendingProtocol, and
+ * MPTokensV2 need to represent those integer values accurately and precisely,
+ * both for the STNumber field type, and for internal calculations. That
+ * necessitated the "large" scale.
  *
  * The "Large" scales are intended to represent all values that can be represented
  * by an STAmount - IOUs, XRP, and MPTs. It has a min value of 10^18, and a max
@@ -134,8 +134,8 @@ struct MantissaRange final
     // NOLINTBEGIN(readability-enum-initial-value)
     // The values don't matter, except for Large
     enum class MantissaScale {
-        // Small can be removed when either featureSingleAssetVault or featureLendingProtocol are
-        // retired
+        // Small can be removed when any of featureSingleAssetVault, featureLendingProtocol, or
+        // featureMPTokensV2 are retired
         Small,
         // LargeLegacy can be removed when fixCleanup3_2_0 is retired
         LargeLegacy,
@@ -280,6 +280,8 @@ concept Integral64 = std::is_same_v<T, std::int64_t> || std::is_same_v<T, std::u
  *   2. The max of the "large" range, 10^19-1, is the largest 10^X-1 value that
  *      fits in an unsigned 64-bit number. (10^19-1 < 2^64-1 and
  *      10^20-1 > 2^64-1). This avoids under- and overflows.
+ *   3. A Number must not outlive a change of the active MantissaRange. See
+ *      "Usage With Different Ranges" below.
  *
  * ---- External Interface ----
  *
@@ -311,10 +313,10 @@ concept Integral64 = std::is_same_v<T, std::int64_t> || std::is_same_v<T, std::u
  *
  * The mantissa range may be changed at runtime via setMantissaScale(). The
  * default mantissa range is "large". The range is updated whenever transaction
- * processing begins, based on whether SingleAssetVault or LendingProtocol are
- * enabled. If either is enabled, the mantissa range is set to "large". If not,
- * it is set to "small", preserving backward compatibility and correct
- * "amendment-gating".
+ * processing begins, based on whether SingleAssetVault, LendingProtocol, or
+ * MPTokensV2 are enabled. If any is enabled, the mantissa range is set to
+ * "large". If not, it is set to "small", preserving backward compatibility and
+ * correct "amendment-gating".
  *
  * It is extremely unlikely that any more calls to setMantissaScale() will be
  * needed outside of unit tests.
@@ -322,7 +324,20 @@ concept Integral64 = std::is_same_v<T, std::int64_t> || std::is_same_v<T, std::u
  * ---- Usage With Different Ranges ----
  *
  * Outside of unit tests, and existing checks, code that uses Number should not
- * know or care which mantissa range is active.
+ * know or care which mantissa range is active, provided no Number lives across
+ * a range switch. That is why a non-zero Number must not be stored in a
+ * static, inline, or global variable. A Number is normalized to the
+ * MantissaRange that is active when it is built. If the range changes later,
+ * operator< and operator== give wrong results when the two operands were built
+ * under different ranges, and operator+= can fail an assert in debug builds or
+ * align exponents incorrectly. Multiplication is not affected, because it
+ * computes an exact 128-bit product and normalizes it once. Division by a
+ * stored Number can lose precision: under the Small range, operator/= runs
+ * only the first division stage, so a 19-digit divisor leaves a quotient of
+ * about 14 or 15 digits. Zero does not depend on the range, so a stored zero
+ * is safe. Store the mantissa and exponent instead, and build the Number where
+ * you use it. Changing a runtime Number into a stored constant changes
+ * transaction results, so gate that change behind an amendment.
  *
  * The results of computations using Numbers with a small mantissa may differ
  * from computations using Numbers with a large mantissa, specifically as it
@@ -344,27 +359,27 @@ concept Integral64 = std::is_same_v<T, std::int64_t> || std::is_same_v<T, std::u
  * set/getMantissaScale() functions may be most appropriate. However, if the
  * test has anything to do with transaction processing, it should enable or
  * disable the amendments that control the mantissa range choice
- * (SingleAssetVault and LendingProtocol), and/or check if either of those
- * amendments are enabled to determine which result to expect.
+ * (SingleAssetVault, LendingProtocol, and MPTokensV2), and/or check if any of
+ * those amendments are enabled to determine which result to expect.
  */
 class Number final
 {
     using rep = std::int64_t;
-    using internalrep = MantissaRange::rep;
+    using InternalRep = MantissaRange::rep;
 
-    bool negative_{false};
-    internalrep mantissa_{0};
+    InternalRep mantissa_{0};
     int exponent_{std::numeric_limits<int>::lowest()};
+    bool negative_{false};
 
 public:
     // The range for the exponent when normalized
     static constexpr int kMinExponent = -32768;
     static constexpr int kMaxExponent = 32768;
 
-    static constexpr internalrep kMaxRep = std::numeric_limits<rep>::max();
+    static constexpr InternalRep kMaxRep = std::numeric_limits<rep>::max();
     static_assert(kMaxRep == 9'223'372'036'854'775'807);
     static_assert(-kMaxRep == std::numeric_limits<rep>::min() + 1);
-    static constexpr internalrep kMaxRepUp = ((kMaxRep / 10) + 1) * 10;
+    static constexpr InternalRep kMaxRepUp = ((kMaxRep / 10) + 1) * 10;
     static_assert(kMaxRepUp == 9'223'372'036'854'775'810ULL);
 
     // May need to make unchecked private
@@ -388,15 +403,15 @@ public:
     explicit Number(rep mantissa, int exponent);
     explicit constexpr Number(
         bool negative,
-        internalrep mantissa,
+        InternalRep mantissa,
         int exponent,
         Unchecked) noexcept;
     // Assume unsigned values are... unsigned. i.e. positive
-    explicit constexpr Number(internalrep mantissa, int exponent, Unchecked) noexcept;
+    explicit constexpr Number(InternalRep mantissa, int exponent, Unchecked) noexcept;
     // Only unit tests are expected to use this ctor
-    explicit Number(bool negative, internalrep mantissa, int exponent, Normalized);
+    explicit Number(bool negative, InternalRep mantissa, int exponent, Normalized);
     // Assume unsigned values are... unsigned. i.e. positive
-    explicit Number(internalrep mantissa, int exponent, Normalized);
+    explicit Number(InternalRep mantissa, int exponent, Normalized);
 
     [[nodiscard]] constexpr rep
     mantissa() const noexcept;
@@ -558,13 +573,13 @@ public:
     static void
     setMantissaScale(MantissaRange::MantissaScale scale);
 
-    static internalrep
+    static InternalRep
     minMantissa()
     {
         return kRange.get().min;
     }
 
-    static internalrep
+    static InternalRep
     maxMantissa()
     {
         return kRange.get().max;
@@ -591,7 +606,7 @@ public:
     // is negative, returns the positive value. This takes a little extra work
     // because converting std::numeric_limits<std::int64_t>::min() flirts with
     // UB, and can vary across compilers.
-    static internalrep
+    static InternalRep
     externalToInternal(rep mantissa);
 
 private:
@@ -625,8 +640,8 @@ private:
         bool& negative,
         T& mantissa,
         int& exponent,
-        internalrep const& minMantissa,
-        internalrep const& maxMantissa,
+        InternalRep const& minMantissa,
+        InternalRep const& maxMantissa,
         MantissaRange::CuspRoundingFix cuspRoundingFix);
 
     template <class T>
@@ -650,25 +665,29 @@ private:
     shiftExponent(int exponentDelta) const;
 };
 
-constexpr Number::Number(bool negative, internalrep mantissa, int exponent, Unchecked) noexcept
-    : negative_(negative), mantissa_{mantissa}, exponent_{exponent}
+// The number class currently has 3 tail padding bytes. If you are adding new
+// members, try to fit them there before expanding the size of the class.
+static_assert(sizeof(Number) == 16);
+
+constexpr Number::Number(bool negative, InternalRep mantissa, int exponent, Unchecked) noexcept
+    : mantissa_{mantissa}, exponent_{exponent}, negative_(negative)
 {
 }
 
-constexpr Number::Number(internalrep mantissa, int exponent, Unchecked) noexcept
+constexpr Number::Number(InternalRep mantissa, int exponent, Unchecked) noexcept
     : Number(false, mantissa, exponent, Unchecked{})
 {
 }
 
 static constexpr Number kNumZero{};
 
-inline Number::Number(bool negative, internalrep mantissa, int exponent, Normalized)
+inline Number::Number(bool negative, InternalRep mantissa, int exponent, Normalized)
     : Number(negative, mantissa, exponent, Unchecked{})
 {
     normalize(kRange);
 }
 
-inline Number::Number(internalrep mantissa, int exponent, Normalized)
+inline Number::Number(InternalRep mantissa, int exponent, Normalized)
     : Number(false, mantissa, exponent, Normalized{})
 {
 }
@@ -853,7 +872,7 @@ Number::normalizeToRange() const
     static_assert((kMAX + 1) / 10 == kMIN);
 
     bool negative = negative_;
-    internalrep mantissa = mantissa_;
+    InternalRep mantissa = mantissa_;
     int exponent = exponent_;
 
     if constexpr (std::is_unsigned_v<T>)

@@ -29,8 +29,10 @@ set(test_modules
     basics
     beast
     consensus
+    core
     crypto
     json
+    ledger
     nodestore
     peerfinder
     protocol
